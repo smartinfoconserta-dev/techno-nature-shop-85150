@@ -14,6 +14,7 @@ import MonthlyReportsTab from "@/components/admin/MonthlyReportsTab";
 import SalesHistoryTab from "@/components/admin/SalesHistoryTab";
 import CategoriesTab from "@/components/admin/CategoriesTab";
 import CouponsTab from "@/components/admin/CouponsTab";
+import SettingsTab from "@/components/admin/SettingsTab";
 
 const Admin = () => {
   const { user, logout } = useAuth();
@@ -69,6 +70,7 @@ const Admin = () => {
                   { value: "brands", label: "Marcas" },
                   { value: "categories", label: "Categorias" },
                   { value: "coupons", label: "Cupons" },
+                  { value: "settings", label: "Configurações" },
                 ].map((tab) => (
                   <button
                     key={tab.value}
@@ -96,6 +98,7 @@ const Admin = () => {
             {activeTab === "brands" && <BrandsTab />}
             {activeTab === "categories" && <CategoriesTab />}
             {activeTab === "coupons" && <CouponsTab />}
+            {activeTab === "settings" && <SettingsTab />}
           </main>
         </div>
       </div>

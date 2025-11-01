@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { productsStore, Product } from "@/lib/productsStore";
 import { monthlyReportsStore } from "@/lib/monthlyReportsStore";
+import { settingsStore } from "@/lib/settingsStore";
 import ProductExpenseRow from "./ProductExpenseRow";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DollarSign, TrendingUp, TrendingDown, ShoppingBag, Receipt } from "lucide-react";
@@ -123,7 +124,7 @@ const CostsProfitsTab = () => {
               R$ {totals.totalTax.toFixed(2)}
             </div>
             <p className="text-xs text-muted-foreground">
-              6% do digital
+              {settingsStore.getSettings().taxSettings.digitalTaxRate}% do {settingsStore.getSettings().taxSettings.includeCashInTax ? "total" : "digital"}
             </p>
           </CardContent>
         </Card>

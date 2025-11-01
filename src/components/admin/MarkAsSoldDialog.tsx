@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Product } from "@/lib/productsStore";
+import { settingsStore } from "@/lib/settingsStore";
 import { Separator } from "@/components/ui/separator";
 
 interface MarkAsSoldDialogProps {
@@ -50,12 +51,19 @@ const MarkAsSoldDialog = ({
     return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(6, 9)}-${numbers.slice(9)}`;
   };
 
+  // Obter configurações de imposto
+  const settings = settingsStore.getSettings();
+  const { digitalTaxRate, includeCashInTax } = settings.taxSettings;
+
   const cashValue = parseFloat(cash) || 0;
   const pixValue = parseFloat(pix) || 0;
   const cardValue = parseFloat(card) || 0;
   const totalSale = cashValue + pixValue + cardValue;
   const digitalTotal = pixValue + cardValue;
-  const taxAmount = digitalTotal * 0.06;
+  
+  // Calcular imposto baseado nas configurações
+  const taxableAmount = includeCashInTax ? totalSale : digitalTotal;
+  const taxAmount = taxableAmount * (digitalTaxRate / 100);
 
   const handleConfirm = () => {
     const trimmedName = buyerName.trim();
@@ -181,7 +189,9 @@ const MarkAsSoldDialog = ({
               <span className="font-semibold">R$ {digitalTotal.toFixed(2)}</span>
             </div>
             <div className="flex justify-between items-center text-sm">
-              <span className="text-muted-foreground">📊 Imposto (6%):</span>
+              <span className="text-muted-foreground">
+                📊 Imposto ({digitalTaxRate}%{includeCashInTax ? " sobre total" : " sobre digital"}):
+              </span>
               <span className="font-semibold text-orange-600">
                 R$ {taxAmount.toFixed(2)}
               </span>

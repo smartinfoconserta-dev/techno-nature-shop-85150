@@ -309,9 +309,18 @@ export const productsStore = {
     
     if (!product) throw new Error("Produto não encontrado");
     
+    // Importar settings dinamicamente para evitar circular dependency
+    const settingsData = localStorage.getItem("app_settings");
+    const settings = settingsData ? JSON.parse(settingsData) : {
+      taxSettings: { digitalTaxRate: 6, includeCashInTax: false }
+    };
+    
     const salePrice = cash + pix + card;
     const digitalAmount = pix + card;
-    const taxAmount = digitalAmount * 0.06;
+    
+    // Calcular imposto baseado nas configurações
+    const taxableAmount = settings.taxSettings.includeCashInTax ? salePrice : digitalAmount;
+    const taxAmount = taxableAmount * (settings.taxSettings.digitalTaxRate / 100);
     
     product.sold = true;
     product.salePrice = salePrice;
