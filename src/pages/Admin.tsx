@@ -1,8 +1,12 @@
+import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut } from "lucide-react";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { LogOut, Menu } from "lucide-react";
+import { AdminSidebar } from "@/components/admin/AdminSidebar";
+import DashboardTab from "@/components/admin/DashboardTab";
 import BrandsTab from "@/components/admin/BrandsTab";
 import ProductsTab from "@/components/admin/ProductsTab";
 import CostsProfitsTab from "@/components/admin/CostsProfitsTab";
@@ -14,6 +18,7 @@ import CouponsTab from "@/components/admin/CouponsTab";
 const Admin = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState("dashboard");
 
   const handleLogout = () => {
     logout();
@@ -21,62 +26,80 @@ const Admin = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Painel Administrativo</h1>
-            <p className="text-sm text-muted-foreground">{user?.email}</p>
-          </div>
-          <Button variant="outline" onClick={handleLogout}>
-            <LogOut className="mr-2 h-4 w-4" />
-            Sair
-          </Button>
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full bg-background">
+        {/* Sidebar - Apenas Desktop */}
+        <div className="hidden md:block">
+          <AdminSidebar activeTab={activeTab} onTabChange={setActiveTab} />
         </div>
-      </header>
 
-      <main className="container mx-auto px-4 py-8">
-        <Tabs defaultValue="products" className="w-full">
-          <TabsList className="inline-flex w-full max-w-6xl overflow-x-auto md:grid md:grid-cols-7 gap-2">
-            <TabsTrigger value="products">Produtos</TabsTrigger>
-            <TabsTrigger value="costs">Custos e Lucros</TabsTrigger>
-            <TabsTrigger value="reports">📊 Relatórios</TabsTrigger>
-            <TabsTrigger value="history">Histórico</TabsTrigger>
-            <TabsTrigger value="brands">Marcas</TabsTrigger>
-            <TabsTrigger value="categories">Categorias</TabsTrigger>
-            <TabsTrigger value="coupons">Cupons</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="products" className="mt-6">
-            <ProductsTab />
-          </TabsContent>
+        {/* Conteúdo Principal */}
+        <div className="flex-1 flex flex-col min-w-0">
+          {/* Header */}
+          <header className="border-b border-border bg-card sticky top-0 z-10">
+            <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <SidebarTrigger className="md:flex hidden" />
+                <div>
+                  <h1 className="text-xl md:text-2xl font-bold text-foreground">
+                    Painel Administrativo
+                  </h1>
+                  <p className="text-xs md:text-sm text-muted-foreground">
+                    {user?.email}
+                  </p>
+                </div>
+              </div>
+              <Button variant="outline" onClick={handleLogout} size="sm">
+                <LogOut className="h-4 w-4 md:mr-2" />
+                <span className="hidden md:inline">Sair</span>
+              </Button>
+            </div>
+          </header>
 
-          <TabsContent value="costs" className="mt-6">
-            <CostsProfitsTab />
-          </TabsContent>
+          {/* Tabs Mobile - Apenas em telas pequenas */}
+          <div className="md:hidden border-b border-border bg-card sticky top-[73px] z-10">
+            <div className="overflow-x-auto">
+              <div className="inline-flex p-1 gap-1 min-w-full">
+                {[
+                  { value: "dashboard", label: "📊 Dashboard" },
+                  { value: "products", label: "Produtos" },
+                  { value: "costs", label: "Custos" },
+                  { value: "reports", label: "Relatórios" },
+                  { value: "history", label: "Histórico" },
+                  { value: "brands", label: "Marcas" },
+                  { value: "categories", label: "Categorias" },
+                  { value: "coupons", label: "Cupons" },
+                ].map((tab) => (
+                  <button
+                    key={tab.value}
+                    onClick={() => setActiveTab(tab.value)}
+                    className={`px-4 py-2 rounded-md text-sm font-medium whitespace-nowrap transition-colors ${
+                      activeTab === tab.value
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-transparent text-muted-foreground hover:bg-muted"
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
 
-          <TabsContent value="reports" className="mt-6">
-            <MonthlyReportsTab />
-          </TabsContent>
-
-          <TabsContent value="history" className="mt-6">
-            <SalesHistoryTab />
-          </TabsContent>
-          
-          <TabsContent value="brands" className="mt-6">
-            <BrandsTab />
-          </TabsContent>
-
-          <TabsContent value="categories" className="mt-6">
-            <CategoriesTab />
-          </TabsContent>
-
-          <TabsContent value="coupons" className="mt-6">
-            <CouponsTab />
-          </TabsContent>
-        </Tabs>
-      </main>
-    </div>
+          {/* Conteúdo das Tabs */}
+          <main className="flex-1 container mx-auto px-4 py-6 md:py-8">
+            {activeTab === "dashboard" && <DashboardTab />}
+            {activeTab === "products" && <ProductsTab />}
+            {activeTab === "costs" && <CostsProfitsTab />}
+            {activeTab === "reports" && <MonthlyReportsTab />}
+            {activeTab === "history" && <SalesHistoryTab />}
+            {activeTab === "brands" && <BrandsTab />}
+            {activeTab === "categories" && <CategoriesTab />}
+            {activeTab === "coupons" && <CouponsTab />}
+          </main>
+        </div>
+      </div>
+    </SidebarProvider>
   );
 };
 
