@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { productsStore, Product } from "@/lib/productsStore";
 import { monthlyReportsStore } from "@/lib/monthlyReportsStore";
+import { quickSalesStore } from "@/lib/quickSalesStore";
 import { MetricCard } from "./MetricCard";
 import { AlertsSection } from "./AlertsSection";
 import { SalesTrendChart } from "./SalesTrendChart";
@@ -11,6 +12,7 @@ import {
   Receipt,
   Calendar,
   ShoppingBag,
+  Zap,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +34,7 @@ const DashboardTab = () => {
   });
   const [stockCount, setStockCount] = useState(0);
   const [recentSales, setRecentSales] = useState<Product[]>([]);
+  const [quickSalesCount, setQuickSalesCount] = useState(0);
 
   useEffect(() => {
     loadData();
@@ -40,7 +43,27 @@ const DashboardTab = () => {
   const loadData = () => {
     // Dados do mês atual
     const currentTotals = productsStore.computeCurrentMonthTotals();
-    setTotals(currentTotals);
+    
+    // Busca vendas rápidas do mês atual
+    const currentMonth = format(new Date(), "yyyy-MM");
+    const quickSales = quickSalesStore.getQuickSalesByMonth(currentMonth);
+    const quickSalesTotals = quickSalesStore.getMonthlyTotals(currentMonth);
+    
+    setQuickSalesCount(quickSales.length);
+    
+    // Consolida totais (catálogo + vendas rápidas)
+    setTotals({
+      totalGross: currentTotals.totalGross + quickSalesTotals.totalSales,
+      totalCash: currentTotals.totalCash + quickSalesTotals.totalCash,
+      totalPix: currentTotals.totalPix + quickSalesTotals.totalPix,
+      totalCard: currentTotals.totalCard + quickSalesTotals.totalCard,
+      totalDigital: currentTotals.totalDigital + (quickSalesTotals.totalPix + quickSalesTotals.totalCard),
+      totalTax: currentTotals.totalTax + quickSalesTotals.totalTax,
+      totalExpenses: currentTotals.totalExpenses + quickSalesTotals.totalCost,
+      netProfit: currentTotals.netProfit + quickSalesTotals.totalProfit,
+      averageMargin: currentTotals.averageMargin, // Mantém do catálogo
+      soldCount: currentTotals.soldCount + quickSales.length,
+    });
 
     // Produtos em estoque
     const available = productsStore.getAvailableProducts();
@@ -109,6 +132,26 @@ const DashboardTab = () => {
           variant="warning"
         />
       </div>
+
+      {/* Card de Vendas Rápidas */}
+      {quickSalesCount > 0 && (
+        <Card className="bg-blue-50 border-blue-200">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Vendas Rápidas (mês)</p>
+                <p className="text-2xl font-bold text-blue-600">
+                  {quickSalesCount} {quickSalesCount === 1 ? "venda" : "vendas"}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Produtos não catalogados
+                </p>
+              </div>
+              <Zap className="h-8 w-8 text-blue-600" />
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Gráfico de Vendas */}
       <SalesTrendChart />

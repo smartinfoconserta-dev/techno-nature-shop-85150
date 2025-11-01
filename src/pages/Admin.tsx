@@ -17,6 +17,7 @@ import CouponsTab from "@/components/admin/CouponsTab";
 import SettingsTab from "@/components/admin/SettingsTab";
 import ReceivablesTab from "@/components/admin/ReceivablesTab";
 import CustomersTab from "@/components/admin/CustomersTab";
+import QuickSalesTab from "@/components/admin/QuickSalesTab";
 
 const Admin = () => {
   const { user, logout } = useAuth();
@@ -69,6 +70,7 @@ const Admin = () => {
                   { value: "costs", label: "Custos" },
                   { value: "reports", label: "Relatórios" },
                   { value: "history", label: "Histórico" },
+                  { value: "quick-sales", label: "⚡ Vendas Rápidas" },
                   { value: "brands", label: "Marcas" },
                   { value: "categories", label: "Categorias" },
                   { value: "coupons", label: "Cupons" },
@@ -99,6 +101,7 @@ const Admin = () => {
             {activeTab === "costs" && <CostsProfitsTab />}
             {activeTab === "reports" && <MonthlyReportsTab />}
             {activeTab === "history" && <SalesHistoryTab />}
+            {activeTab === "quick-sales" && <QuickSalesTab />}
             {activeTab === "brands" && <BrandsTab />}
             {activeTab === "categories" && <CategoriesTab />}
             {activeTab === "coupons" && <CouponsTab />}

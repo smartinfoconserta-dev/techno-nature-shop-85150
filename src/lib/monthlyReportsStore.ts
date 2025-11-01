@@ -1,5 +1,6 @@
 import { format, startOfMonth, endOfMonth } from "date-fns";
 import { productsStore } from "./productsStore";
+import { quickSalesStore } from "./quickSalesStore";
 
 export interface MonthlyReport {
   month: string; // "2025-11" (YYYY-MM)
@@ -90,10 +91,27 @@ export const monthlyReportsStore = {
       totalMargins += margin;
     });
 
+    // Adiciona vendas rápidas
+    const quickSales = quickSalesStore.getQuickSalesByMonth(monthString);
+    quickSales.forEach((qs) => {
+      totalGross += qs.salePrice;
+      totalExpenses += qs.costPrice;
+      
+      if (qs.saleType === "immediate") {
+        if (qs.paymentMethod === "cash") totalCash += qs.salePrice;
+        if (qs.paymentMethod === "pix") totalPix += qs.salePrice;
+        if (qs.paymentMethod === "card") totalCard += qs.salePrice;
+      }
+
+      const margin = qs.salePrice > 0 ? ((qs.salePrice - qs.costPrice) / qs.salePrice) * 100 : 0;
+      totalMargins += margin;
+    });
+
     totalDigital = totalPix + totalCard;
     const totalTax = totalDigital * 0.06;
     const netProfit = totalGross - totalExpenses - totalTax;
-    const averageMargin = soldProducts.length > 0 ? totalMargins / soldProducts.length : 0;
+    const totalCount = soldProducts.length + quickSales.length;
+    const averageMargin = totalCount > 0 ? totalMargins / totalCount : 0;
 
     const monthNameStr = `${monthNames[month - 1]} ${year}`;
 
@@ -104,7 +122,7 @@ export const monthlyReportsStore = {
       totalPurchases: totalExpenses,
       netProfit,
       totalTax,
-      soldCount: soldProducts.length,
+      soldCount: totalCount,
       averageMargin,
       generatedAt: new Date().toISOString(),
     };
@@ -151,10 +169,28 @@ export const monthlyReportsStore = {
       totalMargins += margin;
     });
 
+    // Adiciona vendas rápidas do mês atual
+    const currentMonthStr = format(now, "yyyy-MM");
+    const quickSales = quickSalesStore.getQuickSalesByMonth(currentMonthStr);
+    quickSales.forEach((qs) => {
+      totalGross += qs.salePrice;
+      totalExpenses += qs.costPrice;
+      
+      if (qs.saleType === "immediate") {
+        if (qs.paymentMethod === "cash") totalCash += qs.salePrice;
+        if (qs.paymentMethod === "pix") totalPix += qs.salePrice;
+        if (qs.paymentMethod === "card") totalCard += qs.salePrice;
+      }
+
+      const margin = qs.salePrice > 0 ? ((qs.salePrice - qs.costPrice) / qs.salePrice) * 100 : 0;
+      totalMargins += margin;
+    });
+
     totalDigital = totalPix + totalCard;
     const totalTax = totalDigital * 0.06;
     const netProfit = totalGross - totalExpenses - totalTax;
-    const averageMargin = soldProducts.length > 0 ? totalMargins / soldProducts.length : 0;
+    const totalCount = soldProducts.length + quickSales.length;
+    const averageMargin = totalCount > 0 ? totalMargins / totalCount : 0;
 
     const monthNameStr = `${monthNames[month - 1]} ${year}`;
 
@@ -165,7 +201,7 @@ export const monthlyReportsStore = {
       totalPurchases: totalExpenses,
       netProfit,
       totalTax,
-      soldCount: soldProducts.length,
+      soldCount: totalCount,
       averageMargin,
       generatedAt: new Date().toISOString(),
     };
