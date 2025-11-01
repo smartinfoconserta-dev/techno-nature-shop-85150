@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { X, Plus, Check, DollarSign } from "lucide-react";
 import { Product, productsStore } from "@/lib/productsStore";
 import { useToast } from "@/hooks/use-toast";
+import MarkAsSoldDialog from "./MarkAsSoldDialog";
 
 interface ProductExpenseRowProps {
   product: Product;
@@ -17,6 +18,7 @@ const ProductExpenseRow = ({ product, onUpdate }: ProductExpenseRowProps) => {
   const [expenseValue, setExpenseValue] = useState("");
   const [salePrice, setSalePrice] = useState(product.salePrice?.toString() || "");
   const [isEditingSalePrice, setIsEditingSalePrice] = useState(false);
+  const [showSoldDialog, setShowSoldDialog] = useState(false);
   const { toast } = useToast();
 
   const totalExpenses = product.expenses.reduce((sum, e) => sum + e.value, 0);
@@ -66,15 +68,17 @@ const ProductExpenseRow = ({ product, onUpdate }: ProductExpenseRowProps) => {
       alert("Informe o preço de venda antes de marcar como vendido");
       return;
     }
+    setShowSoldDialog(true);
+  };
 
-    if (confirm(`Marcar "${product.name}" como vendido por R$ ${parseFloat(salePrice).toFixed(2)}?`)) {
-      productsStore.markAsSold(product.id, parseFloat(salePrice));
-      toast({
-        title: "Produto vendido! 🎉",
-        description: `${product.name} foi marcado como vendido.`,
-      });
-      onUpdate();
-    }
+  const handleConfirmSale = (buyerName: string) => {
+    productsStore.markAsSold(product.id, parseFloat(salePrice), buyerName);
+    toast({
+      title: "Produto vendido! 🎉",
+      description: `${product.name} foi vendido para ${buyerName}.`,
+    });
+    setShowSoldDialog(false);
+    onUpdate();
   };
 
   return (
@@ -209,6 +213,14 @@ const ProductExpenseRow = ({ product, onUpdate }: ProductExpenseRowProps) => {
           </div>
         </div>
       </div>
+
+      <MarkAsSoldDialog
+        product={product}
+        salePrice={parseFloat(salePrice) || 0}
+        open={showSoldDialog}
+        onOpenChange={setShowSoldDialog}
+        onConfirm={handleConfirmSale}
+      />
     </div>
   );
 };

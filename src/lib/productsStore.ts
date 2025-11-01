@@ -19,6 +19,7 @@ export interface Product {
   sold: boolean;
   salePrice?: number;
   saleDate?: string;
+  buyerName?: string;
   expenses: ProductExpense[];
   createdAt: string;
 }
@@ -139,7 +140,7 @@ export const productsStore = {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
   },
 
-  markAsSold(id: string, salePrice: number): Product {
+  markAsSold(id: string, salePrice: number, buyerName: string): Product {
     const products = this.getAllProducts();
     const product = products.find((p) => p.id === id);
     
@@ -148,6 +149,7 @@ export const productsStore = {
     product.sold = true;
     product.salePrice = salePrice;
     product.saleDate = new Date().toISOString();
+    product.buyerName = buyerName.trim();
     
     localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
     return product;
