@@ -4,12 +4,22 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { TrendingUp, DollarSign, Package, Percent, Pencil, FileText } from "lucide-react";
+import { TrendingUp, DollarSign, Package, Percent, Pencil, FileText, XCircle } from "lucide-react";
 import EditSaleDialog from "./EditSaleDialog";
 import WarrantyBadge from "./WarrantyBadge";
 import { calculateWarranty } from "@/lib/warrantyHelper";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const SalesHistoryTab = () => {
   const [soldProducts, setSoldProducts] = useState<Product[]>([]);
@@ -28,6 +38,7 @@ const SalesHistoryTab = () => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [warrantyFilter, setWarrantyFilter] = useState<"all" | "active" | "expired">("all");
+  const [cancelingProduct, setCancelingProduct] = useState<Product | null>(null);
 
   useEffect(() => {
     loadData();
@@ -90,6 +101,19 @@ const SalesHistoryTab = () => {
       loadData();
     } catch (error) {
       toast.error("Erro ao atualizar venda");
+    }
+  };
+
+  const handleCancelSale = () => {
+    if (!cancelingProduct) return;
+
+    try {
+      productsStore.cancelSale(cancelingProduct.id);
+      setCancelingProduct(null);
+      loadData();
+      toast.success("Venda cancelada! Produto retornou ao estoque.");
+    } catch (error: any) {
+      toast.error(error.message || "Erro ao cancelar venda");
     }
   };
 
@@ -352,7 +376,7 @@ const SalesHistoryTab = () => {
                         </div>
                       </div>
 
-                      <div className="flex gap-2 mt-4">
+                      <div className="flex gap-2 mt-4 flex-wrap">
                         <Button
                           variant="outline"
                           size="sm"
@@ -360,6 +384,15 @@ const SalesHistoryTab = () => {
                         >
                           <Pencil className="w-4 h-4 mr-2" />
                           Editar
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCancelingProduct(product)}
+                          className="text-destructive hover:text-destructive"
+                        >
+                          <XCircle className="w-4 h-4 mr-2" />
+                          Cancelar Venda
                         </Button>
                         {product.invoiceUrl && (
                           <Button
@@ -389,6 +422,26 @@ const SalesHistoryTab = () => {
           onConfirm={handleEditConfirm}
         />
       )}
+
+      <AlertDialog open={!!cancelingProduct} onOpenChange={() => setCancelingProduct(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancelar Venda</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja cancelar a venda de <strong>{cancelingProduct?.name}</strong>?
+              <br /><br />
+              O produto retornará ao estoque e todos os dados da venda serão removidos.
+              Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Não, manter venda</AlertDialogCancel>
+            <AlertDialogAction onClick={handleCancelSale} className="bg-destructive hover:bg-destructive/90">
+              Sim, cancelar venda
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

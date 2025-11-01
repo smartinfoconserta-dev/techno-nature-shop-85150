@@ -405,6 +405,27 @@ export const productsStore = {
     return product;
   },
 
+  cancelSale(id: string): Product {
+    const products = this.getAllProducts();
+    const product = products.find((p) => p.id === id);
+    
+    if (!product) throw new Error("Produto não encontrado");
+    if (!product.sold) throw new Error("Produto não está marcado como vendido");
+    
+    // Restaurar produto para estado disponível
+    product.sold = false;
+    product.salePrice = undefined;
+    product.paymentBreakdown = undefined;
+    product.taxAmount = undefined;
+    product.saleDate = undefined;
+    product.buyerName = undefined;
+    product.buyerCpf = undefined;
+    product.invoiceUrl = undefined;
+    
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
+    return product;
+  },
+
   computeTotals() {
     const soldProducts = this.getSoldProducts();
     
