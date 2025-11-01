@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -91,6 +91,21 @@ export function AddQuickSaleDialog({
   const paymentMethod = form.watch("paymentMethod");
   const salePrice = form.watch("salePrice");
   const costPrice = form.watch("costPrice");
+
+  // Carrega clientes quando o dialog é aberto
+  useEffect(() => {
+    if (open) {
+      setCustomers(customersStore.getActiveCustomers());
+    }
+  }, [open]);
+
+  // Reseta seleção quando o dialog fecha
+  useEffect(() => {
+    if (!open) {
+      setSelectedCustomer(null);
+      form.setValue("customerId", undefined);
+    }
+  }, [open, form]);
 
   // Carrega clientes quando abre o dialog
   const handleOpenChange = (newOpen: boolean) => {
