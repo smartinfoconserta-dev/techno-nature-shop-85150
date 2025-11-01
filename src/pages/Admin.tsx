@@ -72,6 +72,8 @@ const Admin = () => {
                   { value: "brands", label: "Marcas" },
                   { value: "categories", label: "Categorias" },
                   { value: "coupons", label: "Cupons" },
+                  { value: "receivables", label: "💰 A Receber" },
+                  { value: "customers", label: "👥 Clientes" },
                   { value: "settings", label: "Configurações" },
                 ].map((tab) => (
                   <button
