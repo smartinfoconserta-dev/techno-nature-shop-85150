@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { UserPlus, Edit, Trash2, Search, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import NewCustomerDialog from "./NewCustomerDialog";
+import CustomerReceivablesDialog from "./CustomerReceivablesDialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,6 +30,8 @@ const CustomersTab = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showNewCustomerDialog, setShowNewCustomerDialog] = useState(false);
   const [customerToDelete, setCustomerToDelete] = useState<string | null>(null);
+  const [showCustomerReceivablesDialog, setShowCustomerReceivablesDialog] = useState(false);
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
 
   useEffect(() => {
     loadCustomers();
@@ -292,12 +295,8 @@ const CustomersTab = () => {
                       <Button
                         size="sm"
                         onClick={() => {
-                          // Aqui será implementada a navegação para caderneta com o cliente selecionado
-                          // Por enquanto, podemos mostrar um toast
-                          toast({
-                            title: "Ver Caderneta",
-                            description: "Navegue até a aba 'Caderneta' para ver as compras deste cliente",
-                          });
+                          setSelectedCustomerId(customer.id);
+                          setShowCustomerReceivablesDialog(true);
                         }}
                       >
                         📒 Ver Caderneta
@@ -323,6 +322,12 @@ const CustomersTab = () => {
         open={showNewCustomerDialog}
         onOpenChange={setShowNewCustomerDialog}
         onCustomerCreated={handleCustomerCreated}
+      />
+
+      <CustomerReceivablesDialog
+        open={showCustomerReceivablesDialog}
+        onOpenChange={setShowCustomerReceivablesDialog}
+        customerId={selectedCustomerId}
       />
 
       <AlertDialog open={!!customerToDelete} onOpenChange={(open) => !open && setCustomerToDelete(null)}>
