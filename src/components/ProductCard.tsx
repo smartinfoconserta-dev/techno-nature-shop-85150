@@ -66,7 +66,7 @@ const ProductCard = ({ images, name, brand, specs, description, price, discountP
     }
     
     const message = encodeURIComponent(`Olá! Tenho interesse no produto: ${name} - ${brand}\nValor: ${priceInfo}`);
-    window.open(`https://wa.me/5511999999999?text=${message}`, "_blank");
+    window.open(`https://wa.me/5548999385829?text=${message}`, "_blank");
   };
 
   return (
