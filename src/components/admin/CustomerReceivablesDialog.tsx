@@ -11,13 +11,14 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { DollarSign, Calendar, Eye, AlertCircle } from "lucide-react";
+import { DollarSign, Calendar, Eye, AlertCircle, Edit } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import AddPaymentDialog from "./AddPaymentDialog";
 import ReceivableDetailsDialog from "./ReceivableDetailsDialog";
 import { AddManualReceivableDialog } from "./AddManualReceivableDialog";
 import { AddCustomerPaymentDialog } from "./AddCustomerPaymentDialog";
+import EditCustomerDialog from "./EditCustomerDialog";
 import { useToast } from "@/hooks/use-toast";
 
 interface CustomerReceivablesDialogProps {
@@ -38,6 +39,7 @@ const CustomerReceivablesDialog = ({
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const [showNewSaleDialog, setShowNewSaleDialog] = useState(false);
   const [showCustomerPaymentDialog, setShowCustomerPaymentDialog] = useState(false);
+  const [showEditCustomerDialog, setShowEditCustomerDialog] = useState(false);
 
   useEffect(() => {
     if (open && customerId) {
@@ -183,12 +185,16 @@ const CustomerReceivablesDialog = ({
               </div>
 
               {/* Botões de Ação do Cliente */}
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <Button onClick={() => setShowNewSaleDialog(true)} variant="default">
                   ➕ Nova Venda/Compra
                 </Button>
                 <Button onClick={() => setShowCustomerPaymentDialog(true)} variant="outline">
                   💰 Registrar Pagamento
+                </Button>
+                <Button onClick={() => setShowEditCustomerDialog(true)} variant="outline">
+                  <Edit className="h-4 w-4 mr-2" />
+                  Editar Dados
                 </Button>
               </div>
 
@@ -311,6 +317,13 @@ const CustomerReceivablesDialog = ({
         onOpenChange={setShowCustomerPaymentDialog}
         customerId={customerId}
         onSuccess={loadCustomerReceivables}
+      />
+
+      <EditCustomerDialog
+        open={showEditCustomerDialog}
+        onOpenChange={setShowEditCustomerDialog}
+        customer={customer}
+        onCustomerUpdated={loadCustomerReceivables}
       />
     </>
   );

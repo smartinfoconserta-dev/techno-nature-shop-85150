@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 import { receivablesStore, Receivable } from "@/lib/receivablesStore";
-import { customersStore } from "@/lib/customersStore";
+import { customersStore, Customer } from "@/lib/customersStore";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DollarSign, Calendar, Eye, Trash2, AlertCircle } from "lucide-react";
+import { DollarSign, Calendar, Eye, Trash2, AlertCircle, UserPlus, Edit } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
@@ -13,6 +13,8 @@ import AddPaymentDialog from "./AddPaymentDialog";
 import ReceivableDetailsDialog from "./ReceivableDetailsDialog";
 import CustomerReceivablesDialog from "./CustomerReceivablesDialog";
 import { AddCustomerPaymentDialog } from "./AddCustomerPaymentDialog";
+import NewCustomerDialog from "./NewCustomerDialog";
+import EditCustomerDialog from "./EditCustomerDialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,8 +26,19 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
+interface CustomerGroup {
+  customer: Customer | undefined;
+  receivables: Receivable[];
+  totalAmount: number;
+  paidAmount: number;
+  remainingAmount: number;
+  activeCount: number;
+  hasOverdue: boolean;
+}
+
 const ReceivablesTab = () => {
   const { toast } = useToast();
+  const [viewMode, setViewMode] = useState<"customer" | "purchase">("customer");
   const [receivables, setReceivables] = useState<Receivable[]>([]);
   const [filteredReceivables, setFilteredReceivables] = useState<Receivable[]>([]);
   const [statusFilter, setStatusFilter] = useState("all");
@@ -36,6 +49,10 @@ const ReceivablesTab = () => {
   const [showCustomerDialog, setShowCustomerDialog] = useState(false);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
   const [receivableToDelete, setReceivableToDelete] = useState<string | null>(null);
+  const [showNewCustomerDialog, setShowNewCustomerDialog] = useState(false);
+  const [showEditCustomerDialog, setShowEditCustomerDialog] = useState(false);
+  const [customerToEdit, setCustomerToEdit] = useState<Customer | null>(null);
+  const [showCustomerPaymentDialog, setShowCustomerPaymentDialog] = useState(false);
 
   useEffect(() => {
     loadReceivables();
@@ -154,22 +171,86 @@ const ReceivablesTab = () => {
     return new Date(receivable.dueDate) < new Date();
   };
 
+  const groupByCustomer = (): CustomerGroup[] => {
+    const grouped = filteredReceivables.reduce((acc, receivable) => {
+      const customerId = receivable.customerId;
+      if (!acc[customerId]) {
+        acc[customerId] = {
+          customer: customersStore.getCustomerById(customerId),
+          receivables: [],
+          totalAmount: 0,
+          paidAmount: 0,
+          remainingAmount: 0,
+          activeCount: 0,
+          hasOverdue: false,
+        };
+      }
+      acc[customerId].receivables.push(receivable);
+      acc[customerId].totalAmount += receivable.totalAmount;
+      acc[customerId].paidAmount += receivable.paidAmount;
+      acc[customerId].remainingAmount += receivable.remainingAmount;
+      if (receivable.status !== "paid") acc[customerId].activeCount++;
+      if (isOverdue(receivable)) acc[customerId].hasOverdue = true;
+      return acc;
+    }, {} as Record<string, CustomerGroup>);
+    
+    return Object.values(grouped).sort((a, b) => {
+      if (!a.customer || !b.customer) return 0;
+      return a.customer.code.localeCompare(b.customer.code);
+    });
+  };
+
+  const handleEditCustomer = (customer: Customer) => {
+    setCustomerToEdit(customer);
+    setShowEditCustomerDialog(true);
+  };
+
+  const handleCustomerUpdated = () => {
+    loadReceivables();
+  };
+
+  const handleCustomerCreated = () => {
+    loadReceivables();
+  };
+
   const totals = getTotals();
   const customers = customersStore.getActiveCustomers();
+  const customerGroups = groupByCustomer();
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-3xl font-bold text-foreground">📒 Caderneta</h2>
-        <p className="text-sm text-muted-foreground mt-1">
-          Gerencie vendas a prazo e pagamentos dos clientes
-        </p>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h2 className="text-3xl font-bold text-foreground">📒 Caderneta</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Gerencie vendas a prazo e pagamentos dos clientes
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button onClick={() => setShowNewCustomerDialog(true)} className="gap-2">
+            <UserPlus className="h-4 w-4" />
+            Novo Cliente
+          </Button>
+        </div>
       </div>
 
-      {/* Filtros */}
+      {/* Filtros e Modo de Visualização */}
       <Card>
         <CardContent className="pt-6">
           <div className="flex flex-wrap gap-4">
+            <div className="flex-1 min-w-[200px]">
+              <label className="text-sm font-medium mb-2 block">Modo de Visualização</label>
+              <Select value={viewMode} onValueChange={(v) => setViewMode(v as "customer" | "purchase")}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="customer">👥 Ver por Cliente</SelectItem>
+                  <SelectItem value="purchase">📦 Ver por Compra</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="flex-1 min-w-[200px]">
               <label className="text-sm font-medium mb-2 block">Status</label>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -257,18 +338,117 @@ const ReceivablesTab = () => {
       </div>
 
       {/* Lista de Contas */}
-      <Card>
-        <CardHeader>
-          <CardTitle>📋 Lista de Contas ({filteredReceivables.length})</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {filteredReceivables.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <p>Nenhuma conta a receber encontrada</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {filteredReceivables.map((receivable) => (
+      {viewMode === "customer" ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>👥 Clientes ({customerGroups.length})</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {customerGroups.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <p>Nenhum cliente encontrado</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {customerGroups.map((group) => {
+                  if (!group.customer) return null;
+                  return (
+                    <div
+                      key={group.customer.id}
+                      className={`p-4 rounded-lg border-2 ${
+                        group.hasOverdue ? "border-red-300 bg-red-50 dark:bg-red-950/20" : "border-border bg-muted/30"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            {group.hasOverdue && (
+                              <Badge variant="destructive" className="gap-1">
+                                <AlertCircle className="h-3 w-3" />
+                                VENCIDO
+                              </Badge>
+                            )}
+                          </div>
+                          <h3 className="font-semibold text-lg">
+                            {group.customer.code} - {group.customer.name}
+                          </h3>
+                          <p className="text-sm text-muted-foreground">
+                            {group.customer.type === "lojista" ? "🏪 Lojista" : "👤 Cliente"}
+                            {group.customer.phone && ` • ${group.customer.phone}`}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3 text-sm">
+                        <div>
+                          <span className="text-muted-foreground">Total:</span>
+                          <p className="font-semibold">R$ {group.totalAmount.toFixed(2)}</p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Pago:</span>
+                          <p className="font-semibold text-green-600">R$ {group.paidAmount.toFixed(2)}</p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Resta:</span>
+                          <p className="font-bold text-red-600">R$ {group.remainingAmount.toFixed(2)}</p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Contas:</span>
+                          <p className="font-semibold">{group.activeCount} ativas</p>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            setSelectedCustomerId(group.customer!.id);
+                            setShowCustomerDialog(true);
+                          }}
+                        >
+                          👁️ Ver Compras
+                        </Button>
+                        {group.remainingAmount > 0 && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setSelectedCustomerId(group.customer!.id);
+                              setShowCustomerPaymentDialog(true);
+                            }}
+                          >
+                            💰 Registrar Pagamento
+                          </Button>
+                        )}
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleEditCustomer(group.customer!)}
+                        >
+                          <Edit className="h-4 w-4 mr-1" />
+                          Editar Cadastro
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle>📋 Lista de Contas ({filteredReceivables.length})</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {filteredReceivables.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <p>Nenhuma conta a receber encontrada</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {filteredReceivables.map((receivable) => (
                 <div
                   key={receivable.id}
                   className={`p-4 rounded-lg border-2 ${
@@ -363,6 +543,20 @@ const ReceivablesTab = () => {
           )}
         </CardContent>
       </Card>
+      )}
+
+      <NewCustomerDialog
+        open={showNewCustomerDialog}
+        onOpenChange={setShowNewCustomerDialog}
+        onCustomerCreated={handleCustomerCreated}
+      />
+
+      <EditCustomerDialog
+        open={showEditCustomerDialog}
+        onOpenChange={setShowEditCustomerDialog}
+        customer={customerToEdit}
+        onCustomerUpdated={handleCustomerUpdated}
+      />
 
       <AddPaymentDialog
         open={showPaymentDialog}
@@ -384,6 +578,13 @@ const ReceivablesTab = () => {
           if (!open) loadReceivables();
         }}
         customerId={selectedCustomerId}
+      />
+
+      <AddCustomerPaymentDialog
+        open={showCustomerPaymentDialog}
+        onOpenChange={setShowCustomerPaymentDialog}
+        customerId={selectedCustomerId}
+        onSuccess={loadReceivables}
       />
 
       <AlertDialog open={!!receivableToDelete} onOpenChange={(open) => !open && setReceivableToDelete(null)}>

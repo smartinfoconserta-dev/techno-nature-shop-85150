@@ -13,7 +13,6 @@ import SalesHistoryTab from "@/components/admin/SalesHistoryTab";
 import CouponsTab from "@/components/admin/CouponsTab";
 import SettingsTab from "@/components/admin/SettingsTab";
 import ReceivablesTab from "@/components/admin/ReceivablesTab";
-import CustomersTab from "@/components/admin/CustomersTab";
 import QuickSalesTab from "@/components/admin/QuickSalesTab";
 
 const Admin = () => {
@@ -65,10 +64,9 @@ const Admin = () => {
                   { value: "dashboard", label: "📊 Dashboard" },
                   { value: "products", label: "📦 Produtos" },
                   { value: "quick-sales", label: "⚡ Vendas Rápidas" },
+                  { value: "receivables", label: "📒 Caderneta" },
                   { value: "finance", label: "💰 Financeiro" },
                   { value: "history", label: "📜 Histórico" },
-                  { value: "receivables", label: "💵 A Receber" },
-                  { value: "customers", label: "👥 Clientes" },
                   { value: "coupons", label: "🎟️ Cupons" },
                   { value: "settings", label: "⚙️ Configurações" },
                 ].map((tab) => (
@@ -93,10 +91,9 @@ const Admin = () => {
             {activeTab === "dashboard" && <DashboardTab />}
             {activeTab === "products" && <ProductsMainTab />}
             {activeTab === "quick-sales" && <QuickSalesTab />}
+            {activeTab === "receivables" && <ReceivablesTab />}
             {activeTab === "finance" && <FinanceMainTab />}
             {activeTab === "history" && <SalesHistoryTab />}
-            {activeTab === "receivables" && <ReceivablesTab />}
-            {activeTab === "customers" && <CustomersTab />}
             {activeTab === "coupons" && <CouponsTab />}
             {activeTab === "settings" && <SettingsTab />}
           </main>
