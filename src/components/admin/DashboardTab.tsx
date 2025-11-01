@@ -53,16 +53,16 @@ const DashboardTab = () => {
     
     // Consolida totais (catálogo + vendas rápidas)
     setTotals({
-      totalGross: currentTotals.totalGross + quickSalesTotals.totalSales,
-      totalCash: currentTotals.totalCash + quickSalesTotals.totalCash,
-      totalPix: currentTotals.totalPix + quickSalesTotals.totalPix,
-      totalCard: currentTotals.totalCard + quickSalesTotals.totalCard,
-      totalDigital: currentTotals.totalDigital + (quickSalesTotals.totalPix + quickSalesTotals.totalCard),
-      totalTax: currentTotals.totalTax + quickSalesTotals.totalTax,
-      totalExpenses: currentTotals.totalExpenses + quickSalesTotals.totalCost,
-      netProfit: currentTotals.netProfit + quickSalesTotals.totalProfit,
-      averageMargin: currentTotals.averageMargin, // Mantém do catálogo
-      soldCount: currentTotals.soldCount + quickSales.length,
+      totalGross: (currentTotals.totalGross || 0) + (quickSalesTotals.totalSales || 0),
+      totalCash: (currentTotals.totalCash || 0) + (quickSalesTotals.totalCash || 0),
+      totalPix: (currentTotals.totalPix || 0) + (quickSalesTotals.totalPix || 0),
+      totalCard: (currentTotals.totalCard || 0) + (quickSalesTotals.totalCard || 0),
+      totalDigital: (currentTotals.totalDigital || 0) + ((quickSalesTotals.totalPix || 0) + (quickSalesTotals.totalCard || 0)),
+      totalTax: (currentTotals.totalTax || 0) + (quickSalesTotals.totalTax || 0),
+      totalExpenses: (currentTotals.totalExpenses || 0) + (quickSalesTotals.totalCost || 0),
+      netProfit: (currentTotals.netProfit || 0) + (quickSalesTotals.totalProfit || 0),
+      averageMargin: currentTotals.averageMargin || 0,
+      soldCount: (currentTotals.soldCount || 0) + quickSales.length,
     });
 
     // Produtos em estoque

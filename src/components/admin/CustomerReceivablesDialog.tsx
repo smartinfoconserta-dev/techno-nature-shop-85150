@@ -11,7 +11,17 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { DollarSign, Calendar, Eye, AlertCircle, Edit, FileDown } from "lucide-react";
+import { DollarSign, Calendar, Eye, AlertCircle, Edit, FileDown, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { generateCustomerReportPDF } from "@/lib/generateCustomerReportPDF";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -41,6 +51,7 @@ const CustomerReceivablesDialog = ({
   const [showNewSaleDialog, setShowNewSaleDialog] = useState(false);
   const [showCustomerPaymentDialog, setShowCustomerPaymentDialog] = useState(false);
   const [showEditCustomerDialog, setShowEditCustomerDialog] = useState(false);
+  const [deleteReceivableId, setDeleteReceivableId] = useState<string | null>(null);
 
   useEffect(() => {
     if (open && customerId) {
@@ -100,6 +111,40 @@ const CustomerReceivablesDialog = ({
   const handleViewDetails = (receivable: Receivable) => {
     setSelectedReceivable(receivable);
     setShowDetailsDialog(true);
+  };
+
+  const handleDeleteReceivable = (receivable: Receivable) => {
+    // Verifica se tem pagamentos
+    if (receivable.payments && receivable.payments.length > 0) {
+      toast({
+        title: "Não é possível devolver",
+        description: "Este produto já possui pagamentos registrados. Cancele os pagamentos primeiro.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setDeleteReceivableId(receivable.id);
+  };
+
+  const confirmDelete = () => {
+    if (!deleteReceivableId) return;
+    
+    try {
+      receivablesStore.deleteReceivable(deleteReceivableId);
+      toast({
+        title: "Produto devolvido!",
+        description: "O produto foi removido da caderneta",
+      });
+      loadCustomerReceivables();
+      setDeleteReceivableId(null);
+    } catch (error: any) {
+      toast({
+        title: "Erro ao devolver produto",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -297,6 +342,16 @@ const CustomerReceivablesDialog = ({
                             <Eye className="h-4 w-4 mr-1" />
                             Ver Detalhes
                           </Button>
+                          {receivable.payments.length === 0 && (
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleDeleteReceivable(receivable)}
+                            >
+                              <Trash2 className="h-4 w-4 mr-1" />
+                              Devolver Produto
+                            </Button>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -341,6 +396,27 @@ const CustomerReceivablesDialog = ({
         customer={customer}
         onCustomerUpdated={loadCustomerReceivables}
       />
+
+      <AlertDialog 
+        open={deleteReceivableId !== null} 
+        onOpenChange={(open) => !open && setDeleteReceivableId(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar Devolução</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja remover este produto da caderneta? 
+              Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-red-600">
+              Sim, Devolver
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };

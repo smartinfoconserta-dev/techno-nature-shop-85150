@@ -50,10 +50,10 @@ const QuickSalesTab = () => {
 
     const totals = quickSalesStore.getMonthlyTotals(monthString);
     setMonthlyTotals({
-      totalSales: totals.totalSales,
-      totalProfit: totals.totalProfit,
-      count: totals.count,
-      totalTax: totals.totalTax,
+      totalSales: totals.totalSales || 0,
+      totalProfit: totals.totalProfit || 0,
+      count: totals.count || 0,
+      totalTax: totals.totalTax || 0,
     });
   };
 

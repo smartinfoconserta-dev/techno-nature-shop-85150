@@ -43,7 +43,7 @@ export const quickSalesStore = {
     const now = new Date().toISOString();
 
     // Calcula lucro
-    const taxAmount = data.taxAmount || 0;
+    const taxAmount = data.taxAmount ?? 0;
     const profit = data.salePrice - data.costPrice - taxAmount;
 
     const newSale: QuickSale = {
@@ -101,7 +101,7 @@ export const quickSalesStore = {
       totalSales += sale.salePrice;
       totalCost += sale.costPrice;
       totalProfit += sale.profit;
-      totalTax += sale.taxAmount;
+      totalTax += sale.taxAmount || 0;
 
       if (sale.paymentMethod === "cash") totalCash += sale.salePrice;
       if (sale.paymentMethod === "pix") totalPix += sale.salePrice;
