@@ -17,7 +17,7 @@ interface MarkAsSoldDialogProps {
   product: Product;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onConfirm: (buyerName: string, cash: number, pix: number, card: number) => void;
+  onConfirm: (buyerName: string, buyerCpf: string, cash: number, pix: number, card: number) => void;
 }
 
 const MarkAsSoldDialog = ({
@@ -27,6 +27,7 @@ const MarkAsSoldDialog = ({
   onConfirm,
 }: MarkAsSoldDialogProps) => {
   const [buyerName, setBuyerName] = useState("");
+  const [buyerCpf, setBuyerCpf] = useState("");
   const [cash, setCash] = useState("");
   const [pix, setPix] = useState("");
   const [card, setCard] = useState("");
@@ -34,11 +35,20 @@ const MarkAsSoldDialog = ({
   useEffect(() => {
     if (!open) {
       setBuyerName("");
+      setBuyerCpf("");
       setCash("");
       setPix("");
       setCard("");
     }
   }, [open]);
+
+  const formatCpf = (value: string) => {
+    const numbers = value.replace(/\D/g, '').slice(0, 11);
+    if (numbers.length <= 3) return numbers;
+    if (numbers.length <= 6) return `${numbers.slice(0, 3)}.${numbers.slice(3)}`;
+    if (numbers.length <= 9) return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(6)}`;
+    return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(6, 9)}-${numbers.slice(9)}`;
+  };
 
   const cashValue = parseFloat(cash) || 0;
   const pixValue = parseFloat(pix) || 0;
@@ -49,8 +59,15 @@ const MarkAsSoldDialog = ({
 
   const handleConfirm = () => {
     const trimmedName = buyerName.trim();
+    const trimmedCpf = buyerCpf.replace(/\D/g, '');
+    
     if (!trimmedName) {
       alert("Por favor, informe o nome do comprador");
+      return;
+    }
+
+    if (!trimmedCpf || trimmedCpf.length !== 11) {
+      alert("Por favor, informe um CPF válido com 11 dígitos");
       return;
     }
 
@@ -59,7 +76,7 @@ const MarkAsSoldDialog = ({
       return;
     }
 
-    onConfirm(trimmedName, cashValue, pixValue, cardValue);
+    onConfirm(trimmedName, buyerCpf, cashValue, pixValue, cardValue);
   };
 
   const handleCancel = () => {
@@ -90,6 +107,17 @@ const MarkAsSoldDialog = ({
               placeholder="Ex: João Silva"
               value={buyerName}
               onChange={(e) => setBuyerName(e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="buyerCpf">CPF do comprador *</Label>
+            <Input
+              id="buyerCpf"
+              placeholder="000.000.000-00"
+              value={buyerCpf}
+              onChange={(e) => setBuyerCpf(formatCpf(e.target.value))}
+              maxLength={14}
             />
           </div>
 

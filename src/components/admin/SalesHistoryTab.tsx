@@ -55,6 +55,7 @@ const SalesHistoryTab = () => {
 
   const handleEditConfirm = (
     buyerName: string,
+    buyerCpf: string,
     salePrice: number,
     saleDate: string,
     invoiceUrl: string,
@@ -67,7 +68,9 @@ const SalesHistoryTab = () => {
     try {
       productsStore.updateSale(editingProduct.id, buyerName, salePrice, saleDate, invoiceUrl);
       
-      // Update payment breakdown if provided
+      // Update payment breakdown and CPF if provided
+      const updates: Partial<Product> = { buyerCpf };
+      
       if (cash !== undefined || pix !== undefined || card !== undefined) {
         const paymentBreakdown = {
           cash: cash || 0,
@@ -77,11 +80,11 @@ const SalesHistoryTab = () => {
         const digitalAmount = paymentBreakdown.pix + paymentBreakdown.card;
         const taxAmount = digitalAmount * 0.06;
         
-        productsStore.updateProduct(editingProduct.id, {
-          paymentBreakdown,
-          taxAmount,
-        });
+        updates.paymentBreakdown = paymentBreakdown;
+        updates.taxAmount = taxAmount;
       }
+      
+      productsStore.updateProduct(editingProduct.id, updates);
       
       toast.success("Venda atualizada com sucesso!");
       loadData();
@@ -255,6 +258,9 @@ const SalesHistoryTab = () => {
                       <div className="space-y-1">
                         <p className="text-sm text-muted-foreground">
                           Comprador: <span className="font-medium text-foreground">{product.buyerName || "Não informado"}</span>
+                          {product.buyerCpf && (
+                            <span className="text-muted-foreground"> ({product.buyerCpf})</span>
+                          )}
                         </p>
                         {product.saleDate && <WarrantyBadge saleDate={product.saleDate} />}
                       </div>

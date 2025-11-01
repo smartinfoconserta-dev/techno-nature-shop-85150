@@ -56,8 +56,8 @@ const ProductExpenseRow = ({ product, onUpdate }: ProductExpenseRowProps) => {
     onUpdate();
   };
 
-  const handleConfirmSale = (buyerName: string, cash: number, pix: number, card: number) => {
-    productsStore.markAsSold(product.id, buyerName, cash, pix, card);
+  const handleConfirmSale = (buyerName: string, buyerCpf: string, cash: number, pix: number, card: number) => {
+    productsStore.markAsSold(product.id, buyerName, buyerCpf, cash, pix, card);
     toast({
       title: "Produto vendido! 🎉",
       description: `${product.name} foi vendido para ${buyerName}.`,

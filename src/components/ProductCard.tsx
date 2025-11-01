@@ -7,6 +7,7 @@ import { useState } from "react";
 import ProductGalleryDialog from "./ProductGalleryDialog";
 import InstallmentSelector from "./InstallmentSelector";
 import { InstallmentOption } from "@/lib/installmentHelper";
+import { couponsStore } from "@/lib/couponsStore";
 
 interface ProductCardProps {
   id: string;
@@ -24,7 +25,8 @@ const ProductCard = ({ images, name, brand, specs, description, price, discountP
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<{ type: 'cash' | 'installment', data?: InstallmentOption, cashValue?: number } | null>(null);
   
-  const isDiscountActive = coupon === "010203";
+  const couponValidation = couponsStore.validateCoupon(coupon);
+  const isDiscountActive = couponValidation.valid;
   const mainImage = images[0] || "/placeholder.svg";
   const hasMultipleImages = images.length > 1;
   
@@ -33,8 +35,9 @@ const ProductCard = ({ images, name, brand, specs, description, price, discountP
   let displayMode: 'original' | 'coupon' | 'cash' | 'installment' = 'original';
   let paymentDetails: { installments?: number; installmentValue?: number; totalAmount?: number } = {};
 
-  if (isDiscountActive && discountPrice) {
-    finalPrice = discountPrice;
+  if (isDiscountActive && couponValidation.coupon) {
+    const discount = couponValidation.coupon.discountPercent / 100;
+    finalPrice = price * (1 - discount);
     displayMode = 'coupon';
   } else if (selectedPayment) {
     if (selectedPayment.type === 'cash') {
@@ -141,10 +144,10 @@ const ProductCard = ({ images, name, brand, specs, description, price, discountP
           {displayMode === 'coupon' && (
             <div>
               <p className="text-2xl font-bold text-primary">
-                R$ {discountPrice!.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                R$ {finalPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
               </p>
               <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                🎟️ Cupom de desconto aplicado!
+                🎟️ {couponValidation.coupon?.discountPercent}% de desconto aplicado!
               </p>
               <p className="text-xs text-muted-foreground line-through">
                 De: R$ {price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
@@ -154,7 +157,7 @@ const ProductCard = ({ images, name, brand, specs, description, price, discountP
         </div>
         
         <InstallmentSelector 
-          basePrice={isDiscountActive && discountPrice ? discountPrice : price}
+          basePrice={isDiscountActive ? finalPrice : price}
           hasCouponActive={isDiscountActive}
           onSelect={setSelectedPayment}
         />

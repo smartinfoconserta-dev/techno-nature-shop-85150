@@ -18,6 +18,7 @@ interface EditSaleDialogProps {
   onOpenChange: (open: boolean) => void;
   onConfirm: (
     buyerName: string,
+    buyerCpf: string,
     salePrice: number,
     saleDate: string,
     invoiceUrl: string,
@@ -34,6 +35,7 @@ const EditSaleDialog = ({
   onConfirm,
 }: EditSaleDialogProps) => {
   const [buyerName, setBuyerName] = useState("");
+  const [buyerCpf, setBuyerCpf] = useState("");
   const [salePrice, setSalePrice] = useState("");
   const [saleDate, setSaleDate] = useState("");
   const [invoiceUrl, setInvoiceUrl] = useState("");
@@ -44,6 +46,7 @@ const EditSaleDialog = ({
   useEffect(() => {
     if (open && product) {
       setBuyerName(product.buyerName || "");
+      setBuyerCpf(product.buyerCpf || "");
       setSalePrice(product.salePrice?.toString() || "");
       setSaleDate(product.saleDate ? product.saleDate.split("T")[0] : "");
       setInvoiceUrl(product.invoiceUrl || "");
@@ -53,15 +56,29 @@ const EditSaleDialog = ({
     }
   }, [open, product]);
 
+  const formatCpf = (value: string) => {
+    const numbers = value.replace(/\D/g, '').slice(0, 11);
+    if (numbers.length <= 3) return numbers;
+    if (numbers.length <= 6) return `${numbers.slice(0, 3)}.${numbers.slice(3)}`;
+    if (numbers.length <= 9) return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(6)}`;
+    return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(6, 9)}-${numbers.slice(9)}`;
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const price = parseFloat(salePrice);
     const cashValue = parseFloat(cash) || undefined;
     const pixValue = parseFloat(pix) || undefined;
     const cardValue = parseFloat(card) || undefined;
+    const trimmedCpf = buyerCpf.replace(/\D/g, '');
     
     if (!buyerName.trim()) {
       alert("Por favor, informe o nome do comprador");
+      return;
+    }
+
+    if (!trimmedCpf || trimmedCpf.length !== 11) {
+      alert("Por favor, informe um CPF válido com 11 dígitos");
       return;
     }
     
@@ -77,6 +94,7 @@ const EditSaleDialog = ({
 
     onConfirm(
       buyerName.trim(),
+      buyerCpf,
       price,
       new Date(saleDate).toISOString(),
       invoiceUrl.trim(),
@@ -109,6 +127,18 @@ const EditSaleDialog = ({
               value={buyerName}
               onChange={(e) => setBuyerName(e.target.value)}
               placeholder="Nome completo"
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="buyerCpf">CPF do comprador</Label>
+            <Input
+              id="buyerCpf"
+              placeholder="000.000.000-00"
+              value={buyerCpf}
+              onChange={(e) => setBuyerCpf(formatCpf(e.target.value))}
+              maxLength={14}
               required
             />
           </div>

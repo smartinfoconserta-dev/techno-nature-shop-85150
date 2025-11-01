@@ -20,6 +20,24 @@ const initialCategories: Category[] = [
     icon: "Smartphone",
     createdAt: new Date().toISOString(),
   },
+  {
+    id: "3",
+    name: "Tablets",
+    icon: "Tablet",
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "4",
+    name: "Smartwatches",
+    icon: "Watch",
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "5",
+    name: "Fones de Ouvido",
+    icon: "Headphones",
+    createdAt: new Date().toISOString(),
+  },
 ];
 
 export const categoriesStore = {
