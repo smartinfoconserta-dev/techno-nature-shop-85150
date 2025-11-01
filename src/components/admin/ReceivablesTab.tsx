@@ -11,6 +11,7 @@ import { ptBR } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
 import AddPaymentDialog from "./AddPaymentDialog";
 import ReceivableDetailsDialog from "./ReceivableDetailsDialog";
+import CustomerReceivablesDialog from "./CustomerReceivablesDialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,6 +32,8 @@ const ReceivablesTab = () => {
   const [selectedReceivable, setSelectedReceivable] = useState<Receivable | null>(null);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
+  const [showCustomerDialog, setShowCustomerDialog] = useState(false);
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
   const [receivableToDelete, setReceivableToDelete] = useState<string | null>(null);
 
   useEffect(() => {
@@ -104,6 +107,11 @@ const ReceivablesTab = () => {
   const handleViewDetails = (receivable: Receivable) => {
     setSelectedReceivable(receivable);
     setShowDetailsDialog(true);
+  };
+
+  const handleCustomerClick = (customerId: string) => {
+    setSelectedCustomerId(customerId);
+    setShowCustomerDialog(true);
   };
 
   const handleDeleteReceivable = () => {
@@ -277,9 +285,12 @@ const ReceivablesTab = () => {
                           </Badge>
                         )}
                       </div>
-                      <h3 className="font-semibold text-lg">
+                      <button
+                        onClick={() => handleCustomerClick(receivable.customerId)}
+                        className="font-semibold text-lg hover:underline hover:text-primary cursor-pointer text-left transition-colors"
+                      >
                         {receivable.customerCode} - {receivable.customerName}
-                      </h3>
+                      </button>
                       <p className="text-sm text-muted-foreground">
                         Produto: {receivable.productName}
                       </p>
@@ -363,6 +374,12 @@ const ReceivablesTab = () => {
         open={showDetailsDialog}
         onOpenChange={setShowDetailsDialog}
         receivable={selectedReceivable}
+      />
+
+      <CustomerReceivablesDialog
+        open={showCustomerDialog}
+        onOpenChange={setShowCustomerDialog}
+        customerId={selectedCustomerId}
       />
 
       <AlertDialog open={!!receivableToDelete} onOpenChange={(open) => !open && setReceivableToDelete(null)}>
