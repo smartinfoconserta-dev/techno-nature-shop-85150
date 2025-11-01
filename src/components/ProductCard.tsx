@@ -5,6 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { MessageCircle, Image } from "lucide-react";
 import { useState } from "react";
 import ProductGalleryDialog from "./ProductGalleryDialog";
+import InstallmentSelector from "./InstallmentSelector";
+import { InstallmentOption } from "@/lib/installmentHelper";
 
 interface ProductCardProps {
   id: string;
@@ -20,13 +22,47 @@ interface ProductCardProps {
 const ProductCard = ({ images, name, brand, specs, description, price, discountPrice }: ProductCardProps) => {
   const [coupon, setCoupon] = useState("");
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
+  const [selectedPayment, setSelectedPayment] = useState<{ type: 'cash' | 'installment', data?: InstallmentOption, cashValue?: number } | null>(null);
+  
   const isDiscountActive = coupon === "010203";
-  const displayPrice = isDiscountActive && discountPrice ? discountPrice : price;
   const mainImage = images[0] || "/placeholder.svg";
   const hasMultipleImages = images.length > 1;
+  
+  // Calcular preço a mostrar com prioridades: cupom > pagamento selecionado > original
+  let finalPrice = price;
+  let displayMode: 'original' | 'coupon' | 'cash' | 'installment' = 'original';
+  let paymentDetails: { installments?: number; installmentValue?: number; totalAmount?: number } = {};
+
+  if (isDiscountActive && discountPrice) {
+    finalPrice = discountPrice;
+    displayMode = 'coupon';
+  } else if (selectedPayment) {
+    if (selectedPayment.type === 'cash') {
+      finalPrice = selectedPayment.cashValue || price;
+      displayMode = 'cash';
+    } else if (selectedPayment.type === 'installment' && selectedPayment.data) {
+      finalPrice = selectedPayment.data.totalAmount;
+      displayMode = 'installment';
+      paymentDetails = {
+        installments: selectedPayment.data.installments,
+        installmentValue: selectedPayment.data.installmentValue,
+        totalAmount: selectedPayment.data.totalAmount,
+      };
+    }
+  }
 
   const handleWhatsAppClick = () => {
-    const message = encodeURIComponent(`Olá! Tenho interesse no produto: ${name} - ${brand}`);
+    let priceInfo = `R$ ${price.toFixed(2)}`;
+    
+    if (displayMode === 'cash') {
+      priceInfo = `R$ ${finalPrice.toFixed(2)} (à vista com 5% desconto)`;
+    } else if (displayMode === 'installment' && paymentDetails.installments) {
+      priceInfo = `${paymentDetails.installments}x de R$ ${paymentDetails.installmentValue?.toFixed(2)} (Total: R$ ${paymentDetails.totalAmount?.toFixed(2)}) - Visa/Mastercard`;
+    } else if (displayMode === 'coupon') {
+      priceInfo = `R$ ${finalPrice.toFixed(2)} (com cupom de desconto)`;
+    }
+    
+    const message = encodeURIComponent(`Olá! Tenho interesse no produto: ${name} - ${brand}\nValor: ${priceInfo}`);
     window.open(`https://wa.me/5511999999999?text=${message}`, "_blank");
   };
 
@@ -59,33 +95,88 @@ const ProductCard = ({ images, name, brand, specs, description, price, discountP
         <p className="text-sm text-muted-foreground">{specs}</p>
         <p className="text-sm text-foreground/80">{description}</p>
         
-        <div className="pt-2">
-          <p className="text-2xl font-bold text-primary">
-            R$ {displayPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-          </p>
-          {isDiscountActive && discountPrice && (
-            <p className="text-sm text-muted-foreground line-through">
-              R$ {price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-            </p>
+        <div className="pt-2 border-t">
+          {displayMode === 'original' && (
+            <div>
+              <p className="text-2xl font-bold text-primary">
+                R$ {price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                ou 5% à vista
+              </p>
+            </div>
+          )}
+          
+          {displayMode === 'cash' && (
+            <div>
+              <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                R$ {finalPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              </p>
+              <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                💰 5% de desconto à vista
+              </p>
+              <p className="text-xs text-muted-foreground line-through">
+                De: R$ {price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              </p>
+            </div>
+          )}
+          
+          {displayMode === 'installment' && paymentDetails.installments && (
+            <div>
+              <p className="text-2xl font-bold text-primary">
+                {paymentDetails.installments}x de R$ {paymentDetails.installmentValue?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Total: R$ {paymentDetails.totalAmount?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              </p>
+              <div className="flex gap-1 mt-2">
+                <Badge variant="secondary" className="text-xs">💳 Visa</Badge>
+                <Badge variant="secondary" className="text-xs">💳 Mastercard</Badge>
+              </div>
+            </div>
+          )}
+          
+          {displayMode === 'coupon' && (
+            <div>
+              <p className="text-2xl font-bold text-primary">
+                R$ {discountPrice!.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              </p>
+              <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                🎟️ Cupom de desconto aplicado!
+              </p>
+              <p className="text-xs text-muted-foreground line-through">
+                De: R$ {price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              </p>
+            </div>
           )}
         </div>
         
-        <div className="space-y-3">
+        <InstallmentSelector 
+          basePrice={isDiscountActive && discountPrice ? discountPrice : price}
+          onSelect={setSelectedPayment}
+        />
+        
+        <div className="space-y-2">
           <Input
             placeholder="Insira o cupom de desconto"
             value={coupon}
             onChange={(e) => setCoupon(e.target.value)}
             className="transition-all duration-200"
           />
-          
-          <Button 
-            onClick={handleWhatsAppClick}
-            className="w-full bg-[hsl(var(--whatsapp))] hover:bg-[hsl(var(--whatsapp))]/90 text-[hsl(var(--whatsapp-foreground))]"
-          >
-            <MessageCircle className="w-4 h-4 mr-2" />
-            Fale no WhatsApp
-          </Button>
+          {isDiscountActive && (
+            <p className="text-xs text-green-600 dark:text-green-400">
+              ✅ Cupom válido! Desconto aplicado.
+            </p>
+          )}
         </div>
+        
+        <Button 
+          onClick={handleWhatsAppClick}
+          className="w-full bg-[hsl(var(--whatsapp))] hover:bg-[hsl(var(--whatsapp))]/90 text-[hsl(var(--whatsapp-foreground))]"
+        >
+          <MessageCircle className="w-4 h-4 mr-2" />
+          Fale no WhatsApp
+        </Button>
       </CardContent>
     </Card>
 
