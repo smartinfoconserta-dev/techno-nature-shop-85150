@@ -156,6 +156,7 @@ const ProductExpenseRow = ({ product, onUpdate }: ProductExpenseRowProps) => {
         open={showSoldDialog}
         onOpenChange={setShowSoldDialog}
         onConfirm={handleConfirmSale}
+        onUpdate={onUpdate}
       />
 
       <AddExpenseDialog

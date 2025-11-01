@@ -91,24 +91,18 @@ const MarkAsSoldDialog = ({
       return;
     }
 
-    const coupon = couponsStore.getCouponByCode(trimmedCode);
+    const result = couponsStore.validateCoupon(trimmedCode);
+    const coupon = result.coupon;
     
-    if (!coupon) {
-      setCouponError("Cupom não encontrado");
-      setCouponValidated(false);
-      setCouponDiscount(0);
-      return;
-    }
-
-    if (!coupon.active) {
-      setCouponError("Cupom inativo");
+    if (!result.valid || !coupon) {
+      setCouponError("Cupom não encontrado ou inativo");
       setCouponValidated(false);
       setCouponDiscount(0);
       return;
     }
 
     setCouponValidated(true);
-    setCouponDiscount(coupon.discount);
+    setCouponDiscount(coupon.discountPercent);
     setCouponError("");
   };
 
@@ -174,12 +168,13 @@ const MarkAsSoldDialog = ({
           couponDiscount: couponValidated ? couponDiscount : undefined,
           dueDate: dueDate || undefined,
           notes: notes || undefined,
-          payments: initialPaymentValue > 0 ? [{
-            amount: initialPaymentValue,
-            paymentDate: new Date().toISOString(),
-            paymentMethod: "cash",
-            notes: "Pagamento inicial",
-          }] : [],
+        payments: initialPaymentValue > 0 ? [{
+          id: Date.now().toString(),
+          amount: initialPaymentValue,
+          paymentDate: new Date().toISOString(),
+          paymentMethod: "cash",
+          notes: "Pagamento inicial",
+        }] : [],
         });
 
         productsStore.markAsSoldOnCredit(product.id, selectedCustomer.name, selectedCustomer.cpfCnpj, finalPrice, receivable.id);

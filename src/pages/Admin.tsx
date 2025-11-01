@@ -15,6 +15,8 @@ import SalesHistoryTab from "@/components/admin/SalesHistoryTab";
 import CategoriesTab from "@/components/admin/CategoriesTab";
 import CouponsTab from "@/components/admin/CouponsTab";
 import SettingsTab from "@/components/admin/SettingsTab";
+import ReceivablesTab from "@/components/admin/ReceivablesTab";
+import CustomersTab from "@/components/admin/CustomersTab";
 
 const Admin = () => {
   const { user, logout } = useAuth();
