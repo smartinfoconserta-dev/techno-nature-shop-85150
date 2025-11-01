@@ -22,9 +22,7 @@ interface ProductFormProps {
 
 const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
   const [name, setName] = useState(product?.name || "");
-  const [category, setCategory] = useState<"Notebooks" | "Celulares">(
-    product?.category || "Notebooks"
-  );
+  const [category, setCategory] = useState(product?.category || "Notebooks");
   const [brand, setBrand] = useState(product?.brand || "");
   const [specs, setSpecs] = useState(product?.specs || "");
   const [description, setDescription] = useState(product?.description || "");
@@ -35,6 +33,13 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
   const [images, setImages] = useState<string[]>(product?.images || []);
   const [newImageUrl, setNewImageUrl] = useState("");
   const [availableBrands, setAvailableBrands] = useState<string[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
+
+  useEffect(() => {
+    import("@/lib/categoriesStore").then(({ categoriesStore }) => {
+      setCategories(categoriesStore.getCategoryNames());
+    });
+  }, []);
 
   useEffect(() => {
     loadBrands();
@@ -99,13 +104,16 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
 
         <div className="space-y-2">
           <Label htmlFor="category">Categoria *</Label>
-          <Select value={category} onValueChange={(v) => setCategory(v as any)}>
+          <Select value={category} onValueChange={setCategory}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="Notebooks">Notebooks</SelectItem>
-              <SelectItem value="Celulares">Celulares</SelectItem>
+              {categories.map((cat) => (
+                <SelectItem key={cat} value={cat}>
+                  {cat}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>

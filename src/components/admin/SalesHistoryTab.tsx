@@ -1,9 +1,15 @@
 import { useEffect, useState } from "react";
 import { productsStore, Product } from "@/lib/productsStore";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { TrendingUp, DollarSign, Package, Percent } from "lucide-react";
+import { TrendingUp, DollarSign, Package, Percent, Pencil, FileText } from "lucide-react";
+import EditSaleDialog from "./EditSaleDialog";
+import WarrantyBadge from "./WarrantyBadge";
+import { calculateWarranty } from "@/lib/warrantyHelper";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 const SalesHistoryTab = () => {
   const [soldProducts, setSoldProducts] = useState<Product[]>([]);
@@ -14,6 +20,9 @@ const SalesHistoryTab = () => {
     averageMargin: 0,
     soldCount: 0,
   });
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [warrantyFilter, setWarrantyFilter] = useState<"all" | "active" | "expired">("all");
 
   useEffect(() => {
     loadData();
@@ -33,6 +42,33 @@ const SalesHistoryTab = () => {
     const margin = salePrice > 0 ? (profit / salePrice) * 100 : 0;
     return { profit, margin, totalExpenses };
   };
+
+  const handleEdit = (product: Product) => {
+    setEditingProduct(product);
+    setEditDialogOpen(true);
+  };
+
+  const handleEditConfirm = (buyerName: string, salePrice: number, saleDate: string, invoiceUrl: string) => {
+    if (!editingProduct) return;
+    
+    try {
+      productsStore.updateSale(editingProduct.id, buyerName, salePrice, saleDate, invoiceUrl);
+      toast.success("Venda atualizada com sucesso!");
+      loadData();
+    } catch (error) {
+      toast.error("Erro ao atualizar venda");
+    }
+  };
+
+  const filteredProducts = soldProducts.filter(product => {
+    if (warrantyFilter === "all") return true;
+    if (!product.saleDate) return false;
+    
+    const warranty = calculateWarranty(product.saleDate);
+    if (warrantyFilter === "active") return warranty.isActive;
+    if (warrantyFilter === "expired") return !warranty.isActive;
+    return true;
+  });
 
   return (
     <div className="space-y-6">
@@ -90,6 +126,31 @@ const SalesHistoryTab = () => {
         </Card>
       </div>
 
+      {/* Filtros de garantia */}
+      <div className="flex flex-wrap gap-2">
+        <Button
+          variant={warrantyFilter === "all" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setWarrantyFilter("all")}
+        >
+          Todas
+        </Button>
+        <Button
+          variant={warrantyFilter === "active" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setWarrantyFilter("active")}
+        >
+          ✅ Na garantia
+        </Button>
+        <Button
+          variant={warrantyFilter === "expired" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setWarrantyFilter("expired")}
+        >
+          ❌ Expiradas
+        </Button>
+      </div>
+
       {/* Lista de vendas */}
       <div className="space-y-4">
         {soldProducts.length === 0 ? (
@@ -101,12 +162,31 @@ const SalesHistoryTab = () => {
               </CardDescription>
             </CardHeader>
           </Card>
+        ) : filteredProducts.length === 0 ? (
+          <Card>
+            <CardHeader>
+              <CardTitle>Nenhuma venda encontrada com esse filtro</CardTitle>
+              <CardDescription>
+                Tente mudar o filtro de garantia para ver outras vendas.
+              </CardDescription>
+            </CardHeader>
+          </Card>
         ) : (
-          soldProducts.map((product) => {
+          filteredProducts.map((product) => {
             const { profit, margin, totalExpenses } = calculateProductProfit(product);
+            const warranty = product.saleDate ? calculateWarranty(product.saleDate) : null;
             
             return (
-              <Card key={product.id}>
+              <Card
+                key={product.id}
+                className={cn(
+                  "transition-all",
+                  warranty?.isActive && warranty.daysRemaining > 30 && "border-green-300 shadow-sm shadow-green-100",
+                  warranty?.isActive && warranty.daysRemaining <= 30 && warranty.daysRemaining > 7 && "border-yellow-300 shadow-sm shadow-yellow-100",
+                  warranty?.isActive && warranty.daysRemaining <= 7 && "border-orange-300 shadow-sm shadow-orange-100",
+                  !warranty?.isActive && "border-red-200 shadow-sm shadow-red-50 opacity-90"
+                )}
+              >
                 <CardContent className="p-6">
                   <div className="flex items-start gap-4">
                     <img
@@ -124,14 +204,14 @@ const SalesHistoryTab = () => {
                         </p>
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
-                        <div>
-                          <p className="text-muted-foreground">Comprador</p>
-                          <p className="font-semibold text-foreground">
-                            {product.buyerName || "Não informado"}
-                          </p>
-                        </div>
+                      <div className="space-y-1">
+                        <p className="text-sm text-muted-foreground">
+                          Comprador: <span className="font-medium text-foreground">{product.buyerName || "Não informado"}</span>
+                        </p>
+                        {product.saleDate && <WarrantyBadge saleDate={product.saleDate} />}
+                      </div>
 
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
                         <div>
                           <p className="text-muted-foreground">Data da venda</p>
                           <p className="font-semibold text-foreground">
@@ -176,6 +256,27 @@ const SalesHistoryTab = () => {
                           </p>
                         </div>
                       </div>
+
+                      <div className="flex gap-2 mt-4">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEdit(product)}
+                        >
+                          <Pencil className="w-4 h-4 mr-2" />
+                          Editar
+                        </Button>
+                        {product.invoiceUrl && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => window.open(product.invoiceUrl, "_blank")}
+                          >
+                            <FileText className="w-4 h-4 mr-2" />
+                            Nota Fiscal
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </CardContent>
@@ -184,6 +285,15 @@ const SalesHistoryTab = () => {
           })
         )}
       </div>
+
+      {editingProduct && (
+        <EditSaleDialog
+          product={editingProduct}
+          open={editDialogOpen}
+          onOpenChange={setEditDialogOpen}
+          onConfirm={handleEditConfirm}
+        />
+      )}
     </div>
   );
 };

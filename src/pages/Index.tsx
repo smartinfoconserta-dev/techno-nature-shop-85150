@@ -4,12 +4,18 @@ import ProductFilters from "@/components/ProductFilters";
 import ProductCard from "@/components/ProductCard";
 import { brandsStore } from "@/lib/brandsStore";
 import { productsStore } from "@/lib/productsStore";
+import { categoriesStore } from "@/lib/categoriesStore";
 
 const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState("Todos");
   const [selectedBrand, setSelectedBrand] = useState("all");
   const [brands, setBrands] = useState<string[]>([]);
   const [products, setProducts] = useState(productsStore.getAvailableProducts());
+  const [categories, setCategories] = useState<string[]>([]);
+
+  useEffect(() => {
+    setCategories(["Todos", ...categoriesStore.getCategoryNames()]);
+  }, []);
 
   useEffect(() => {
     loadBrands();
@@ -22,7 +28,7 @@ const Index = () => {
       const uniqueBrands = Array.from(new Set(allBrands.map(b => b.name))).sort();
       setBrands(uniqueBrands);
     } else {
-      const categoryBrands = brandsStore.getBrandsByCategory(selectedCategory as any);
+      const categoryBrands = brandsStore.getBrandsByCategory(selectedCategory);
       setBrands(categoryBrands.map(b => b.name));
     }
   };
@@ -50,6 +56,7 @@ const Index = () => {
             selectedBrand={selectedBrand}
             onBrandChange={setSelectedBrand}
             brands={brands}
+            categories={categories}
           />
         </div>
         

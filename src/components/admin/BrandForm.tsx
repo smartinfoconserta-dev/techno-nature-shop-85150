@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Brand } from "@/lib/brandsStore";
+import { categoriesStore } from "@/lib/categoriesStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,13 +22,18 @@ import {
 interface BrandFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (name: string, category: "Notebooks" | "Celulares") => void;
+  onSubmit: (name: string, category: string) => void;
   editingBrand?: Brand | null;
 }
 
 const BrandForm = ({ open, onOpenChange, onSubmit, editingBrand }: BrandFormProps) => {
   const [name, setName] = useState("");
-  const [category, setCategory] = useState<"Notebooks" | "Celulares">("Celulares");
+  const [category, setCategory] = useState("Celulares");
+  const [categories, setCategories] = useState<string[]>([]);
+
+  useEffect(() => {
+    setCategories(categoriesStore.getCategoryNames());
+  }, []);
 
   useEffect(() => {
     if (editingBrand) {
@@ -35,7 +41,8 @@ const BrandForm = ({ open, onOpenChange, onSubmit, editingBrand }: BrandFormProp
       setCategory(editingBrand.category);
     } else {
       setName("");
-      setCategory("Celulares");
+      const cats = categoriesStore.getCategoryNames();
+      setCategory(cats[0] || "Celulares");
     }
   }, [editingBrand, open]);
 
@@ -74,13 +81,16 @@ const BrandForm = ({ open, onOpenChange, onSubmit, editingBrand }: BrandFormProp
           </div>
           <div className="space-y-2">
             <Label htmlFor="brand-category">Categoria</Label>
-            <Select value={category} onValueChange={(val) => setCategory(val as any)}>
+            <Select value={category} onValueChange={setCategory}>
               <SelectTrigger id="brand-category">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Celulares">Celulares</SelectItem>
-                <SelectItem value="Notebooks">Notebooks</SelectItem>
+                {categories.map((cat) => (
+                  <SelectItem key={cat} value={cat}>
+                    {cat}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

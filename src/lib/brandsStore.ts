@@ -1,7 +1,7 @@
 export interface Brand {
   id: string;
   name: string;
-  category: "Notebooks" | "Celulares";
+  category: string;
   createdAt: Date;
 }
 
@@ -34,14 +34,14 @@ export const brandsStore = {
     }));
   },
 
-  getBrandsByCategory: (category: "Notebooks" | "Celulares"): Brand[] => {
+  getBrandsByCategory: (category: string): Brand[] => {
     const allBrands = brandsStore.getAllBrands();
     return allBrands
       .filter(b => b.category === category)
       .sort((a, b) => a.name.localeCompare(b.name));
   },
 
-  addBrand: (name: string, category: "Notebooks" | "Celulares"): Brand => {
+  addBrand: (name: string, category: string): Brand => {
     const brands = brandsStore.getAllBrands();
     
     // Verificar duplicata
@@ -65,7 +65,7 @@ export const brandsStore = {
     return newBrand;
   },
 
-  updateBrand: (id: string, name: string, category: "Notebooks" | "Celulares"): Brand => {
+  updateBrand: (id: string, name: string, category: string): Brand => {
     const brands = brandsStore.getAllBrands();
     const index = brands.findIndex(b => b.id === id);
     

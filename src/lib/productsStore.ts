@@ -9,7 +9,7 @@ export interface Product {
   id: string;
   name: string;
   brand: string;
-  category: "Notebooks" | "Celulares";
+  category: string;
   images: string[];
   specs: string;
   description: string;
@@ -20,6 +20,7 @@ export interface Product {
   salePrice?: number;
   saleDate?: string;
   buyerName?: string;
+  invoiceUrl?: string;
   expenses: ProductExpense[];
   createdAt: string;
 }
@@ -70,7 +71,7 @@ export const productsStore = {
     return JSON.parse(stored);
   },
 
-  getProductsByCategory(category: "Notebooks" | "Celulares"): Product[] {
+  getProductsByCategory(category: string): Product[] {
     return this.getAllProducts()
       .filter((p) => p.category === category && !p.sold)
       .sort((a, b) => a.order - b.order);
@@ -180,6 +181,28 @@ export const productsStore = {
     if (!product) throw new Error("Produto não encontrado");
     
     product.expenses = product.expenses.filter((e) => e.id !== expenseId);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
+    return product;
+  },
+
+  updateSale(
+    productId: string,
+    buyerName: string,
+    salePrice: number,
+    saleDate: string,
+    invoiceUrl?: string
+  ): Product {
+    const products = this.getAllProducts();
+    const product = products.find((p) => p.id === productId);
+
+    if (!product) throw new Error("Produto não encontrado");
+    if (!product.sold) throw new Error("Produto não está marcado como vendido");
+
+    product.buyerName = buyerName.trim();
+    product.salePrice = salePrice;
+    product.saleDate = saleDate;
+    product.invoiceUrl = invoiceUrl?.trim();
+
     localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
     return product;
   },

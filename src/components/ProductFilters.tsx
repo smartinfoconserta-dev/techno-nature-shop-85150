@@ -7,6 +7,7 @@ interface ProductFiltersProps {
   selectedBrand: string;
   onBrandChange: (brand: string) => void;
   brands: string[];
+  categories: string[];
 }
 
 const ProductFilters = ({ 
@@ -14,10 +15,9 @@ const ProductFilters = ({
   onCategoryChange, 
   selectedBrand, 
   onBrandChange,
-  brands 
+  brands,
+  categories
 }: ProductFiltersProps) => {
-  const categories = ["Todos", "Notebooks", "Celulares"];
-
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap gap-3">

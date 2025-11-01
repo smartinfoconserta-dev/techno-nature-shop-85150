@@ -7,6 +7,7 @@ import BrandsTab from "@/components/admin/BrandsTab";
 import ProductsTab from "@/components/admin/ProductsTab";
 import CostsProfitsTab from "@/components/admin/CostsProfitsTab";
 import SalesHistoryTab from "@/components/admin/SalesHistoryTab";
+import CategoriesTab from "@/components/admin/CategoriesTab";
 
 const Admin = () => {
   const { user, logout } = useAuth();
@@ -34,11 +35,12 @@ const Admin = () => {
 
       <main className="container mx-auto px-4 py-8">
         <Tabs defaultValue="products" className="w-full">
-          <TabsList className="grid w-full max-w-3xl grid-cols-4">
+          <TabsList className="grid w-full max-w-4xl grid-cols-5">
             <TabsTrigger value="products">Produtos</TabsTrigger>
             <TabsTrigger value="costs">Custos e Lucros</TabsTrigger>
             <TabsTrigger value="history">Histórico</TabsTrigger>
             <TabsTrigger value="brands">Marcas</TabsTrigger>
+            <TabsTrigger value="categories">Categorias</TabsTrigger>
           </TabsList>
           
           <TabsContent value="products" className="mt-6">
@@ -55,6 +57,10 @@ const Admin = () => {
           
           <TabsContent value="brands" className="mt-6">
             <BrandsTab />
+          </TabsContent>
+
+          <TabsContent value="categories" className="mt-6">
+            <CategoriesTab />
           </TabsContent>
         </Tabs>
       </main>
