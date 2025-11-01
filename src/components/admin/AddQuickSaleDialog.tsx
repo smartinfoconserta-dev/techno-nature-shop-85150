@@ -40,6 +40,8 @@ import { quickSalesStore } from "@/lib/quickSalesStore";
 import { receivablesStore } from "@/lib/receivablesStore";
 import { customersStore, Customer } from "@/lib/customersStore";
 import { useToast } from "@/hooks/use-toast";
+import CustomerSelector from "@/components/admin/CustomerSelector";
+import NewCustomerDialog from "@/components/admin/NewCustomerDialog";
 
 const formSchema = z.object({
   productName: z.string().min(1, "Nome do produto é obrigatório"),
@@ -69,6 +71,8 @@ export function AddQuickSaleDialog({
   const { toast } = useToast();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [showNewCustomerDialog, setShowNewCustomerDialog] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -142,9 +146,6 @@ export function AddQuickSaleDialog({
         if (!data.customerId) {
           throw new Error("Cliente é obrigatório para vendas a prazo");
         }
-        if (!data.dueDate) {
-          throw new Error("Data de vencimento é obrigatória");
-        }
 
         const customer = customers.find(c => c.id === data.customerId);
         if (!customer) {
@@ -160,7 +161,7 @@ export function AddQuickSaleDialog({
           productName: data.productName,
           totalAmount: data.salePrice,
           paidAmount: data.initialPayment || 0,
-          dueDate: format(data.dueDate, "yyyy-MM-dd"),
+          dueDate: data.dueDate ? format(data.dueDate, "yyyy-MM-dd") : undefined,
           payments: [],
         });
 
@@ -368,20 +369,20 @@ export function AddQuickSaleDialog({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Cliente *</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione o cliente" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {customers.map(customer => (
-                            <SelectItem key={customer.id} value={customer.id}>
-                              {customer.code} - {customer.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <FormControl>
+                        <CustomerSelector
+                          selectedCustomer={selectedCustomer}
+                          onCustomerSelect={(customer) => {
+                            setSelectedCustomer(customer);
+                            if (customer) {
+                              field.onChange(customer.id);
+                            } else {
+                              field.onChange("");
+                            }
+                          }}
+                          onNewCustomer={() => setShowNewCustomerDialog(true)}
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -393,7 +394,7 @@ export function AddQuickSaleDialog({
                     name="dueDate"
                     render={({ field }) => (
                       <FormItem className="flex flex-col">
-                        <FormLabel>Data Vencimento *</FormLabel>
+                        <FormLabel>Data Vencimento (opcional)</FormLabel>
                         <Popover>
                           <PopoverTrigger asChild>
                             <FormControl>
@@ -485,6 +486,19 @@ export function AddQuickSaleDialog({
           </form>
         </Form>
       </DialogContent>
+
+      {/* Dialog de Novo Cliente */}
+      <NewCustomerDialog
+        open={showNewCustomerDialog}
+        onOpenChange={setShowNewCustomerDialog}
+        onCustomerCreated={(newCustomer) => {
+          const updatedCustomers = [...customers, newCustomer];
+          setCustomers(updatedCustomers);
+          setSelectedCustomer(newCustomer);
+          form.setValue("customerId", newCustomer.id);
+          setShowNewCustomerDialog(false);
+        }}
+      />
     </Dialog>
   );
 }

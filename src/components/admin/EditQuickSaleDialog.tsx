@@ -33,6 +33,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Trash2 } from "lucide-react";
 import { quickSalesStore, QuickSale } from "@/lib/quickSalesStore";
+import { receivablesStore } from "@/lib/receivablesStore";
 import { useToast } from "@/hooks/use-toast";
 
 const formSchema = z.object({
@@ -110,14 +111,22 @@ export function EditQuickSaleDialog({
   };
 
   const handleDelete = () => {
-    if (!saleId) return;
+    if (!saleId || !sale) return;
 
     try {
+      // 1. Se for venda a prazo, remove a conta a receber vinculada
+      if (sale.saleType === "receivable" && sale.receivableId) {
+        receivablesStore.deleteReceivable(sale.receivableId);
+      }
+
+      // 2. Remove a venda rápida
       quickSalesStore.deleteQuickSale(saleId);
+      
+      // 3. NÃO remove o cliente (mantém o cadastro)
       
       toast({
         title: "Venda excluída",
-        description: "A venda foi removida com sucesso.",
+        description: "A venda e contas relacionadas foram removidas. O cliente permanece cadastrado.",
       });
 
       setShowDeleteDialog(false);
