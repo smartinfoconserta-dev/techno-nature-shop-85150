@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -11,23 +11,41 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Product } from "@/lib/productsStore";
+import { Separator } from "@/components/ui/separator";
 
 interface MarkAsSoldDialogProps {
   product: Product;
-  salePrice: number;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onConfirm: (buyerName: string) => void;
+  onConfirm: (buyerName: string, cash: number, pix: number, card: number) => void;
 }
 
 const MarkAsSoldDialog = ({
   product,
-  salePrice,
   open,
   onOpenChange,
   onConfirm,
 }: MarkAsSoldDialogProps) => {
   const [buyerName, setBuyerName] = useState("");
+  const [cash, setCash] = useState("");
+  const [pix, setPix] = useState("");
+  const [card, setCard] = useState("");
+
+  useEffect(() => {
+    if (!open) {
+      setBuyerName("");
+      setCash("");
+      setPix("");
+      setCard("");
+    }
+  }, [open]);
+
+  const cashValue = parseFloat(cash) || 0;
+  const pixValue = parseFloat(pix) || 0;
+  const cardValue = parseFloat(card) || 0;
+  const totalSale = cashValue + pixValue + cardValue;
+  const digitalTotal = pixValue + cardValue;
+  const taxAmount = digitalTotal * 0.06;
 
   const handleConfirm = () => {
     const trimmedName = buyerName.trim();
@@ -35,12 +53,16 @@ const MarkAsSoldDialog = ({
       alert("Por favor, informe o nome do comprador");
       return;
     }
-    onConfirm(trimmedName);
-    setBuyerName("");
+
+    if (totalSale <= 0) {
+      alert("Pelo menos uma forma de pagamento deve ser maior que zero");
+      return;
+    }
+
+    onConfirm(trimmedName, cashValue, pixValue, cardValue);
   };
 
   const handleCancel = () => {
-    setBuyerName("");
     onOpenChange(false);
   };
 
@@ -59,10 +81,6 @@ const MarkAsSoldDialog = ({
             <p className="text-sm">
               <span className="font-medium">Produto:</span> {product.name}
             </p>
-            <p className="text-sm">
-              <span className="font-medium">Preço:</span> R${" "}
-              {salePrice.toFixed(2)}
-            </p>
           </div>
 
           <div className="space-y-2">
@@ -72,12 +90,78 @@ const MarkAsSoldDialog = ({
               placeholder="Ex: João Silva"
               value={buyerName}
               onChange={(e) => setBuyerName(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  handleConfirm();
-                }
-              }}
             />
+          </div>
+
+          <Separator className="my-4" />
+
+          <div>
+            <h4 className="font-semibold mb-3">Formas de Pagamento</h4>
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <Label htmlFor="cash">💵 Dinheiro (R$)</Label>
+                <Input
+                  id="cash"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={cash}
+                  onChange={(e) => setCash(e.target.value)}
+                  placeholder="0.00"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="pix">📱 PIX (R$)</Label>
+                <Input
+                  id="pix"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={pix}
+                  onChange={(e) => setPix(e.target.value)}
+                  placeholder="0.00"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="card">💳 Cartão (R$)</Label>
+                <Input
+                  id="card"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={card}
+                  onChange={(e) => setCard(e.target.value)}
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
+          </div>
+
+          <Separator className="my-4" />
+
+          <div className="bg-muted p-4 rounded-lg space-y-2">
+            <div className="flex justify-between items-center">
+              <span className="font-semibold">💰 Total da venda:</span>
+              <span className="text-xl font-bold text-green-600">
+                R$ {totalSale.toFixed(2)}
+              </span>
+            </div>
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-muted-foreground">💻 Digital (PIX + Cartão):</span>
+              <span className="font-semibold">R$ {digitalTotal.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-muted-foreground">📊 Imposto (6%):</span>
+              <span className="font-semibold text-orange-600">
+                R$ {taxAmount.toFixed(2)}
+              </span>
+            </div>
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-muted-foreground">💵 Dinheiro:</span>
+              <span className="font-semibold">R$ {cashValue.toFixed(2)}</span>
+            </div>
           </div>
         </div>
 

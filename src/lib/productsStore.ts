@@ -2,7 +2,16 @@ export interface ProductExpense {
   id: string;
   label: string;
   value: number;
+  description?: string;
+  paymentMethod?: "cash" | "pix" | "card";
+  sellerCpf?: string;
   createdAt: string;
+}
+
+export interface PaymentBreakdown {
+  cash: number;
+  pix: number;
+  card: number;
 }
 
 export interface Product {
@@ -18,6 +27,8 @@ export interface Product {
   order: number;
   sold: boolean;
   salePrice?: number;
+  paymentBreakdown?: PaymentBreakdown;
+  taxAmount?: number;
   saleDate?: string;
   buyerName?: string;
   invoiceUrl?: string;
@@ -141,14 +152,20 @@ export const productsStore = {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
   },
 
-  markAsSold(id: string, salePrice: number, buyerName: string): Product {
+  markAsSold(id: string, buyerName: string, cash: number, pix: number, card: number): Product {
     const products = this.getAllProducts();
     const product = products.find((p) => p.id === id);
     
     if (!product) throw new Error("Produto não encontrado");
     
+    const salePrice = cash + pix + card;
+    const digitalAmount = pix + card;
+    const taxAmount = digitalAmount * 0.06;
+    
     product.sold = true;
     product.salePrice = salePrice;
+    product.paymentBreakdown = { cash, pix, card };
+    product.taxAmount = taxAmount;
     product.saleDate = new Date().toISOString();
     product.buyerName = buyerName.trim();
     
@@ -156,7 +173,14 @@ export const productsStore = {
     return product;
   },
 
-  addExpense(productId: string, label: string, value: number): Product {
+  addExpense(
+    productId: string,
+    label: string,
+    value: number,
+    paymentMethod: "cash" | "pix" | "card",
+    description?: string,
+    sellerCpf?: string
+  ): Product {
     const products = this.getAllProducts();
     const product = products.find((p) => p.id === productId);
     
@@ -166,10 +190,32 @@ export const productsStore = {
       id: Date.now().toString(),
       label,
       value,
+      paymentMethod,
+      description: description?.trim(),
+      sellerCpf: sellerCpf?.trim(),
       createdAt: new Date().toISOString(),
     };
     
     product.expenses.push(newExpense);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
+    return product;
+  },
+
+  updateExpense(
+    productId: string,
+    expenseId: string,
+    updates: Partial<Omit<ProductExpense, "id" | "createdAt">>
+  ): Product {
+    const products = this.getAllProducts();
+    const product = products.find((p) => p.id === productId);
+    
+    if (!product) throw new Error("Produto não encontrado");
+    
+    const expense = product.expenses.find((e) => e.id === expenseId);
+    if (!expense) throw new Error("Gasto não encontrado");
+    
+    Object.assign(expense, updates);
+    
     localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
     return product;
   },
@@ -211,6 +257,11 @@ export const productsStore = {
     const soldProducts = this.getSoldProducts();
     
     const totalGross = soldProducts.reduce((sum, p) => sum + (p.salePrice || 0), 0);
+    const totalCash = soldProducts.reduce((sum, p) => sum + (p.paymentBreakdown?.cash || 0), 0);
+    const totalPix = soldProducts.reduce((sum, p) => sum + (p.paymentBreakdown?.pix || 0), 0);
+    const totalCard = soldProducts.reduce((sum, p) => sum + (p.paymentBreakdown?.card || 0), 0);
+    const totalDigital = totalPix + totalCard;
+    const totalTax = soldProducts.reduce((sum, p) => sum + (p.taxAmount || 0), 0);
     const totalExpenses = soldProducts.reduce((sum, p) => 
       sum + p.expenses.reduce((expSum, e) => expSum + e.value, 0), 0
     );
@@ -219,6 +270,11 @@ export const productsStore = {
     
     return {
       totalGross,
+      totalCash,
+      totalPix,
+      totalCard,
+      totalDigital,
+      totalTax,
       totalExpenses,
       netProfit,
       averageMargin,

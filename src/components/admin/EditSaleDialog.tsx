@@ -16,7 +16,15 @@ interface EditSaleDialogProps {
   product: Product;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onConfirm: (buyerName: string, salePrice: number, saleDate: string, invoiceUrl: string) => void;
+  onConfirm: (
+    buyerName: string,
+    salePrice: number,
+    saleDate: string,
+    invoiceUrl: string,
+    cash?: number,
+    pix?: number,
+    card?: number
+  ) => void;
 }
 
 const EditSaleDialog = ({
@@ -29,6 +37,9 @@ const EditSaleDialog = ({
   const [salePrice, setSalePrice] = useState("");
   const [saleDate, setSaleDate] = useState("");
   const [invoiceUrl, setInvoiceUrl] = useState("");
+  const [cash, setCash] = useState("");
+  const [pix, setPix] = useState("");
+  const [card, setCard] = useState("");
 
   useEffect(() => {
     if (open && product) {
@@ -36,12 +47,18 @@ const EditSaleDialog = ({
       setSalePrice(product.salePrice?.toString() || "");
       setSaleDate(product.saleDate ? product.saleDate.split("T")[0] : "");
       setInvoiceUrl(product.invoiceUrl || "");
+      setCash(product.paymentBreakdown?.cash?.toString() || "");
+      setPix(product.paymentBreakdown?.pix?.toString() || "");
+      setCard(product.paymentBreakdown?.card?.toString() || "");
     }
   }, [open, product]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const price = parseFloat(salePrice);
+    const cashValue = parseFloat(cash) || undefined;
+    const pixValue = parseFloat(pix) || undefined;
+    const cardValue = parseFloat(card) || undefined;
     
     if (!buyerName.trim()) {
       alert("Por favor, informe o nome do comprador");
@@ -58,7 +75,15 @@ const EditSaleDialog = ({
       return;
     }
 
-    onConfirm(buyerName.trim(), price, new Date(saleDate).toISOString(), invoiceUrl.trim());
+    onConfirm(
+      buyerName.trim(),
+      price,
+      new Date(saleDate).toISOString(),
+      invoiceUrl.trim(),
+      cashValue,
+      pixValue,
+      cardValue
+    );
     onOpenChange(false);
   };
 
@@ -133,6 +158,48 @@ const EditSaleDialog = ({
                 Abrir Nota Fiscal Atual
               </Button>
             )}
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Formas de Pagamento (opcional)</Label>
+            <div className="grid grid-cols-3 gap-2">
+              <div>
+                <Label htmlFor="cash" className="text-xs">💵 Dinheiro</Label>
+                <Input
+                  id="cash"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={cash}
+                  onChange={(e) => setCash(e.target.value)}
+                  placeholder="0.00"
+                />
+              </div>
+              <div>
+                <Label htmlFor="pix" className="text-xs">📱 PIX</Label>
+                <Input
+                  id="pix"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={pix}
+                  onChange={(e) => setPix(e.target.value)}
+                  placeholder="0.00"
+                />
+              </div>
+              <div>
+                <Label htmlFor="card" className="text-xs">💳 Cartão</Label>
+                <Input
+                  id="card"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={card}
+                  onChange={(e) => setCard(e.target.value)}
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
           </div>
 
           <div className="flex gap-3 pt-4">

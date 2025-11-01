@@ -15,6 +15,11 @@ const SalesHistoryTab = () => {
   const [soldProducts, setSoldProducts] = useState<Product[]>([]);
   const [totals, setTotals] = useState({
     totalGross: 0,
+    totalCash: 0,
+    totalPix: 0,
+    totalCard: 0,
+    totalDigital: 0,
+    totalTax: 0,
     totalExpenses: 0,
     netProfit: 0,
     averageMargin: 0,
@@ -48,11 +53,36 @@ const SalesHistoryTab = () => {
     setEditDialogOpen(true);
   };
 
-  const handleEditConfirm = (buyerName: string, salePrice: number, saleDate: string, invoiceUrl: string) => {
+  const handleEditConfirm = (
+    buyerName: string,
+    salePrice: number,
+    saleDate: string,
+    invoiceUrl: string,
+    cash?: number,
+    pix?: number,
+    card?: number
+  ) => {
     if (!editingProduct) return;
     
     try {
       productsStore.updateSale(editingProduct.id, buyerName, salePrice, saleDate, invoiceUrl);
+      
+      // Update payment breakdown if provided
+      if (cash !== undefined || pix !== undefined || card !== undefined) {
+        const paymentBreakdown = {
+          cash: cash || 0,
+          pix: pix || 0,
+          card: card || 0,
+        };
+        const digitalAmount = paymentBreakdown.pix + paymentBreakdown.card;
+        const taxAmount = digitalAmount * 0.06;
+        
+        productsStore.updateProduct(editingProduct.id, {
+          paymentBreakdown,
+          taxAmount,
+        });
+      }
+      
       toast.success("Venda atualizada com sucesso!");
       loadData();
     } catch (error) {
@@ -80,7 +110,7 @@ const SalesHistoryTab = () => {
       </div>
 
       {/* Cards de resumo */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Vendido</CardTitle>
@@ -95,33 +125,51 @@ const SalesHistoryTab = () => {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Produtos Vendidos</CardTitle>
+            <CardTitle className="text-sm font-medium">💻 Total Digital</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600">
+              R$ {totals.totalDigital.toFixed(2)}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">PIX + Cartão</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">📊 Imposto (6%)</CardTitle>
+            <Percent className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-orange-600">
+              R$ {totals.totalTax.toFixed(2)}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Sobre o digital</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">💵 Dinheiro</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              R$ {totals.totalCash.toFixed(2)}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Sem imposto</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Produtos</CardTitle>
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totals.soldCount}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Lucro Total</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              R$ {totals.netProfit.toFixed(2)}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Margem Média</CardTitle>
-            <Percent className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totals.averageMargin.toFixed(1)}%</div>
+            <p className="text-xs text-muted-foreground mt-1">Vendidos</p>
           </CardContent>
         </Card>
       </div>
@@ -211,9 +259,9 @@ const SalesHistoryTab = () => {
                         {product.saleDate && <WarrantyBadge saleDate={product.saleDate} />}
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+                      <div className="space-y-3">
                         <div>
-                          <p className="text-muted-foreground">Data da venda</p>
+                          <p className="text-sm text-muted-foreground mb-1">Data da venda</p>
                           <p className="font-semibold text-foreground">
                             {product.saleDate
                               ? format(new Date(product.saleDate), "dd 'de' MMM. yyyy", {
@@ -223,15 +271,56 @@ const SalesHistoryTab = () => {
                           </p>
                         </div>
 
-                        <div>
-                          <p className="text-muted-foreground">Preço de venda</p>
-                          <p className="font-semibold text-green-600">
-                            R$ {(product.salePrice || 0).toFixed(2)}
-                          </p>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm bg-muted/50 p-3 rounded">
+                          <div>
+                            <p className="text-muted-foreground">💰 Total</p>
+                            <p className="font-bold text-green-600">
+                              R$ {(product.salePrice || 0).toFixed(2)}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">💵 Dinheiro</p>
+                            <p className="font-semibold">
+                              R$ {(product.paymentBreakdown?.cash || 0).toFixed(2)}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">📱 PIX</p>
+                            <p className="font-semibold">
+                              R$ {(product.paymentBreakdown?.pix || 0).toFixed(2)}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">💳 Cartão</p>
+                            <p className="font-semibold">
+                              R$ {(product.paymentBreakdown?.card || 0).toFixed(2)}
+                            </p>
+                          </div>
                         </div>
 
-                        <div>
-                          <p className="text-muted-foreground">Gastos</p>
+                        {product.paymentBreakdown && (
+                          <div className="grid grid-cols-2 gap-3 text-sm">
+                            <div className="bg-blue-50 dark:bg-blue-950/20 p-2 rounded">
+                              <p className="text-muted-foreground">💻 Total Digital</p>
+                              <p className="font-semibold text-blue-600">
+                                R${" "}
+                                {(
+                                  (product.paymentBreakdown.pix || 0) +
+                                  (product.paymentBreakdown.card || 0)
+                                ).toFixed(2)}
+                              </p>
+                            </div>
+                            <div className="bg-orange-50 dark:bg-orange-950/20 p-2 rounded">
+                              <p className="text-muted-foreground">📊 Imposto 6%</p>
+                              <p className="font-semibold text-orange-600">
+                                R$ {(product.taxAmount || 0).toFixed(2)}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="pt-2 border-t">
+                          <p className="text-sm text-muted-foreground">Gastos totais</p>
                           <p className="font-semibold text-orange-600">
                             R$ {totalExpenses.toFixed(2)}
                           </p>
