@@ -370,18 +370,19 @@ export function AddQuickSaleDialog({
                     <FormItem>
                       <FormLabel>Cliente *</FormLabel>
                       <FormControl>
-                        <CustomerSelector
-                          selectedCustomer={selectedCustomer}
-                          onCustomerSelect={(customer) => {
-                            setSelectedCustomer(customer);
-                            if (customer) {
-                              field.onChange(customer.id);
-                            } else {
-                              field.onChange("");
-                            }
-                          }}
-                          onNewCustomer={() => setShowNewCustomerDialog(true)}
-                        />
+                  <CustomerSelector
+                    selectedCustomer={selectedCustomer}
+                    customers={customers}
+                    onCustomerSelect={(customer) => {
+                      setSelectedCustomer(customer);
+                      if (customer) {
+                        field.onChange(customer.id);
+                      } else {
+                        field.onChange("");
+                      }
+                    }}
+                    onNewCustomer={() => setShowNewCustomerDialog(true)}
+                  />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

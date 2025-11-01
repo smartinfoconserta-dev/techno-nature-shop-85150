@@ -14,7 +14,7 @@ import { Product, productsStore } from "@/lib/productsStore";
 import { settingsStore } from "@/lib/settingsStore";
 import { couponsStore } from "@/lib/couponsStore";
 import { receivablesStore } from "@/lib/receivablesStore";
-import { Customer } from "@/lib/customersStore";
+import { Customer, customersStore } from "@/lib/customersStore";
 import { Separator } from "@/components/ui/separator";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Check, X } from "lucide-react";
@@ -55,9 +55,12 @@ const MarkAsSoldDialog = ({
   const [dueDate, setDueDate] = useState("");
   const [notes, setNotes] = useState("");
   const [showNewCustomerDialog, setShowNewCustomerDialog] = useState(false);
+  const [customers, setCustomers] = useState<Customer[]>([]);
 
   useEffect(() => {
-    if (!open) {
+    if (open) {
+      setCustomers(customersStore.getActiveCustomers());
+    } else {
       setSaleType("immediate");
       setBuyerName("");
       setBuyerCpf("");
@@ -107,6 +110,7 @@ const MarkAsSoldDialog = ({
   };
 
   const handleCustomerCreated = (customer: Customer) => {
+    setCustomers([...customers, customer]);
     setSelectedCustomer(customer);
   };
 
@@ -233,7 +237,7 @@ const MarkAsSoldDialog = ({
               <div className="bg-muted p-4 rounded-lg space-y-2"><div className="flex justify-between"><span className="font-semibold">Total:</span><span className="text-xl font-bold text-green-600">R$ {totalSale.toFixed(2)}</span></div><div className="flex justify-between text-sm"><span className="text-muted-foreground">Imposto ({digitalTaxRate}%):</span><span className="font-semibold text-orange-600">R$ {taxAmount.toFixed(2)}</span></div></div>
             </>
           ) : (
-            <><CustomerSelector selectedCustomer={selectedCustomer} onCustomerSelect={setSelectedCustomer} onNewCustomer={() => setShowNewCustomerDialog(true)} /><div className="bg-muted/50 p-4 rounded-lg space-y-3"><div className="flex justify-between"><span className="font-medium">Valor Total:</span><span className="text-xl font-bold">R$ {finalPrice.toFixed(2)}</span></div><div className="space-y-2"><Label>Pagamento Inicial</Label><Input type="number" step="0.01" min="0" max={finalPrice} value={initialPayment} onChange={(e) => setInitialPayment(e.target.value)} placeholder="0.00" /></div><div className="flex justify-between"><span className="text-muted-foreground">Restante:</span><span className="text-lg font-bold text-red-600">R$ {remainingAmount.toFixed(2)}</span></div><div className="space-y-2"><Label>Vencimento</Label><Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} /></div><div className="space-y-2"><Label>Observações</Label><Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Informações adicionais" /></div></div></>
+            <><CustomerSelector selectedCustomer={selectedCustomer} customers={customers} onCustomerSelect={setSelectedCustomer} onNewCustomer={() => setShowNewCustomerDialog(true)} /><div className="bg-muted/50 p-4 rounded-lg space-y-3"><div className="flex justify-between"><span className="font-medium">Valor Total:</span><span className="text-xl font-bold">R$ {finalPrice.toFixed(2)}</span></div><div className="space-y-2"><Label>Pagamento Inicial</Label><Input type="number" step="0.01" min="0" max={finalPrice} value={initialPayment} onChange={(e) => setInitialPayment(e.target.value)} placeholder="0.00" /></div><div className="flex justify-between"><span className="text-muted-foreground">Restante:</span><span className="text-lg font-bold text-red-600">R$ {remainingAmount.toFixed(2)}</span></div><div className="space-y-2"><Label>Vencimento</Label><Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} /></div><div className="space-y-2"><Label>Observações</Label><Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Informações adicionais" /></div></div></>
           )}
         </div>
 

@@ -9,19 +9,10 @@ interface CustomerSelectorProps {
   selectedCustomer: Customer | null;
   onCustomerSelect: (customer: Customer | null) => void;
   onNewCustomer: () => void;
+  customers: Customer[];
 }
 
-const CustomerSelector = ({ selectedCustomer, onCustomerSelect, onNewCustomer }: CustomerSelectorProps) => {
-  const [customers, setCustomers] = useState<Customer[]>([]);
-
-  useEffect(() => {
-    loadCustomers();
-  }, []);
-
-  const loadCustomers = () => {
-    setCustomers(customersStore.getActiveCustomers());
-  };
-
+const CustomerSelector = ({ selectedCustomer, onCustomerSelect, onNewCustomer, customers }: CustomerSelectorProps) => {
   const handleSelectChange = (value: string) => {
     if (value === "new") {
       onNewCustomer();
