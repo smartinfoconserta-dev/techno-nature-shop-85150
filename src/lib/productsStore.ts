@@ -33,6 +33,8 @@ export interface Product {
   buyerName?: string;
   buyerCpf?: string;
   invoiceUrl?: string;
+  soldOnCredit?: boolean; // Indica se foi vendido a prazo
+  receivableId?: string; // ID da conta a receber
   expenses: ProductExpense[];
   createdAt: string;
 }
@@ -430,6 +432,27 @@ export const productsStore = {
     product.buyerName = undefined;
     product.buyerCpf = undefined;
     product.invoiceUrl = undefined;
+    product.soldOnCredit = undefined;
+    product.receivableId = undefined;
+    
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
+    return product;
+  },
+
+  markAsSoldOnCredit(id: string, buyerName: string, buyerCpf: string, totalAmount: number, receivableId: string): Product {
+    const products = this.getAllProducts();
+    const product = products.find((p) => p.id === id);
+    
+    if (!product) throw new Error("Produto não encontrado");
+    if (product.sold) throw new Error("Produto já vendido");
+    
+    product.sold = true;
+    product.soldOnCredit = true;
+    product.receivableId = receivableId;
+    product.buyerName = buyerName.trim();
+    product.buyerCpf = buyerCpf.trim();
+    product.salePrice = totalAmount;
+    product.saleDate = new Date().toISOString();
     
     localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
     return product;

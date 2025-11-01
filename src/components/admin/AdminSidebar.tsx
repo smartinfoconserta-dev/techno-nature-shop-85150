@@ -9,6 +9,7 @@ import {
   FolderOpen,
   Ticket,
   Settings,
+  Users,
 } from "lucide-react";
 import {
   Sidebar,
@@ -36,6 +37,8 @@ const navItems: NavItem[] = [
   { title: "Marcas", value: "brands", icon: Tags },
   { title: "Categorias", value: "categories", icon: FolderOpen },
   { title: "Cupons", value: "coupons", icon: Ticket },
+  { title: "A Receber", value: "receivables", icon: DollarSign },
+  { title: "Clientes", value: "customers", icon: Users },
   { title: "Configurações", value: "settings", icon: Settings },
 ];
 

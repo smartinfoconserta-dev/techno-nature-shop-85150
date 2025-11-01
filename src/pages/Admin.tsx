@@ -98,6 +98,8 @@ const Admin = () => {
             {activeTab === "brands" && <BrandsTab />}
             {activeTab === "categories" && <CategoriesTab />}
             {activeTab === "coupons" && <CouponsTab />}
+            {activeTab === "receivables" && <ReceivablesTab />}
+            {activeTab === "customers" && <CustomersTab />}
             {activeTab === "settings" && <SettingsTab />}
           </main>
         </div>
