@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -23,35 +23,16 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { quickSalesStore } from "@/lib/quickSalesStore";
-import { receivablesStore } from "@/lib/receivablesStore";
-import { customersStore, Customer } from "@/lib/customersStore";
 import { useToast } from "@/hooks/use-toast";
-import CustomerSelector from "@/components/admin/CustomerSelector";
-import NewCustomerDialog from "@/components/admin/NewCustomerDialog";
 
 const formSchema = z.object({
   productName: z.string().min(1, "Nome do produto é obrigatório"),
   costPrice: z.number().min(0, "Preço de custo deve ser maior ou igual a 0"),
   salePrice: z.number().min(0.01, "Preço de venda deve ser maior que 0"),
-  saleType: z.enum(["immediate", "receivable"]),
-  paymentMethod: z.enum(["cash", "pix", "card"]).optional(),
-  customerId: z.string().optional(),
-  dueDate: z.date().optional(),
-  initialPayment: z.number().optional(),
+  paymentMethod: z.enum(["cash", "pix", "card"]),
   notes: z.string().optional(),
 });
 
@@ -69,10 +50,7 @@ export function AddQuickSaleDialog({
   onSuccess,
 }: AddQuickSaleDialogProps) {
   const { toast } = useToast();
-  const [customers, setCustomers] = useState<Customer[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [showNewCustomerDialog, setShowNewCustomerDialog] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -80,44 +58,18 @@ export function AddQuickSaleDialog({
       productName: "",
       costPrice: 0,
       salePrice: 0,
-      saleType: "immediate",
       paymentMethod: "cash",
-      initialPayment: 0,
       notes: "",
     },
   });
 
-  const saleType = form.watch("saleType");
   const paymentMethod = form.watch("paymentMethod");
   const salePrice = form.watch("salePrice");
   const costPrice = form.watch("costPrice");
 
-  // Carrega clientes quando o dialog é aberto
-  useEffect(() => {
-    if (open) {
-      setCustomers(customersStore.getActiveCustomers());
-    }
-  }, [open]);
-
-  // Reseta seleção quando o dialog fecha
-  useEffect(() => {
-    if (!open) {
-      setSelectedCustomer(null);
-      form.setValue("customerId", undefined);
-    }
-  }, [open, form]);
-
-  // Carrega clientes quando abre o dialog
-  const handleOpenChange = (newOpen: boolean) => {
-    if (newOpen) {
-      setCustomers(customersStore.getActiveCustomers());
-    }
-    onOpenChange(newOpen);
-  };
-
   // Calcula taxa automaticamente
   const getTaxAmount = () => {
-    if (saleType === "immediate" && (paymentMethod === "pix" || paymentMethod === "card")) {
+    if (paymentMethod === "pix" || paymentMethod === "card") {
       return salePrice * 0.06;
     }
     return 0;
@@ -135,77 +87,21 @@ export function AddQuickSaleDialog({
       const taxAmount = getTaxAmount();
       const saleDate = format(new Date(), "yyyy-MM-dd");
 
-      if (data.saleType === "immediate") {
-        // Venda à vista
-        if (!data.paymentMethod) {
-          throw new Error("Forma de pagamento é obrigatória");
-        }
+      // Venda à vista
+      quickSalesStore.addQuickSale({
+        productName: data.productName,
+        costPrice: data.costPrice,
+        salePrice: data.salePrice,
+        paymentMethod: data.paymentMethod,
+        taxAmount,
+        notes: data.notes,
+        saleDate,
+      });
 
-        quickSalesStore.addQuickSale({
-          productName: data.productName,
-          costPrice: data.costPrice,
-          salePrice: data.salePrice,
-          saleType: "immediate",
-          paymentMethod: data.paymentMethod,
-          taxAmount,
-          notes: data.notes,
-          saleDate,
-        });
-
-        toast({
-          title: "Venda registrada!",
-          description: `${data.productName} - R$ ${data.salePrice.toFixed(2)}`,
-        });
-      } else {
-        // Venda a prazo
-        if (!data.customerId) {
-          throw new Error("Cliente é obrigatório para vendas a prazo");
-        }
-
-        const customer = customers.find(c => c.id === data.customerId);
-        if (!customer) {
-          throw new Error("Cliente não encontrado");
-        }
-
-        // Cria conta a receber
-        const receivable = receivablesStore.addReceivable({
-          customerId: data.customerId,
-          customerCode: customer.code,
-          customerName: customer.name,
-          productId: `quick_sale_${Date.now()}`,
-          productName: data.productName,
-          totalAmount: data.salePrice,
-          paidAmount: data.initialPayment || 0,
-          dueDate: data.dueDate ? format(data.dueDate, "yyyy-MM-dd") : undefined,
-          payments: [],
-        });
-
-        // Adiciona pagamento inicial se houver
-        if (data.initialPayment && data.initialPayment > 0) {
-          receivablesStore.addPayment(receivable.id, {
-            amount: data.initialPayment,
-            paymentDate: format(new Date(), "yyyy-MM-dd"),
-            paymentMethod: "cash",
-          });
-        }
-
-        // Registra venda rápida vinculada
-        quickSalesStore.addQuickSale({
-          productName: data.productName,
-          costPrice: data.costPrice,
-          salePrice: data.salePrice,
-          saleType: "receivable",
-          customerId: data.customerId,
-          receivableId: receivable.id,
-          notes: data.notes,
-          saleDate,
-        });
-
-        toast({
-          title: "Venda a prazo criada!",
-          description: `${data.productName} - ${customer.name}`,
-        });
-      }
+      toast({
+        title: "Venda registrada!",
+        description: `${data.productName} - R$ ${data.salePrice.toFixed(2)}`,
+      });
 
       form.reset();
       onSuccess();
@@ -222,12 +118,12 @@ export function AddQuickSaleDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Nova Venda Rápida</DialogTitle>
+          <DialogTitle>Nova Venda Rápida (À Vista)</DialogTitle>
           <DialogDescription>
-            Registre vendas de produtos não catalogados
+            Registre vendas à vista de produtos não catalogados
           </DialogDescription>
         </DialogHeader>
 
@@ -309,13 +205,13 @@ export function AddQuickSaleDialog({
               )}
             </div>
 
-            {/* Tipo de Venda */}
+            {/* Forma de Pagamento */}
             <FormField
               control={form.control}
-              name="saleType"
+              name="paymentMethod"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Tipo de Venda *</FormLabel>
+                  <FormLabel>Forma de Pagamento *</FormLabel>
                   <FormControl>
                     <RadioGroup
                       onValueChange={field.onChange}
@@ -323,16 +219,16 @@ export function AddQuickSaleDialog({
                       className="flex gap-4"
                     >
                       <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="immediate" id="immediate" />
-                        <Label htmlFor="immediate" className="cursor-pointer">
-                          À vista (registra agora)
-                        </Label>
+                        <RadioGroupItem value="cash" id="cash" />
+                        <Label htmlFor="cash" className="cursor-pointer">💵 Dinheiro</Label>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="receivable" id="receivable" />
-                        <Label htmlFor="receivable" className="cursor-pointer">
-                          A prazo (vai p/ receber)
-                        </Label>
+                        <RadioGroupItem value="pix" id="pix" />
+                        <Label htmlFor="pix" className="cursor-pointer">📱 PIX</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="card" id="card" />
+                        <Label htmlFor="card" className="cursor-pointer">💳 Cartão</Label>
                       </div>
                     </RadioGroup>
                   </FormControl>
@@ -340,133 +236,6 @@ export function AddQuickSaleDialog({
                 </FormItem>
               )}
             />
-
-            {/* Campos para À VISTA */}
-            {saleType === "immediate" && (
-              <FormField
-                control={form.control}
-                name="paymentMethod"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Forma de Pagamento *</FormLabel>
-                    <FormControl>
-                      <RadioGroup
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                        className="flex gap-4"
-                      >
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="cash" id="cash" />
-                          <Label htmlFor="cash" className="cursor-pointer">💵 Dinheiro</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="pix" id="pix" />
-                          <Label htmlFor="pix" className="cursor-pointer">📱 PIX</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="card" id="card" />
-                          <Label htmlFor="card" className="cursor-pointer">💳 Cartão</Label>
-                        </div>
-                      </RadioGroup>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-
-            {/* Campos para A PRAZO */}
-            {saleType === "receivable" && (
-              <>
-                <FormField
-                  control={form.control}
-                  name="customerId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Cliente *</FormLabel>
-                      <FormControl>
-                  <CustomerSelector
-                    selectedCustomer={selectedCustomer}
-                    customers={customers}
-                    onCustomerSelect={(customer) => {
-                      setSelectedCustomer(customer);
-                      if (customer) {
-                        field.onChange(customer.id);
-                      } else {
-                        field.onChange("");
-                      }
-                    }}
-                    onNewCustomer={() => setShowNewCustomerDialog(true)}
-                  />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="dueDate"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-col">
-                        <FormLabel>Data Vencimento (opcional)</FormLabel>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <FormControl>
-                              <Button
-                                variant="outline"
-                                className={cn(
-                                  "pl-3 text-left font-normal",
-                                  !field.value && "text-muted-foreground"
-                                )}
-                              >
-                                {field.value ? (
-                                  format(field.value, "dd/MM/yyyy", { locale: ptBR })
-                                ) : (
-                                  <span>Selecione</span>
-                                )}
-                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                              </Button>
-                            </FormControl>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                              mode="single"
-                              selected={field.value}
-                              onSelect={field.onChange}
-                              disabled={(date) => date < new Date()}
-                              initialFocus
-                            />
-                          </PopoverContent>
-                        </Popover>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="initialPayment"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Valor Entrada (opcional)</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            placeholder="0.00"
-                            {...field}
-                            onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </>
-            )}
 
             {/* Observações */}
             <FormField
@@ -502,19 +271,6 @@ export function AddQuickSaleDialog({
           </form>
         </Form>
       </DialogContent>
-
-      {/* Dialog de Novo Cliente */}
-      <NewCustomerDialog
-        open={showNewCustomerDialog}
-        onOpenChange={setShowNewCustomerDialog}
-        onCustomerCreated={(newCustomer) => {
-          const updatedCustomers = [...customers, newCustomer];
-          setCustomers(updatedCustomers);
-          setSelectedCustomer(newCustomer);
-          form.setValue("customerId", newCustomer.id);
-          setShowNewCustomerDialog(false);
-        }}
-      />
     </Dialog>
   );
 }

@@ -33,10 +33,10 @@ const navItems: NavItem[] = [
   { title: "Dashboard", value: "dashboard", icon: LayoutDashboard },
   { title: "Produtos", value: "products", icon: Package },
   { title: "Vendas Rápidas", value: "quick-sales", icon: Zap },
+  { title: "Caderneta", value: "receivables", icon: DollarSign },
+  { title: "Clientes", value: "customers", icon: Users },
   { title: "Financeiro", value: "finance", icon: BarChart3 },
   { title: "Histórico", value: "history", icon: History },
-  { title: "A Receber", value: "receivables", icon: DollarSign },
-  { title: "Clientes", value: "customers", icon: Users },
   { title: "Cupons", value: "coupons", icon: Ticket },
   { title: "Configurações", value: "settings", icon: Settings },
 ];

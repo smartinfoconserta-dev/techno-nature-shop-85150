@@ -16,6 +16,8 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import AddPaymentDialog from "./AddPaymentDialog";
 import ReceivableDetailsDialog from "./ReceivableDetailsDialog";
+import { AddManualReceivableDialog } from "./AddManualReceivableDialog";
+import { AddCustomerPaymentDialog } from "./AddCustomerPaymentDialog";
 import { useToast } from "@/hooks/use-toast";
 
 interface CustomerReceivablesDialogProps {
@@ -34,6 +36,8 @@ const CustomerReceivablesDialog = ({
   const [selectedReceivable, setSelectedReceivable] = useState<Receivable | null>(null);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
+  const [showNewSaleDialog, setShowNewSaleDialog] = useState(false);
+  const [showCustomerPaymentDialog, setShowCustomerPaymentDialog] = useState(false);
 
   useEffect(() => {
     if (open && customerId) {
@@ -178,6 +182,16 @@ const CustomerReceivablesDialog = ({
                 </Card>
               </div>
 
+              {/* Botões de Ação do Cliente */}
+              <div className="flex gap-2">
+                <Button onClick={() => setShowNewSaleDialog(true)} variant="default">
+                  ➕ Nova Venda/Compra
+                </Button>
+                <Button onClick={() => setShowCustomerPaymentDialog(true)} variant="outline">
+                  💰 Registrar Pagamento
+                </Button>
+              </div>
+
               {/* Lista de Contas do Cliente */}
               <div>
                 <h3 className="text-lg font-semibold mb-3">Compras ({receivables.length})</h3>
@@ -283,6 +297,20 @@ const CustomerReceivablesDialog = ({
         open={showDetailsDialog}
         onOpenChange={setShowDetailsDialog}
         receivable={selectedReceivable}
+      />
+
+      <AddManualReceivableDialog
+        open={showNewSaleDialog}
+        onOpenChange={setShowNewSaleDialog}
+        customerId={customerId}
+        onSuccess={loadCustomerReceivables}
+      />
+
+      <AddCustomerPaymentDialog
+        open={showCustomerPaymentDialog}
+        onOpenChange={setShowCustomerPaymentDialog}
+        customerId={customerId}
+        onSuccess={loadCustomerReceivables}
       />
     </>
   );

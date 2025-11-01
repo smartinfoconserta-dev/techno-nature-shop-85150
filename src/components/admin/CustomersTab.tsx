@@ -280,16 +280,6 @@ const CustomersTab = () => {
                           </p>
                         </div>
                       )}
-                      <div>
-                        <span className="text-muted-foreground">Contas Abertas:</span>
-                        <p className="font-semibold">{openAccounts}</p>
-                      </div>
-                      {totalDebt > 0 && (
-                        <div>
-                          <span className="text-muted-foreground">Total Devedor:</span>
-                          <p className="font-bold text-red-600">R$ {totalDebt.toFixed(2)}</p>
-                        </div>
-                      )}
                     </div>
 
                     {customer.notes && (
@@ -299,6 +289,19 @@ const CustomersTab = () => {
                     )}
 
                     <div className="flex flex-wrap gap-2">
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          // Aqui será implementada a navegação para caderneta com o cliente selecionado
+                          // Por enquanto, podemos mostrar um toast
+                          toast({
+                            title: "Ver Caderneta",
+                            description: "Navegue até a aba 'Caderneta' para ver as compras deste cliente",
+                          });
+                        }}
+                      >
+                        📒 Ver Caderneta
+                      </Button>
                       <Button
                         size="sm"
                         variant="destructive"

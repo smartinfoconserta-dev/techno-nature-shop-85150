@@ -97,11 +97,10 @@ export const monthlyReportsStore = {
       totalGross += qs.salePrice;
       totalExpenses += qs.costPrice;
       
-      if (qs.saleType === "immediate") {
-        if (qs.paymentMethod === "cash") totalCash += qs.salePrice;
-        if (qs.paymentMethod === "pix") totalPix += qs.salePrice;
-        if (qs.paymentMethod === "card") totalCard += qs.salePrice;
-      }
+      // Todas as vendas rápidas agora são à vista
+      if (qs.paymentMethod === "cash") totalCash += qs.salePrice;
+      if (qs.paymentMethod === "pix") totalPix += qs.salePrice;
+      if (qs.paymentMethod === "card") totalCard += qs.salePrice;
 
       const margin = qs.salePrice > 0 ? ((qs.salePrice - qs.costPrice) / qs.salePrice) * 100 : 0;
       totalMargins += margin;
@@ -176,11 +175,10 @@ export const monthlyReportsStore = {
       totalGross += qs.salePrice;
       totalExpenses += qs.costPrice;
       
-      if (qs.saleType === "immediate") {
-        if (qs.paymentMethod === "cash") totalCash += qs.salePrice;
-        if (qs.paymentMethod === "pix") totalPix += qs.salePrice;
-        if (qs.paymentMethod === "card") totalCard += qs.salePrice;
-      }
+      // Todas as vendas rápidas agora são à vista
+      if (qs.paymentMethod === "cash") totalCash += qs.salePrice;
+      if (qs.paymentMethod === "pix") totalPix += qs.salePrice;
+      if (qs.paymentMethod === "card") totalCard += qs.salePrice;
 
       const margin = qs.salePrice > 0 ? ((qs.salePrice - qs.costPrice) / qs.salePrice) * 100 : 0;
       totalMargins += margin;

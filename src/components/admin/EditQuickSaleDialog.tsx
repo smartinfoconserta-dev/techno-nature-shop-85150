@@ -114,19 +114,12 @@ export function EditQuickSaleDialog({
     if (!saleId || !sale) return;
 
     try {
-      // 1. Se for venda a prazo, remove a conta a receber vinculada
-      if (sale.saleType === "receivable" && sale.receivableId) {
-        receivablesStore.deleteReceivable(sale.receivableId);
-      }
-
-      // 2. Remove a venda rápida
+      // Remove a venda rápida
       quickSalesStore.deleteQuickSale(saleId);
-      
-      // 3. NÃO remove o cliente (mantém o cadastro)
       
       toast({
         title: "Venda excluída",
-        description: "A venda e contas relacionadas foram removidas. O cliente permanece cadastrado.",
+        description: "A venda foi removida com sucesso.",
       });
 
       setShowDeleteDialog(false);
@@ -172,9 +165,10 @@ export function EditQuickSaleDialog({
                 </p>
               </div>
               <div>
-                <span className="text-muted-foreground">Tipo:</span>
+                <span className="text-muted-foreground">Pagamento:</span>
                 <p className="font-semibold">
-                  {sale.saleType === "immediate" ? "À vista" : "A prazo"}
+                  {sale.paymentMethod === "cash" ? "💵 Dinheiro" : 
+                   sale.paymentMethod === "pix" ? "📱 PIX" : "💳 Cartão"}
                 </p>
               </div>
             </div>

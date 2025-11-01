@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import AddPaymentDialog from "./AddPaymentDialog";
 import ReceivableDetailsDialog from "./ReceivableDetailsDialog";
 import CustomerReceivablesDialog from "./CustomerReceivablesDialog";
+import { AddCustomerPaymentDialog } from "./AddCustomerPaymentDialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -159,9 +160,9 @@ const ReceivablesTab = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-3xl font-bold text-foreground">💰 Contas a Receber</h2>
+        <h2 className="text-3xl font-bold text-foreground">📒 Caderneta</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Gerencie vendas a prazo e pagamentos parciais
+          Gerencie vendas a prazo e pagamentos dos clientes
         </p>
       </div>
 
@@ -378,7 +379,10 @@ const ReceivablesTab = () => {
 
       <CustomerReceivablesDialog
         open={showCustomerDialog}
-        onOpenChange={setShowCustomerDialog}
+        onOpenChange={(open) => {
+          setShowCustomerDialog(open);
+          if (!open) loadReceivables();
+        }}
         customerId={selectedCustomerId}
       />
 

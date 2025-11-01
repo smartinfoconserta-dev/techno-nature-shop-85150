@@ -275,20 +275,12 @@ const QuickSalesTab = () => {
                         )}
                       </TableCell>
                       <TableCell>
-                        <Badge
-                          variant={sale.saleType === "immediate" ? "default" : "secondary"}
-                        >
-                          {sale.saleType === "immediate" ? "À vista" : "A prazo"}
-                        </Badge>
+                        <Badge variant="default">À vista</Badge>
                       </TableCell>
                       <TableCell>
-                        {sale.saleType === "immediate" ? (
-                          <span className="text-sm">
-                            {getPaymentMethodLabel(sale.paymentMethod)}
-                          </span>
-                        ) : (
-                          <span className="text-sm">{getCustomerName(sale.customerId)}</span>
-                        )}
+                        <span className="text-sm">
+                          {getPaymentMethodLabel(sale.paymentMethod)}
+                        </span>
                       </TableCell>
                       <TableCell className="text-center">
                         <Button

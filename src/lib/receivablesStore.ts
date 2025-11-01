@@ -21,6 +21,7 @@ export interface Receivable {
   dueDate?: string; // Data de vencimento (opcional)
   status: "pending" | "partial" | "paid"; // pending = não pago, partial = pago parcialmente, paid = quitado
   payments: ReceivablePayment[]; // Histórico de pagamentos
+  source?: "catalog" | "quick" | "manual"; // Origem da venda: catálogo, venda rápida, ou manual
   notes?: string;
   createdAt: string;
   updatedAt: string;

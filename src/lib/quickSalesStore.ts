@@ -7,15 +7,10 @@ export interface QuickSale {
   costPrice: number;
   salePrice: number;
   profit: number;
-  saleType: "immediate" | "receivable";
   
-  // Se À VISTA
-  paymentMethod?: "cash" | "pix" | "card";
-  taxAmount?: number;
-  
-  // Se A PRAZO
-  customerId?: string;
-  receivableId?: string;
+  // Apenas vendas À VISTA
+  paymentMethod: "cash" | "pix" | "card";
+  taxAmount: number;
   
   notes?: string;
   saleDate: string;
@@ -106,13 +101,11 @@ export const quickSalesStore = {
       totalSales += sale.salePrice;
       totalCost += sale.costPrice;
       totalProfit += sale.profit;
-      totalTax += sale.taxAmount || 0;
+      totalTax += sale.taxAmount;
 
-      if (sale.saleType === "immediate") {
-        if (sale.paymentMethod === "cash") totalCash += sale.salePrice;
-        if (sale.paymentMethod === "pix") totalPix += sale.salePrice;
-        if (sale.paymentMethod === "card") totalCard += sale.salePrice;
-      }
+      if (sale.paymentMethod === "cash") totalCash += sale.salePrice;
+      if (sale.paymentMethod === "pix") totalPix += sale.salePrice;
+      if (sale.paymentMethod === "card") totalCard += sale.salePrice;
     });
 
     return {
