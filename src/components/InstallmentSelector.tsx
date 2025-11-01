@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { CreditCard, Banknote } from "lucide-react";
@@ -6,11 +6,20 @@ import { getAllInstallmentOptions, calculateCashDiscount, InstallmentOption } fr
 
 interface InstallmentSelectorProps {
   basePrice: number;
+  hasCouponActive?: boolean;
   onSelect?: (option: { type: 'cash' | 'installment', data?: InstallmentOption, cashValue?: number } | null) => void;
 }
 
-const InstallmentSelector = ({ basePrice, onSelect }: InstallmentSelectorProps) => {
+const InstallmentSelector = ({ basePrice, hasCouponActive, onSelect }: InstallmentSelectorProps) => {
   const [selectedValue, setSelectedValue] = useState<string>("");
+  
+  // Resetar seleção se estava em "cash" e cupom foi ativado
+  useEffect(() => {
+    if (hasCouponActive && selectedValue === "cash") {
+      setSelectedValue("");
+      onSelect?.(null);
+    }
+  }, [hasCouponActive, selectedValue, onSelect]);
   const installmentOptions = getAllInstallmentOptions(basePrice);
   const cashValue = calculateCashDiscount(basePrice);
 
@@ -90,7 +99,9 @@ const InstallmentSelector = ({ basePrice, onSelect }: InstallmentSelectorProps) 
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="none">Ver preço original</SelectItem>
-          <SelectItem value="cash">💵 À vista (5% desconto)</SelectItem>
+          {!hasCouponActive && (
+            <SelectItem value="cash">💵 À vista (5% desconto)</SelectItem>
+          )}
           {installmentOptions.map((option) => (
             <SelectItem key={option.installments} value={option.installments.toString()}>
               💳 {option.installments}x no cartão (Visa/Master)

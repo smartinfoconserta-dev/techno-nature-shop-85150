@@ -101,9 +101,11 @@ const ProductCard = ({ images, name, brand, specs, description, price, discountP
               <p className="text-2xl font-bold text-primary">
                 R$ {price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
               </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                ou 5% à vista
-              </p>
+              {!isDiscountActive && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  ou 5% à vista
+                </p>
+              )}
             </div>
           )}
           
@@ -153,6 +155,7 @@ const ProductCard = ({ images, name, brand, specs, description, price, discountP
         
         <InstallmentSelector 
           basePrice={isDiscountActive && discountPrice ? discountPrice : price}
+          hasCouponActive={isDiscountActive}
           onSelect={setSelectedPayment}
         />
         
