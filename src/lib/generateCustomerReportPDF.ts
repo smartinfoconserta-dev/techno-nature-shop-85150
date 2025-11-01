@@ -7,7 +7,8 @@ import { ptBR } from "date-fns/locale";
 export const generateCustomerReportPDF = (
   customer: Customer,
   receivables: Receivable[],
-  storeName: string = "LOJA"
+  storeName: string = "LOJA",
+  showOnlyDebts: boolean = true
 ): void => {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -16,11 +17,17 @@ export const generateCustomerReportPDF = (
   let yPos = margin;
 
   const now = new Date();
+  
+  // Filtrar apenas dívidas ativas se showOnlyDebts = true
+  const filteredReceivables = showOnlyDebts
+    ? receivables.filter(r => r.status !== "paid")
+    : receivables;
+  
   const totals = {
-    total: receivables.reduce((sum, r) => sum + r.totalAmount, 0),
-    paid: receivables.reduce((sum, r) => sum + r.paidAmount, 0),
-    remaining: receivables.reduce((sum, r) => sum + r.remainingAmount, 0),
-    activeCount: receivables.filter((r) => r.status !== "paid").length,
+    total: filteredReceivables.reduce((sum, r) => sum + r.totalAmount, 0),
+    paid: filteredReceivables.reduce((sum, r) => sum + r.paidAmount, 0),
+    remaining: filteredReceivables.reduce((sum, r) => sum + r.remainingAmount, 0),
+    activeCount: filteredReceivables.filter((r) => r.status !== "paid").length,
   };
 
   // Helper function to check if we need a new page
@@ -116,7 +123,7 @@ export const generateCustomerReportPDF = (
   doc.text("DETALHAMENTO DAS COMPRAS", margin, yPos);
   yPos += 10;
 
-  receivables.forEach((receivable, index) => {
+  filteredReceivables.forEach((receivable, index) => {
     const isOverdue =
       receivable.dueDate &&
       new Date(receivable.dueDate) < now &&

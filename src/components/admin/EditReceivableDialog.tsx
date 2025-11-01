@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -27,8 +27,7 @@ import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import { receivablesStore } from "@/lib/receivablesStore";
-import { customersStore } from "@/lib/customersStore";
+import { receivablesStore, Receivable } from "@/lib/receivablesStore";
 import { useToast } from "@/hooks/use-toast";
 
 const formSchema = z.object({
@@ -36,25 +35,24 @@ const formSchema = z.object({
   costPrice: z.number().optional(),
   salePrice: z.number().min(0.01, "Preço de venda deve ser maior que 0"),
   dueDate: z.date().optional(),
-  initialPayment: z.number().optional(),
   notes: z.string().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
 
-interface AddManualReceivableDialogProps {
+interface EditReceivableDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  customerId: string | null;
+  receivable: Receivable | null;
   onSuccess: () => void;
 }
 
-export function AddManualReceivableDialog({
+export function EditReceivableDialog({
   open,
   onOpenChange,
-  customerId,
+  receivable,
   onSuccess,
-}: AddManualReceivableDialogProps) {
+}: EditReceivableDialogProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -64,51 +62,51 @@ export function AddManualReceivableDialog({
       productName: "",
       costPrice: 0,
       salePrice: 0,
-      initialPayment: 0,
       notes: "",
     },
   });
 
+  // Preencher formulário com dados existentes
+  useEffect(() => {
+    if (receivable && open) {
+      form.reset({
+        productName: receivable.productName,
+        costPrice: receivable.costPrice || 0,
+        salePrice: receivable.salePrice || receivable.totalAmount,
+        dueDate: receivable.dueDate ? new Date(receivable.dueDate) : undefined,
+        notes: receivable.notes || "",
+      });
+    }
+  }, [receivable, open, form]);
+
   const onSubmit = async (data: FormData) => {
-    if (!customerId) return;
+    if (!receivable) return;
+
+    // Bloquear edição se tiver pagamentos
+    if (receivable.payments && receivable.payments.length > 0) {
+      toast({
+        title: "Não é possível editar",
+        description: "Este produto já possui pagamentos registrados. Cancele os pagamentos primeiro.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setIsLoading(true);
 
     try {
-      const customer = customersStore.getCustomerById(customerId);
-      if (!customer) {
-        throw new Error("Cliente não encontrado");
-      }
-
-      // Cria conta a receber
-      const receivable = receivablesStore.addReceivable({
-        customerId,
-        customerCode: customer.code,
-        customerName: customer.name,
-        productId: `manual_${Date.now()}`,
+      receivablesStore.updateReceivable(receivable.id, {
         productName: data.productName,
         costPrice: data.costPrice || 0,
         salePrice: data.salePrice,
         totalAmount: data.salePrice,
-        paidAmount: data.initialPayment || 0,
         dueDate: data.dueDate ? format(data.dueDate, "yyyy-MM-dd") : undefined,
-        payments: [],
-        source: "manual",
+        notes: data.notes,
       });
 
-      // Adiciona pagamento inicial se houver
-      if (data.initialPayment && data.initialPayment > 0) {
-        receivablesStore.addPayment(receivable.id, {
-          amount: data.initialPayment,
-          paymentDate: format(new Date(), "yyyy-MM-dd"),
-          paymentMethod: "cash",
-          notes: data.notes || "Pagamento inicial",
-        });
-      }
-
       toast({
-        title: "Venda registrada!",
-        description: `${data.productName} - R$ ${data.salePrice.toFixed(2)}`,
+        title: "Venda atualizada!",
+        description: `${data.productName} foi atualizado com sucesso`,
       });
 
       form.reset();
@@ -116,7 +114,7 @@ export function AddManualReceivableDialog({
       onOpenChange(false);
     } catch (error: any) {
       toast({
-        title: "Erro ao registrar venda",
+        title: "Erro ao atualizar venda",
         description: error.message,
         variant: "destructive",
       });
@@ -125,15 +123,13 @@ export function AddManualReceivableDialog({
     }
   };
 
-  const customer = customerId ? customersStore.getCustomerById(customerId) : null;
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>➕ Nova Venda/Compra</DialogTitle>
+          <DialogTitle>✏️ Editar Venda/Compra</DialogTitle>
           <DialogDescription>
-            {customer && `Registrar venda para ${customer.code} - ${customer.name}`}
+            {receivable && `Editando: ${receivable.productName}`}
           </DialogDescription>
         </DialogHeader>
 
@@ -205,69 +201,46 @@ export function AddManualReceivableDialog({
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-4">
-              {/* Data de Vencimento */}
-              <FormField
-                control={form.control}
-                name="dueDate"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Data Vencimento (opcional)</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant="outline"
-                            className={cn(
-                              "pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? (
-                              format(field.value, "dd/MM/yyyy", { locale: ptBR })
-                            ) : (
-                              <span>Selecione</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          disabled={(date) => date < new Date()}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Valor Entrada */}
-              <FormField
-                control={form.control}
-                name="initialPayment"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Valor Entrada (opcional)</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        placeholder="0.00"
-                        {...field}
-                        onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
+            {/* Data de Vencimento */}
+            <FormField
+              control={form.control}
+              name="dueDate"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>Data Vencimento (opcional)</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "pl-3 text-left font-normal",
+                            !field.value && "text-muted-foreground"
+                          )}
+                        >
+                          {field.value ? (
+                            format(field.value, "dd/MM/yyyy", { locale: ptBR })
+                          ) : (
+                            <span>Selecione</span>
+                          )}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field.value}
+                        onSelect={field.onChange}
+                        disabled={(date) => date < new Date()}
+                        initialFocus
                       />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+                    </PopoverContent>
+                  </Popover>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             {/* Observações */}
             <FormField
@@ -297,7 +270,7 @@ export function AddManualReceivableDialog({
                 Cancelar
               </Button>
               <Button type="submit" disabled={isLoading}>
-                {isLoading ? "Registrando..." : "Registrar Venda"}
+                {isLoading ? "Salvando..." : "Salvar Alterações"}
               </Button>
             </DialogFooter>
           </form>

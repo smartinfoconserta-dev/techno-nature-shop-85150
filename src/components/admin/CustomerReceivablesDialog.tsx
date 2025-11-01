@@ -11,7 +11,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { DollarSign, Calendar, Eye, AlertCircle, Edit, FileDown, Trash2 } from "lucide-react";
+import { DollarSign, Calendar, Eye, AlertCircle, Edit, FileDown, Trash2, Pencil } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,6 +28,7 @@ import { ptBR } from "date-fns/locale";
 import AddPaymentDialog from "./AddPaymentDialog";
 import ReceivableDetailsDialog from "./ReceivableDetailsDialog";
 import { AddManualReceivableDialog } from "./AddManualReceivableDialog";
+import { EditReceivableDialog } from "./EditReceivableDialog";
 import { AddCustomerPaymentDialog } from "./AddCustomerPaymentDialog";
 import EditCustomerDialog from "./EditCustomerDialog";
 import { useToast } from "@/hooks/use-toast";
@@ -49,6 +50,8 @@ const CustomerReceivablesDialog = ({
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const [showNewSaleDialog, setShowNewSaleDialog] = useState(false);
+  const [showEditReceivableDialog, setShowEditReceivableDialog] = useState(false);
+  const [receivableToEdit, setReceivableToEdit] = useState<Receivable | null>(null);
   const [showCustomerPaymentDialog, setShowCustomerPaymentDialog] = useState(false);
   const [showEditCustomerDialog, setShowEditCustomerDialog] = useState(false);
   const [deleteReceivableId, setDeleteReceivableId] = useState<string | null>(null);
@@ -111,6 +114,11 @@ const CustomerReceivablesDialog = ({
   const handleViewDetails = (receivable: Receivable) => {
     setSelectedReceivable(receivable);
     setShowDetailsDialog(true);
+  };
+
+  const handleEditReceivable = (receivable: Receivable) => {
+    setReceivableToEdit(receivable);
+    setShowEditReceivableDialog(true);
   };
 
   const handleDeleteReceivable = (receivable: Receivable) => {
@@ -245,17 +253,17 @@ const CustomerReceivablesDialog = ({
                 <Button 
                   onClick={() => {
                     if (customer) {
-                      generateCustomerReportPDF(customer, receivables);
+                      generateCustomerReportPDF(customer, receivables, undefined, true);
                       toast({
                         title: "PDF gerado!",
-                        description: "Download iniciado com sucesso",
+                        description: "Download iniciado com sucesso (apenas dívidas ativas)",
                       });
                     }
                   }} 
                   variant="outline"
                 >
                   <FileDown className="h-4 w-4 mr-2" />
-                  Baixar PDF
+                  Baixar PDF (Dívidas)
                 </Button>
               </div>
 
@@ -343,14 +351,24 @@ const CustomerReceivablesDialog = ({
                             Ver Detalhes
                           </Button>
                           {receivable.payments.length === 0 && (
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={() => handleDeleteReceivable(receivable)}
-                            >
-                              <Trash2 className="h-4 w-4 mr-1" />
-                              Devolver Produto
-                            </Button>
+                            <>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleEditReceivable(receivable)}
+                              >
+                                <Pencil className="h-4 w-4 mr-1" />
+                                Editar
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => handleDeleteReceivable(receivable)}
+                              >
+                                <Trash2 className="h-4 w-4 mr-1" />
+                                Devolver Produto
+                              </Button>
+                            </>
                           )}
                         </div>
                       </div>
@@ -380,6 +398,13 @@ const CustomerReceivablesDialog = ({
         open={showNewSaleDialog}
         onOpenChange={setShowNewSaleDialog}
         customerId={customerId}
+        onSuccess={loadCustomerReceivables}
+      />
+
+      <EditReceivableDialog
+        open={showEditReceivableDialog}
+        onOpenChange={setShowEditReceivableDialog}
+        receivable={receivableToEdit}
         onSuccess={loadCustomerReceivables}
       />
 

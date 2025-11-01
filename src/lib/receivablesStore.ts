@@ -13,6 +13,9 @@ export interface Receivable {
   customerName: string;
   productId: string;
   productName: string;
+  costPrice?: number; // Preço de custo
+  salePrice?: number; // Preço de venda (= totalAmount)
+  profit?: number; // Lucro (salePrice - costPrice)
   totalAmount: number; // Valor total da venda
   paidAmount: number; // Valor já pago
   remainingAmount: number; // Valor restante
@@ -55,7 +58,7 @@ export const receivablesStore = {
     });
   },
 
-  addReceivable(data: Omit<Receivable, "id" | "status" | "remainingAmount" | "createdAt" | "updatedAt">): Receivable {
+  addReceivable(data: Omit<Receivable, "id" | "status" | "remainingAmount" | "profit" | "createdAt" | "updatedAt">): Receivable {
     const receivables = this.getAllReceivables();
     
     // Validações
@@ -64,6 +67,11 @@ export const receivablesStore = {
     if (data.totalAmount <= 0) throw new Error("Valor total deve ser maior que zero");
     if (data.paidAmount < 0) throw new Error("Valor pago não pode ser negativo");
     if (data.paidAmount > data.totalAmount) throw new Error("Valor pago não pode ser maior que o total");
+    
+    // Calcular lucro se houver custo e preço de venda
+    const profit = (data.costPrice && data.salePrice) 
+      ? data.salePrice - data.costPrice 
+      : undefined;
     
     const remainingAmount = data.totalAmount - data.paidAmount;
     let status: "pending" | "partial" | "paid" = "pending";
@@ -80,6 +88,7 @@ export const receivablesStore = {
       ...data,
       id: Date.now().toString(),
       remainingAmount,
+      profit,
       status,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -126,18 +135,40 @@ export const receivablesStore = {
     return receivable;
   },
 
-  updateReceivable(id: string, data: Partial<Omit<Receivable, "id" | "createdAt">>): Receivable {
+  updateReceivable(id: string, data: Partial<Omit<Receivable, "id" | "createdAt" | "profit">>): Receivable {
     const receivables = this.getAllReceivables();
     const index = receivables.findIndex(r => r.id === id);
     
     if (index === -1) throw new Error("Conta a receber não encontrada");
     
-    receivables[index] = {
+    // Atualizar dados
+    const updatedReceivable = {
       ...receivables[index],
       ...data,
       updatedAt: new Date().toISOString(),
     };
     
+    // Recalcular lucro se necessário
+    if (updatedReceivable.costPrice && updatedReceivable.salePrice) {
+      updatedReceivable.profit = updatedReceivable.salePrice - updatedReceivable.costPrice;
+    }
+    
+    // Recalcular remainingAmount se totalAmount ou paidAmount mudaram
+    if (data.totalAmount !== undefined || data.paidAmount !== undefined) {
+      updatedReceivable.remainingAmount = updatedReceivable.totalAmount - updatedReceivable.paidAmount;
+      
+      // Atualizar status
+      if (updatedReceivable.remainingAmount <= 0) {
+        updatedReceivable.status = "paid";
+        updatedReceivable.remainingAmount = 0;
+      } else if (updatedReceivable.paidAmount > 0) {
+        updatedReceivable.status = "partial";
+      } else {
+        updatedReceivable.status = "pending";
+      }
+    }
+    
+    receivables[index] = updatedReceivable;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(receivables));
     return receivables[index];
   },
