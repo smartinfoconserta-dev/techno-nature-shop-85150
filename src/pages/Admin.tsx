@@ -37,7 +37,7 @@ const Admin = () => {
 
       <main className="container mx-auto px-4 py-8">
         <Tabs defaultValue="products" className="w-full">
-          <TabsList className="grid w-full max-w-6xl grid-cols-7">
+          <TabsList className="inline-flex w-full max-w-6xl overflow-x-auto md:grid md:grid-cols-7 gap-2">
             <TabsTrigger value="products">Produtos</TabsTrigger>
             <TabsTrigger value="costs">Custos e Lucros</TabsTrigger>
             <TabsTrigger value="reports">📊 Relatórios</TabsTrigger>

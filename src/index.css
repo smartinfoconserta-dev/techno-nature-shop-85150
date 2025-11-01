@@ -86,3 +86,31 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 }
+
+/* Scroll horizontal suave para tabs no mobile */
+@media (max-width: 768px) {
+  [role="tablist"] {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted-foreground)) transparent;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  [role="tablist"]::-webkit-scrollbar {
+    height: 4px;
+  }
+  
+  [role="tablist"]::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  [role="tablist"]::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground));
+    border-radius: 2px;
+  }
+  
+  [role="tab"] {
+    flex-shrink: 0;
+    min-width: fit-content;
+    white-space: nowrap;
+  }
+}
