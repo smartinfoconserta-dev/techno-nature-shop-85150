@@ -32,15 +32,12 @@ interface NavItem {
 const navItems: NavItem[] = [
   { title: "Dashboard", value: "dashboard", icon: LayoutDashboard },
   { title: "Produtos", value: "products", icon: Package },
-  { title: "Custos e Lucros", value: "costs", icon: DollarSign },
-  { title: "Relatórios", value: "reports", icon: BarChart3 },
-  { title: "Histórico", value: "history", icon: History },
   { title: "Vendas Rápidas", value: "quick-sales", icon: Zap },
-  { title: "Marcas", value: "brands", icon: Tags },
-  { title: "Categorias", value: "categories", icon: FolderOpen },
-  { title: "Cupons", value: "coupons", icon: Ticket },
+  { title: "Financeiro", value: "finance", icon: BarChart3 },
+  { title: "Histórico", value: "history", icon: History },
   { title: "A Receber", value: "receivables", icon: DollarSign },
   { title: "Clientes", value: "customers", icon: Users },
+  { title: "Cupons", value: "coupons", icon: Ticket },
   { title: "Configurações", value: "settings", icon: Settings },
 ];
 

@@ -7,12 +7,9 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { LogOut, Menu } from "lucide-react";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import DashboardTab from "@/components/admin/DashboardTab";
-import BrandsTab from "@/components/admin/BrandsTab";
-import ProductsTab from "@/components/admin/ProductsTab";
-import CostsProfitsTab from "@/components/admin/CostsProfitsTab";
-import MonthlyReportsTab from "@/components/admin/MonthlyReportsTab";
+import ProductsMainTab from "@/components/admin/ProductsMainTab";
+import FinanceMainTab from "@/components/admin/FinanceMainTab";
 import SalesHistoryTab from "@/components/admin/SalesHistoryTab";
-import CategoriesTab from "@/components/admin/CategoriesTab";
 import CouponsTab from "@/components/admin/CouponsTab";
 import SettingsTab from "@/components/admin/SettingsTab";
 import ReceivablesTab from "@/components/admin/ReceivablesTab";
@@ -66,17 +63,14 @@ const Admin = () => {
               <div className="inline-flex p-1 gap-1 min-w-full">
                 {[
                   { value: "dashboard", label: "📊 Dashboard" },
-                  { value: "products", label: "Produtos" },
-                  { value: "costs", label: "Custos" },
-                  { value: "reports", label: "Relatórios" },
-                  { value: "history", label: "Histórico" },
+                  { value: "products", label: "📦 Produtos" },
                   { value: "quick-sales", label: "⚡ Vendas Rápidas" },
-                  { value: "brands", label: "Marcas" },
-                  { value: "categories", label: "Categorias" },
-                  { value: "coupons", label: "Cupons" },
-                  { value: "receivables", label: "💰 A Receber" },
+                  { value: "finance", label: "💰 Financeiro" },
+                  { value: "history", label: "📜 Histórico" },
+                  { value: "receivables", label: "💵 A Receber" },
                   { value: "customers", label: "👥 Clientes" },
-                  { value: "settings", label: "Configurações" },
+                  { value: "coupons", label: "🎟️ Cupons" },
+                  { value: "settings", label: "⚙️ Configurações" },
                 ].map((tab) => (
                   <button
                     key={tab.value}
@@ -97,16 +91,13 @@ const Admin = () => {
           {/* Conteúdo das Tabs */}
           <main className="flex-1 container mx-auto px-4 py-6 md:py-8">
             {activeTab === "dashboard" && <DashboardTab />}
-            {activeTab === "products" && <ProductsTab />}
-            {activeTab === "costs" && <CostsProfitsTab />}
-            {activeTab === "reports" && <MonthlyReportsTab />}
-            {activeTab === "history" && <SalesHistoryTab />}
+            {activeTab === "products" && <ProductsMainTab />}
             {activeTab === "quick-sales" && <QuickSalesTab />}
-            {activeTab === "brands" && <BrandsTab />}
-            {activeTab === "categories" && <CategoriesTab />}
-            {activeTab === "coupons" && <CouponsTab />}
+            {activeTab === "finance" && <FinanceMainTab />}
+            {activeTab === "history" && <SalesHistoryTab />}
             {activeTab === "receivables" && <ReceivablesTab />}
             {activeTab === "customers" && <CustomersTab />}
+            {activeTab === "coupons" && <CouponsTab />}
             {activeTab === "settings" && <SettingsTab />}
           </main>
         </div>
