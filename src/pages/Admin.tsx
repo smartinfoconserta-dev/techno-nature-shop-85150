@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LogOut } from "lucide-react";
 import BrandsTab from "@/components/admin/BrandsTab";
+import ProductsTab from "@/components/admin/ProductsTab";
+import CostsProfitsTab from "@/components/admin/CostsProfitsTab";
 
 const Admin = () => {
   const { user, logout } = useAuth();
@@ -30,10 +32,20 @@ const Admin = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        <Tabs defaultValue="brands" className="w-full">
-          <TabsList className="grid w-full max-w-md grid-cols-1">
+        <Tabs defaultValue="products" className="w-full">
+          <TabsList className="grid w-full max-w-2xl grid-cols-3">
+            <TabsTrigger value="products">Produtos</TabsTrigger>
+            <TabsTrigger value="costs">Custos e Lucros</TabsTrigger>
             <TabsTrigger value="brands">Marcas</TabsTrigger>
           </TabsList>
+          
+          <TabsContent value="products" className="mt-6">
+            <ProductsTab />
+          </TabsContent>
+
+          <TabsContent value="costs" className="mt-6">
+            <CostsProfitsTab />
+          </TabsContent>
           
           <TabsContent value="brands" className="mt-6">
             <BrandsTab />

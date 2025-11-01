@@ -35,11 +35,15 @@ const AdminLoginDialog = ({ open, onOpenChange }: AdminLoginDialogProps) => {
       
       if (success) {
         toast({
-          title: "Login realizado!",
-          description: "Bem-vindo ao painel administrativo.",
+          title: "Login realizado com sucesso!",
+          description: "Redirecionando para o painel administrativo...",
         });
         onOpenChange(false);
-        navigate("/admin");
+        
+        // Usar window.location para garantir o redirecionamento
+        setTimeout(() => {
+          window.location.href = "/admin";
+        }, 500);
       } else {
         toast({
           variant: "destructive",

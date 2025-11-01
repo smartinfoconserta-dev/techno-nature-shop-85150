@@ -5,27 +5,25 @@ interface AuthState {
   user: { email: string } | null;
 }
 
-export const useAuth = () => {
-  const [authState, setAuthState] = useState<AuthState>({
+const getInitialAuthState = (): AuthState => {
+  const token = localStorage.getItem("auth_token");
+  const userEmail = localStorage.getItem("user_email");
+  
+  if (token === "admin_logged_in" && userEmail) {
+    return {
+      isAuthenticated: true,
+      user: { email: userEmail },
+    };
+  }
+  
+  return {
     isAuthenticated: false,
     user: null,
-  });
-
-  useEffect(() => {
-    checkAuth();
-  }, []);
-
-  const checkAuth = () => {
-    const token = localStorage.getItem("auth_token");
-    const userEmail = localStorage.getItem("user_email");
-    
-    if (token === "admin_logged_in" && userEmail) {
-      setAuthState({
-        isAuthenticated: true,
-        user: { email: userEmail },
-      });
-    }
   };
+};
+
+export const useAuth = () => {
+  const [authState, setAuthState] = useState<AuthState>(getInitialAuthState());
 
   const login = (email: string, password: string): boolean => {
     if (email === "laricasagrandee@gmail.com" && password === "macacapreta02") {
