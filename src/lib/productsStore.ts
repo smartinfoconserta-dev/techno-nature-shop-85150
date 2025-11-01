@@ -433,4 +433,41 @@ export const productsStore = {
       soldCount: soldProducts.length,
     };
   },
+
+  computeCurrentMonthTotals() {
+    const now = new Date();
+    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    // Filtra apenas vendas do mês atual
+    const soldProducts = this.getSoldProducts().filter(p => {
+      if (!p.saleDate) return false;
+      const saleDate = new Date(p.saleDate);
+      return saleDate >= currentMonthStart;
+    });
+
+    const totalGross = soldProducts.reduce((sum, p) => sum + (p.salePrice || 0), 0);
+    const totalCash = soldProducts.reduce((sum, p) => sum + (p.paymentBreakdown?.cash || 0), 0);
+    const totalPix = soldProducts.reduce((sum, p) => sum + (p.paymentBreakdown?.pix || 0), 0);
+    const totalCard = soldProducts.reduce((sum, p) => sum + (p.paymentBreakdown?.card || 0), 0);
+    const totalDigital = totalPix + totalCard;
+    const totalTax = soldProducts.reduce((sum, p) => sum + (p.taxAmount || 0), 0);
+    const totalExpenses = soldProducts.reduce((sum, p) => 
+      sum + p.expenses.reduce((expSum, e) => expSum + e.value, 0), 0
+    );
+    const netProfit = totalGross - totalExpenses;
+    const averageMargin = totalGross > 0 ? ((netProfit / totalGross) * 100) : 0;
+
+    return {
+      totalGross,
+      totalCash,
+      totalPix,
+      totalCard,
+      totalDigital,
+      totalTax,
+      totalExpenses,
+      netProfit,
+      averageMargin,
+      soldCount: soldProducts.length,
+    };
+  },
 };

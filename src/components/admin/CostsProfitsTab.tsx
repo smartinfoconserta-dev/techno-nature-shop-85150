@@ -1,8 +1,11 @@
 import { useState, useEffect } from "react";
 import { productsStore, Product } from "@/lib/productsStore";
+import { monthlyReportsStore } from "@/lib/monthlyReportsStore";
 import ProductExpenseRow from "./ProductExpenseRow";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DollarSign, TrendingUp, TrendingDown, ShoppingBag, Receipt } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { format } from "date-fns";
 
 const CostsProfitsTab = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -20,20 +23,37 @@ const CostsProfitsTab = () => {
   });
 
   useEffect(() => {
+    // Verifica se precisa gerar relatório do mês anterior
+    monthlyReportsStore.checkAndGeneratePreviousMonth();
     loadData();
   }, []);
 
   const loadData = () => {
     setProducts(productsStore.getAvailableProducts());
-    setTotals(productsStore.computeTotals());
+    // Calcula totais APENAS do mês atual
+    setTotals(productsStore.computeCurrentMonthTotals());
+  };
+
+  const getCurrentMonthName = () => {
+    const now = new Date();
+    const monthNames = [
+      "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+      "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+    ];
+    return `${monthNames[now.getMonth()]} ${now.getFullYear()}`;
   };
 
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-foreground">Custos e Lucros</h2>
+        <div className="flex items-center gap-3">
+          <h2 className="text-2xl font-bold text-foreground">Custos e Lucros</h2>
+          <Badge variant="default" className="bg-green-600 hover:bg-green-700">
+            {getCurrentMonthName()}
+          </Badge>
+        </div>
         <p className="text-sm text-muted-foreground">
-          Gerencie os gastos e acompanhe o lucro de cada produto
+          Mostrando dados apenas do mês atual - O histórico completo está na aba "Relatórios"
         </p>
       </div>
 

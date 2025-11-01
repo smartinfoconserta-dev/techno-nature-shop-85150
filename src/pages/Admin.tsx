@@ -6,6 +6,7 @@ import { LogOut } from "lucide-react";
 import BrandsTab from "@/components/admin/BrandsTab";
 import ProductsTab from "@/components/admin/ProductsTab";
 import CostsProfitsTab from "@/components/admin/CostsProfitsTab";
+import MonthlyReportsTab from "@/components/admin/MonthlyReportsTab";
 import SalesHistoryTab from "@/components/admin/SalesHistoryTab";
 import CategoriesTab from "@/components/admin/CategoriesTab";
 import CouponsTab from "@/components/admin/CouponsTab";
@@ -36,9 +37,10 @@ const Admin = () => {
 
       <main className="container mx-auto px-4 py-8">
         <Tabs defaultValue="products" className="w-full">
-          <TabsList className="grid w-full max-w-5xl grid-cols-6">
+          <TabsList className="grid w-full max-w-6xl grid-cols-7">
             <TabsTrigger value="products">Produtos</TabsTrigger>
             <TabsTrigger value="costs">Custos e Lucros</TabsTrigger>
+            <TabsTrigger value="reports">📊 Relatórios</TabsTrigger>
             <TabsTrigger value="history">Histórico</TabsTrigger>
             <TabsTrigger value="brands">Marcas</TabsTrigger>
             <TabsTrigger value="categories">Categorias</TabsTrigger>
@@ -51,6 +53,10 @@ const Admin = () => {
 
           <TabsContent value="costs" className="mt-6">
             <CostsProfitsTab />
+          </TabsContent>
+
+          <TabsContent value="reports" className="mt-6">
+            <MonthlyReportsTab />
           </TabsContent>
 
           <TabsContent value="history" className="mt-6">
