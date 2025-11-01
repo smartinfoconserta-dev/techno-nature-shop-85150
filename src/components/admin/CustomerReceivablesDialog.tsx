@@ -11,7 +11,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { DollarSign, Calendar, Eye, AlertCircle, Edit } from "lucide-react";
+import { DollarSign, Calendar, Eye, AlertCircle, Edit, FileDown } from "lucide-react";
+import { generateCustomerReportPDF } from "@/lib/generateCustomerReportPDF";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import AddPaymentDialog from "./AddPaymentDialog";
@@ -195,6 +196,21 @@ const CustomerReceivablesDialog = ({
                 <Button onClick={() => setShowEditCustomerDialog(true)} variant="outline">
                   <Edit className="h-4 w-4 mr-2" />
                   Editar Dados
+                </Button>
+                <Button 
+                  onClick={() => {
+                    if (customer) {
+                      generateCustomerReportPDF(customer, receivables);
+                      toast({
+                        title: "PDF gerado!",
+                        description: "Download iniciado com sucesso",
+                      });
+                    }
+                  }} 
+                  variant="outline"
+                >
+                  <FileDown className="h-4 w-4 mr-2" />
+                  Baixar PDF
                 </Button>
               </div>
 

@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DollarSign, Calendar, Eye, Trash2, AlertCircle, UserPlus, Edit } from "lucide-react";
+import { DollarSign, Calendar, Eye, Trash2, AlertCircle, UserPlus, Edit, FileDown } from "lucide-react";
+import { generateCustomerReportPDF } from "@/lib/generateCustomerReportPDF";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
@@ -427,6 +428,22 @@ const ReceivablesTab = () => {
                         >
                           <Edit className="h-4 w-4 mr-1" />
                           Editar Cadastro
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            if (group.customer) {
+                              generateCustomerReportPDF(group.customer, group.receivables);
+                              toast({
+                                title: "PDF gerado!",
+                                description: "Download iniciado com sucesso",
+                              });
+                            }
+                          }}
+                        >
+                          <FileDown className="h-4 w-4 mr-1" />
+                          Baixar PDF
                         </Button>
                       </div>
                     </div>
