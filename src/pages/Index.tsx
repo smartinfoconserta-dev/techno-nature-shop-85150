@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Header from "@/components/Header";
 import ProductFilters from "@/components/ProductFilters";
 import ProductCard from "@/components/ProductCard";
+import { brandsStore } from "@/lib/brandsStore";
 import notebookImg from "@/assets/product-notebook-1.jpg";
 import phoneImg from "@/assets/product-phone-1.jpg";
 
@@ -56,8 +57,22 @@ const mockProducts = [
 const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState("Todos");
   const [selectedBrand, setSelectedBrand] = useState("all");
+  const [brands, setBrands] = useState<string[]>([]);
 
-  const brands = Array.from(new Set(mockProducts.map(p => p.brand)));
+  useEffect(() => {
+    loadBrands();
+  }, [selectedCategory]);
+
+  const loadBrands = () => {
+    if (selectedCategory === "Todos") {
+      const allBrands = brandsStore.getAllBrands();
+      const uniqueBrands = Array.from(new Set(allBrands.map(b => b.name))).sort();
+      setBrands(uniqueBrands);
+    } else {
+      const categoryBrands = brandsStore.getBrandsByCategory(selectedCategory as any);
+      setBrands(categoryBrands.map(b => b.name));
+    }
+  };
 
   const filteredProducts = mockProducts.filter(product => {
     const categoryMatch = selectedCategory === "Todos" || product.category === selectedCategory;
