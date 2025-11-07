@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -23,12 +23,16 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { CalendarIcon, Check } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { receivablesStore } from "@/lib/receivablesStore";
 import { customersStore } from "@/lib/customersStore";
+import { productsStore } from "@/lib/productsStore";
 import { useToast } from "@/hooks/use-toast";
 
 const formSchema = z.object({
@@ -57,6 +61,10 @@ export function AddManualReceivableDialog({
 }: AddManualReceivableDialogProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [productSource, setProductSource] = useState<"manual" | "catalog">("manual");
+  const [selectedProductId, setSelectedProductId] = useState<string>("");
+  
+  const catalogProducts = productsStore.getAvailableProducts();
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -69,6 +77,15 @@ export function AddManualReceivableDialog({
     },
   });
 
+  // Resetar estados ao fechar diálogo
+  useEffect(() => {
+    if (!open) {
+      setProductSource("manual");
+      setSelectedProductId("");
+      form.reset();
+    }
+  }, [open, form]);
+
   const onSubmit = async (data: FormData) => {
     if (!customerId) return;
 
@@ -80,12 +97,21 @@ export function AddManualReceivableDialog({
         throw new Error("Cliente não encontrado");
       }
 
+      // Validações específicas para catálogo
+      if (productSource === "catalog" && !selectedProductId) {
+        throw new Error("Selecione um produto do catálogo");
+      }
+
+      const finalProductId = productSource === "catalog" 
+        ? selectedProductId 
+        : `manual_${Date.now()}`;
+
       // Cria conta a receber
       const receivable = receivablesStore.addReceivable({
         customerId,
         customerCode: customer.code,
         customerName: customer.name,
-        productId: `manual_${Date.now()}`,
+        productId: finalProductId,
         productName: data.productName,
         costPrice: data.costPrice || 0,
         salePrice: data.salePrice,
@@ -93,7 +119,7 @@ export function AddManualReceivableDialog({
         paidAmount: data.initialPayment || 0,
         dueDate: data.dueDate ? format(data.dueDate, "yyyy-MM-dd") : undefined,
         payments: [],
-        source: "manual",
+        source: productSource === "catalog" ? "catalog" : "manual",
       });
 
       // Adiciona pagamento inicial se houver
@@ -106,12 +132,25 @@ export function AddManualReceivableDialog({
         });
       }
 
+      // Se for do catálogo, marca produto como vendido
+      if (productSource === "catalog") {
+        productsStore.markAsSoldOnCredit(
+          selectedProductId,
+          customer.name,
+          customer.cpfCnpj || "",
+          data.salePrice,
+          receivable.id
+        );
+      }
+
       toast({
         title: "Venda registrada!",
-        description: `${data.productName} - R$ ${data.salePrice.toFixed(2)}`,
+        description: `${data.productName} - R$ ${data.salePrice.toFixed(2)}${productSource === "catalog" ? " (vinculado ao catálogo)" : ""}`,
       });
 
       form.reset();
+      setSelectedProductId("");
+      setProductSource("manual");
       onSuccess();
       onOpenChange(false);
     } catch (error: any) {
@@ -139,20 +178,93 @@ export function AddManualReceivableDialog({
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            {/* Nome do Produto */}
-            <FormField
-              control={form.control}
-              name="productName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nome do Produto/Serviço *</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Ex: Notebook Dell" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {/* Toggle Manual/Catálogo */}
+            <div className="space-y-3 bg-muted/50 p-4 rounded-lg">
+              <h4 className="font-semibold text-sm">📦 Origem do Produto</h4>
+              <RadioGroup 
+                value={productSource} 
+                onValueChange={(v) => {
+                  setProductSource(v as "manual" | "catalog");
+                  if (v === "manual") {
+                    setSelectedProductId("");
+                    form.setValue("productName", "");
+                    form.setValue("costPrice", 0);
+                    form.setValue("salePrice", 0);
+                  }
+                }}
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="manual" id="manual" />
+                  <Label htmlFor="manual" className="font-normal cursor-pointer">
+                    📝 Produto Manual (sem vínculo com catálogo)
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="catalog" id="catalog" />
+                  <Label htmlFor="catalog" className="font-normal cursor-pointer">
+                    🏪 Produto do Catálogo
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
+
+            {/* Nome do Produto - Campo ou Select */}
+            {productSource === "manual" ? (
+              <FormField
+                control={form.control}
+                name="productName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nome do Produto/Serviço *</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Ex: Notebook Dell" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            ) : (
+              <div className="space-y-2">
+                <Label>Selecione o Produto *</Label>
+                <Select 
+                  value={selectedProductId} 
+                  onValueChange={(productId) => {
+                    setSelectedProductId(productId);
+                    const product = catalogProducts.find(p => p.id === productId);
+                    if (product) {
+                      // Preenche automaticamente os campos
+                      const totalExpenses = product.expenses.reduce((sum, e) => sum + e.value, 0);
+                      form.setValue("productName", product.name);
+                      form.setValue("costPrice", totalExpenses);
+                      form.setValue("salePrice", product.price);
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Escolha um produto do catálogo..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {catalogProducts.length === 0 ? (
+                      <SelectItem value="_empty" disabled>
+                        Nenhum produto disponível
+                      </SelectItem>
+                    ) : (
+                      catalogProducts.map(product => (
+                        <SelectItem key={product.id} value={product.id}>
+                          {product.name} - R$ {product.price.toFixed(2)}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+                {selectedProductId && (
+                  <p className="text-sm text-green-600 dark:text-green-400 flex items-center gap-1">
+                    <Check className="h-4 w-4" />
+                    Produto vinculado ao catálogo
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* Preço de Custo */}
             <FormField
@@ -166,6 +278,7 @@ export function AddManualReceivableDialog({
                       type="number"
                       step="0.01"
                       placeholder="Quanto você pagou no produto"
+                      disabled={productSource === "catalog"}
                       {...field}
                       onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
                     />
@@ -187,6 +300,7 @@ export function AddManualReceivableDialog({
                       type="number"
                       step="0.01"
                       placeholder="Por quanto você vendeu"
+                      disabled={productSource === "catalog"}
                       {...field}
                       onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
                     />

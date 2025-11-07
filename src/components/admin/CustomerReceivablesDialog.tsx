@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { receivablesStore, Receivable } from "@/lib/receivablesStore";
 import { customersStore } from "@/lib/customersStore";
+import { productsStore } from "@/lib/productsStore";
 import {
   Dialog,
   DialogContent,
@@ -139,11 +140,25 @@ const CustomerReceivablesDialog = ({
     if (!deleteReceivableId) return;
     
     try {
+      const receivable = receivables.find(r => r.id === deleteReceivableId);
+      
+      // Se for produto do catálogo, devolve ao estoque
+      if (receivable?.source === "catalog" && receivable.productId) {
+        const product = productsStore.getAllProducts().find(p => p.id === receivable.productId);
+        if (product?.soldOnCredit) {
+          productsStore.cancelSale(receivable.productId);
+        }
+      }
+      
       receivablesStore.deleteReceivable(deleteReceivableId);
+      
       toast({
         title: "Produto devolvido!",
-        description: "O produto foi removido da caderneta",
+        description: receivable?.source === "catalog" 
+          ? "Produto devolvido ao catálogo" 
+          : "O produto foi removido da caderneta",
       });
+      
       loadCustomerReceivables();
       setDeleteReceivableId(null);
     } catch (error: any) {
