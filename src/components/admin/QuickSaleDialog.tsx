@@ -3,8 +3,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { customersStore } from "@/lib/customersStore";
+import { customersStore, Customer } from "@/lib/customersStore";
 import { AddManualReceivableDialog } from "./AddManualReceivableDialog";
+import NewCustomerDialog from "./NewCustomerDialog";
+import { useToast } from "@/hooks/use-toast";
 
 interface QuickSaleDialogProps {
   open: boolean;
@@ -19,12 +21,23 @@ const QuickSaleDialog = ({
 }: QuickSaleDialogProps) => {
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>("");
   const [showSaleForm, setShowSaleForm] = useState(false);
-
+  const [showNewCustomerDialog, setShowNewCustomerDialog] = useState(false);
+  
+  const { toast } = useToast();
   const customers = customersStore.getActiveCustomers();
 
   const handleNext = () => {
     if (!selectedCustomerId) return;
     setShowSaleForm(true);
+  };
+
+  const handleCustomerCreated = (customer: Customer) => {
+    setSelectedCustomerId(customer.id);
+    setShowNewCustomerDialog(false);
+    toast({
+      title: "Cliente cadastrado!",
+      description: `${customer.code} - ${customer.name} foi adicionado`,
+    });
   };
 
   const handleSaleSuccess = () => {
@@ -51,11 +64,23 @@ const QuickSaleDialog = ({
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label>Selecione o Cliente *</Label>
-              <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
+              <Select 
+                value={selectedCustomerId} 
+                onValueChange={(value) => {
+                  if (value === "new") {
+                    setShowNewCustomerDialog(true);
+                  } else {
+                    setSelectedCustomerId(value);
+                  }
+                }}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Escolha um cliente..." />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="new" className="text-primary font-semibold">
+                    + Cadastrar Novo Cliente
+                  </SelectItem>
                   {customers.map(customer => (
                     <SelectItem key={customer.id} value={customer.id}>
                       {customer.code} - {customer.name}
@@ -71,6 +96,12 @@ const QuickSaleDialog = ({
           </div>
         </DialogContent>
       </Dialog>
+
+      <NewCustomerDialog
+        open={showNewCustomerDialog}
+        onOpenChange={setShowNewCustomerDialog}
+        onCustomerCreated={handleCustomerCreated}
+      />
 
       <AddManualReceivableDialog
         open={showSaleForm}
