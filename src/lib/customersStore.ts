@@ -8,6 +8,7 @@ export interface Customer {
   address?: string;
   type: "lojista" | "cliente"; // Tipo de cliente
   creditLimit?: number; // Limite de crédito
+  creditBalance?: number; // Saldo de crédito a favor do cliente (haver)
   notes?: string;
   username?: string; // Username para login no portal
   password?: string; // Senha para acessar o portal (opcional)
@@ -187,5 +188,42 @@ export const customersStore = {
     return this.getAllCustomers().find(
       c => c.code.toUpperCase() === normalized || c.cpfCnpj === identifier
     );
+  },
+
+  addCredit(customerId: string, amount: number, description: string): Customer {
+    const customers = this.getAllCustomers();
+    const index = customers.findIndex(c => c.id === customerId);
+    
+    if (index === -1) throw new Error("Cliente não encontrado");
+    
+    const currentBalance = customers[index].creditBalance || 0;
+    customers[index].creditBalance = currentBalance + amount;
+    customers[index].updatedAt = new Date().toISOString();
+    
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(customers));
+    return customers[index];
+  },
+
+  removeCredit(customerId: string, amount: number): Customer {
+    const customers = this.getAllCustomers();
+    const index = customers.findIndex(c => c.id === customerId);
+    
+    if (index === -1) throw new Error("Cliente não encontrado");
+    
+    const currentBalance = customers[index].creditBalance || 0;
+    if (currentBalance < amount) {
+      throw new Error("Saldo de crédito insuficiente");
+    }
+    
+    customers[index].creditBalance = currentBalance - amount;
+    customers[index].updatedAt = new Date().toISOString();
+    
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(customers));
+    return customers[index];
+  },
+
+  getCreditBalance(customerId: string): number {
+    const customer = this.getCustomerById(customerId);
+    return customer?.creditBalance || 0;
   },
 };

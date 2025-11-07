@@ -103,6 +103,26 @@ const CustomerPortal = () => {
           </Card>
         </div>
 
+        {/* Card de Crédito Disponível */}
+        {customer.creditBalance && customer.creditBalance > 0 && (
+          <Card className="border-green-500">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <DollarSign className="h-4 w-4" />
+                Crédito Disponível (Haver)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-bold text-green-600">
+                R$ {customer.creditBalance.toFixed(2)}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Disponível para suas próximas compras
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Lista de Compras */}
         <Card>
           <CardHeader>

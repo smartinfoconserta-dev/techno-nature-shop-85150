@@ -32,6 +32,8 @@ import { AddManualReceivableDialog } from "./AddManualReceivableDialog";
 import { EditReceivableDialog } from "./EditReceivableDialog";
 import { AddCustomerPaymentDialog } from "./AddCustomerPaymentDialog";
 import EditCustomerDialog from "./EditCustomerDialog";
+import { RefundOptionsDialog } from "./RefundOptionsDialog";
+import { creditHistoryStore } from "@/lib/creditHistoryStore";
 import { useToast } from "@/hooks/use-toast";
 
 interface CustomerReceivablesDialogProps {
@@ -56,6 +58,7 @@ const CustomerReceivablesDialog = ({
   const [showCustomerPaymentDialog, setShowCustomerPaymentDialog] = useState(false);
   const [showEditCustomerDialog, setShowEditCustomerDialog] = useState(false);
   const [deleteReceivableId, setDeleteReceivableId] = useState<string | null>(null);
+  const [receivableToRefund, setReceivableToRefund] = useState<Receivable | null>(null);
 
   useEffect(() => {
     if (open && customerId) {
@@ -135,27 +138,41 @@ const CustomerReceivablesDialog = ({
   };
 
   const handleDeleteReceivable = (receivable: Receivable) => {
-    // Verifica se tem pagamentos
-    if (receivable.payments && receivable.payments.length > 0) {
-      toast({
-        title: "Não é possível devolver",
-        description: "Este produto já possui pagamentos registrados. Cancele os pagamentos primeiro.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
     setDeleteReceivableId(receivable.id);
+    setReceivableToRefund(receivable);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = (keepAsCredit: boolean) => {
     if (!deleteReceivableId) return;
     
     try {
       const receivable = receivables.find(r => r.id === deleteReceivableId);
+      if (!receivable) throw new Error("Produto não encontrado");
+      
+      // Se tem pagamentos E usuário quer manter crédito
+      if (receivable.paidAmount > 0 && keepAsCredit) {
+        customersStore.addCredit(
+          receivable.customerId, 
+          receivable.paidAmount,
+          `Devolução: ${receivable.productName}`
+        );
+        
+        // Registrar no histórico
+        creditHistoryStore.addTransaction({
+          customerId: receivable.customerId,
+          type: "add",
+          amount: receivable.paidAmount,
+          description: `Devolução: ${receivable.productName}`,
+        });
+        
+        toast({
+          title: "Crédito adicionado! 💰",
+          description: `R$ ${receivable.paidAmount.toFixed(2)} ficou disponível em haver para ${customer?.name}`,
+        });
+      }
       
       // Se for produto do catálogo, devolve ao estoque
-      if (receivable?.source === "catalog" && receivable.productId) {
+      if (receivable.source === "catalog" && receivable.productId) {
         const product = productsStore.getAllProducts().find(p => p.id === receivable.productId);
         if (product?.soldOnCredit) {
           productsStore.cancelSale(receivable.productId);
@@ -166,13 +183,14 @@ const CustomerReceivablesDialog = ({
       
       toast({
         title: "Produto devolvido!",
-        description: receivable?.source === "catalog" 
+        description: receivable.source === "catalog" 
           ? "Produto devolvido ao catálogo" 
-          : "O produto foi removido da caderneta",
+          : "Produto removido da caderneta",
       });
       
       loadCustomerReceivables();
       setDeleteReceivableId(null);
+      setReceivableToRefund(null);
     } catch (error: any) {
       toast({
         title: "Erro ao devolver produto",
@@ -264,6 +282,20 @@ const CustomerReceivablesDialog = ({
                   </CardContent>
                 </Card>
               </div>
+
+              {/* Card de Crédito Disponível */}
+              {customer && customer.creditBalance && customer.creditBalance > 0 && (
+                <Card className="border-green-500 bg-green-50 dark:bg-green-950/20">
+                  <CardContent className="pt-4 pb-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs text-green-700 dark:text-green-400">💰 Crédito Disponível (Haver)</p>
+                        <p className="text-2xl font-bold text-green-600">R$ {customer.creditBalance.toFixed(2)}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
 
               {/* Botões de Ação do Cliente */}
               <div className="flex flex-wrap gap-2">
@@ -378,25 +410,23 @@ const CustomerReceivablesDialog = ({
                             Ver Detalhes
                           </Button>
                           {receivable.payments.length === 0 && (
-                            <>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleEditReceivable(receivable)}
-                              >
-                                <Pencil className="h-4 w-4 mr-1" />
-                                Editar
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={() => handleDeleteReceivable(receivable)}
-                              >
-                                <Trash2 className="h-4 w-4 mr-1" />
-                                Devolver Produto
-                              </Button>
-                            </>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleEditReceivable(receivable)}
+                            >
+                              <Pencil className="h-4 w-4 mr-1" />
+                              Editar
+                            </Button>
                           )}
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleDeleteReceivable(receivable)}
+                          >
+                            <Trash2 className="h-4 w-4 mr-1" />
+                            Devolver Produto
+                          </Button>
                         </div>
                       </div>
                     ))}
@@ -449,26 +479,46 @@ const CustomerReceivablesDialog = ({
         onCustomerUpdated={loadCustomerReceivables}
       />
 
-      <AlertDialog 
-        open={deleteReceivableId !== null} 
-        onOpenChange={(open) => !open && setDeleteReceivableId(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Confirmar Devolução</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tem certeza que deseja remover este produto da caderneta? 
-              Esta ação não pode ser desfeita.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-red-600">
-              Sim, Devolver
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* Diálogo de Devolução - Condicional baseado em pagamentos */}
+      {receivableToRefund && receivableToRefund.paidAmount > 0 ? (
+        <RefundOptionsDialog
+          open={deleteReceivableId !== null}
+          onOpenChange={(open) => {
+            if (!open) {
+              setDeleteReceivableId(null);
+              setReceivableToRefund(null);
+            }
+          }}
+          receivable={receivableToRefund}
+          onConfirm={(keepAsCredit) => confirmDelete(keepAsCredit)}
+        />
+      ) : (
+        <AlertDialog 
+          open={deleteReceivableId !== null} 
+          onOpenChange={(open) => {
+            if (!open) {
+              setDeleteReceivableId(null);
+              setReceivableToRefund(null);
+            }
+          }}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirmar Devolução</AlertDialogTitle>
+              <AlertDialogDescription>
+                Tem certeza que deseja remover este produto da caderneta? 
+                Esta ação não pode ser desfeita.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction onClick={() => confirmDelete(false)} className="bg-red-600">
+                Sim, Devolver
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
     </>
   );
 };
