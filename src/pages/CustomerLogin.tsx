@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useCustomerAuth } from "@/hooks/useCustomerAuth";
 import { customersStore } from "@/lib/customersStore";
 import { useToast } from "@/hooks/use-toast";
+import { ArrowLeft } from "lucide-react";
 
 const CustomerLogin = () => {
   const navigate = useNavigate();
@@ -47,8 +48,17 @@ const CustomerLogin = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/20 to-secondary/20 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
+      <Card className="w-full max-w-md relative">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate("/")}
+          className="absolute top-4 left-4"
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Voltar ao Catálogo
+        </Button>
+        <CardHeader className="text-center pt-16">
           <CardTitle className="text-2xl">Área de Parceiros</CardTitle>
           <CardDescription>Acesse suas compras e acompanhe seus pagamentos</CardDescription>
         </CardHeader>

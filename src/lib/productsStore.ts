@@ -23,6 +23,7 @@ export interface Product {
   specs: string;
   description: string;
   price: number;
+  costPrice?: number; // Preço de custo do produto
   discountPrice?: number;
   order: number;
   sold: boolean;

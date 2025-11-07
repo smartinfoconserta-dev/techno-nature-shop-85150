@@ -69,7 +69,18 @@ const Index = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredProducts.map((product) => (
-              <ProductCard key={product.id} {...product} />
+              <ProductCard 
+                key={product.id} 
+                id={product.id}
+                images={product.images}
+                name={product.name}
+                brand={product.brand}
+                specs={product.specs}
+                description={product.description}
+                price={product.price}
+                costPrice={product.costPrice}
+                discountPrice={product.discountPrice}
+              />
             ))}
           </div>
         )}

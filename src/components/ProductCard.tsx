@@ -17,10 +17,11 @@ interface ProductCardProps {
   specs: string;
   description: string;
   price: number;
+  costPrice?: number;
   discountPrice?: number;
 }
 
-const ProductCard = ({ images, name, brand, specs, description, price, discountPrice }: ProductCardProps) => {
+const ProductCard = ({ images, name, brand, specs, description, price, costPrice, discountPrice }: ProductCardProps) => {
   const [coupon, setCoupon] = useState("");
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<{ type: 'cash' | 'installment', data?: InstallmentOption, cashValue?: number } | null>(null);
@@ -55,18 +56,55 @@ const ProductCard = ({ images, name, brand, specs, description, price, discountP
   }
 
   const handleWhatsAppClick = () => {
-    let priceInfo = `R$ ${price.toFixed(2)}`;
+    const imageLink = images[0] || "";
     
+    let messageLines = [
+      "🛒 *INTERESSE EM PRODUTO*",
+      "",
+      `📦 *Produto:* ${name} - ${brand}`,
+      "",
+      "📋 *Especificações:*",
+      specs,
+      "",
+      "📝 *Descrição:*",
+      description,
+      "",
+      "💰 *Valores:*",
+    ];
+
+    // Adicionar informações de pagamento selecionado
     if (displayMode === 'cash') {
-      priceInfo = `R$ ${finalPrice.toFixed(2)} (à vista com 5% desconto)`;
+      messageLines.push(`• *Valor à vista:* R$ ${finalPrice.toFixed(2)} (5% desconto)`);
+      messageLines.push(`• Valor original: R$ ${price.toFixed(2)}`);
     } else if (displayMode === 'installment' && paymentDetails.installments) {
-      priceInfo = `${paymentDetails.installments}x de R$ ${paymentDetails.installmentValue?.toFixed(2)} (Total: R$ ${paymentDetails.totalAmount?.toFixed(2)}) - Visa/Mastercard`;
+      messageLines.push(`• *Parcelado:* ${paymentDetails.installments}x de R$ ${paymentDetails.installmentValue?.toFixed(2)}`);
+      messageLines.push(`• Total: R$ ${paymentDetails.totalAmount?.toFixed(2)}`);
+      messageLines.push(`• 💳 Visa/Mastercard`);
     } else if (displayMode === 'coupon') {
-      priceInfo = `R$ ${finalPrice.toFixed(2)} (com cupom de desconto)`;
+      messageLines.push(`• *Com cupom:* R$ ${finalPrice.toFixed(2)}`);
+      messageLines.push(`• Valor original: R$ ${price.toFixed(2)}`);
+    } else {
+      messageLines.push(`• *Preço de Venda:* R$ ${price.toFixed(2)}`);
     }
-    
-    const message = encodeURIComponent(`Olá! Tenho interesse no produto: ${name} - ${brand}\nValor: ${priceInfo}`);
-    window.open(`https://wa.me/5548999385829?text=${message}`, "_blank");
+
+    // Adicionar preço de custo e margem (informação interna)
+    if (costPrice) {
+      const margin = price - costPrice;
+      const marginPercent = ((margin / costPrice) * 100).toFixed(1);
+      messageLines.push("");
+      messageLines.push("📊 *Info Interna (Negociação):*");
+      messageLines.push(`• Preço de Custo: R$ ${costPrice.toFixed(2)}`);
+      messageLines.push(`• Margem: R$ ${margin.toFixed(2)} (${marginPercent}%)`);
+    }
+
+    // Adicionar link da imagem
+    if (imageLink) {
+      messageLines.push("");
+      messageLines.push(`🖼️ *Imagem:* ${imageLink}`);
+    }
+
+    const message = encodeURIComponent(messageLines.join("\n"));
+    window.open(`https://wa.me/5548991027363?text=${message}`, "_blank");
   };
 
   return (
