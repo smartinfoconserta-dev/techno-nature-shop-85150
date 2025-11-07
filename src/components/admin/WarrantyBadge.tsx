@@ -4,11 +4,12 @@ import { CheckCircle2, AlertTriangle, XCircle } from "lucide-react";
 
 interface WarrantyBadgeProps {
   saleDate: string;
+  warrantyDays?: number;
   size?: "sm" | "default" | "lg";
 }
 
-const WarrantyBadge = ({ saleDate, size = "default" }: WarrantyBadgeProps) => {
-  const warranty = calculateWarranty(saleDate);
+const WarrantyBadge = ({ saleDate, warrantyDays = 90, size = "default" }: WarrantyBadgeProps) => {
+  const warranty = calculateWarranty(saleDate, warrantyDays);
 
   if (!warranty.isActive) {
     return (

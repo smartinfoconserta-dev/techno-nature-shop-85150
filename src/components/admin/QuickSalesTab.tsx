@@ -21,14 +21,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Zap, DollarSign, TrendingUp, Package, Receipt, Edit, Plus } from "lucide-react";
+import { Zap, DollarSign, TrendingUp, Package, Receipt, Edit, Plus, Search } from "lucide-react";
 import { AddQuickSaleDialog } from "./AddQuickSaleDialog";
 import { EditQuickSaleDialog } from "./EditQuickSaleDialog";
+import WarrantyBadge from "./WarrantyBadge";
+import { calculateWarranty } from "@/lib/warrantyHelper";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 const QuickSalesTab = () => {
   const [sales, setSales] = useState<QuickSale[]>([]);
   const [selectedMonth, setSelectedMonth] = useState<string>("");
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [warrantyFilter, setWarrantyFilter] = useState<string>("all");
   const [monthlyTotals, setMonthlyTotals] = useState({
     totalSales: 0,
     totalProfit: 0,
@@ -99,6 +104,34 @@ const QuickSalesTab = () => {
     return `R$ ${value.toFixed(2)}`;
   };
 
+  // Filtrar vendas por busca e garantia
+  const filteredSales = sales.filter(sale => {
+    // Filtro de busca
+    const matchesSearch = sale.productName.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    // Filtro de garantia
+    let matchesWarranty = true;
+    if (warrantyFilter !== "all") {
+      if (!sale.warranty || sale.warranty === 0) {
+        matchesWarranty = warrantyFilter === "none";
+      } else {
+        const warranty = calculateWarranty(sale.saleDate, sale.warranty);
+        
+        if (warrantyFilter === "active") {
+          matchesWarranty = warranty.isActive;
+        } else if (warrantyFilter === "expiring") {
+          matchesWarranty = warranty.isActive && warranty.daysRemaining <= 7;
+        } else if (warrantyFilter === "expired") {
+          matchesWarranty = !warranty.isActive;
+        } else if (warrantyFilter === "none") {
+          matchesWarranty = false;
+        }
+      }
+    }
+    
+    return matchesSearch && matchesWarranty;
+  });
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -113,7 +146,7 @@ const QuickSalesTab = () => {
           </p>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Select value={selectedMonth} onValueChange={handleMonthChange}>
             <SelectTrigger className="w-[180px]">
               <SelectValue />
@@ -126,6 +159,29 @@ const QuickSalesTab = () => {
               ))}
             </SelectContent>
           </Select>
+
+          <Select value={warrantyFilter} onValueChange={setWarrantyFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filtrar garantia" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas garantias</SelectItem>
+              <SelectItem value="active">Em garantia</SelectItem>
+              <SelectItem value="expiring">Expirando (&lt;7d)</SelectItem>
+              <SelectItem value="expired">Expirada</SelectItem>
+              <SelectItem value="none">Sem garantia</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar produto..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9"
+            />
+          </div>
 
           <Button onClick={() => setShowAddDialog(true)}>
             <Plus className="h-4 w-4 mr-2" />
@@ -211,11 +267,13 @@ const QuickSalesTab = () => {
           <CardTitle>Histórico de Vendas</CardTitle>
         </CardHeader>
         <CardContent>
-          {sales.length === 0 ? (
+          {filteredSales.length === 0 ? (
             <div className="text-center py-12">
               <Zap className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
               <p className="text-muted-foreground">
-                Nenhuma venda rápida registrada neste mês
+                {sales.length === 0 
+                  ? "Nenhuma venda rápida registrada neste mês"
+                  : "Nenhuma venda encontrada com os filtros aplicados"}
               </p>
               <Button
                 variant="outline"
@@ -232,6 +290,7 @@ const QuickSalesTab = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Data</TableHead>
+                    <TableHead>Garantia</TableHead>
                     <TableHead>Produto</TableHead>
                     <TableHead className="text-right">Custo</TableHead>
                     <TableHead className="text-right">Venda</TableHead>
@@ -242,10 +301,22 @@ const QuickSalesTab = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {sales.map(sale => (
+                  {filteredSales.map(sale => (
                     <TableRow key={sale.id}>
                       <TableCell className="whitespace-nowrap">
                         {format(new Date(sale.saleDate), "dd/MM/yyyy", { locale: ptBR })}
+                      </TableCell>
+                      <TableCell>
+                        {sale.warranty && sale.warranty > 0 ? (
+                          <WarrantyBadge 
+                            saleDate={sale.saleDate} 
+                            warrantyDays={sale.warranty}
+                          />
+                        ) : (
+                          <Badge variant="secondary" className="bg-gray-100 text-gray-600">
+                            Sem garantia
+                          </Badge>
+                        )}
                       </TableCell>
                       <TableCell className="font-medium">
                         {sale.productName}
