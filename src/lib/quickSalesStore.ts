@@ -8,9 +8,14 @@ export interface QuickSale {
   salePrice: number;
   profit: number;
   
-  // Apenas vendas À VISTA
-  paymentMethod: "cash" | "pix" | "card";
+  // Pagamento (pode ser misto agora)
+  paymentBreakdown?: { cash: number; pix: number; card: number };
+  paymentMethod?: "cash" | "pix" | "card"; // Mantido para compatibilidade com vendas antigas
   taxAmount: number;
+  
+  // Garantia
+  warranty?: number; // 0 = sem garantia, 7, 15, 30, 60, 90 dias
+  warrantyExpiresAt?: string;
   
   notes?: string;
   saleDate: string;

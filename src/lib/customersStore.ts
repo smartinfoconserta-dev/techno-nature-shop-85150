@@ -9,6 +9,8 @@ export interface Customer {
   type: "lojista" | "cliente"; // Tipo de cliente
   creditLimit?: number; // Limite de crédito
   notes?: string;
+  password?: string; // Senha para acessar o portal (opcional)
+  hasPortalAccess?: boolean; // Se tem acesso ao portal
   active: boolean;
   createdAt: string;
   updatedAt: string;
@@ -110,5 +112,26 @@ export const customersStore = {
   deleteCustomer(id: string): void {
     const customers = this.getAllCustomers().filter(c => c.id !== id);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(customers));
+  },
+
+  setPassword(id: string, password: string): Customer {
+    const customers = this.getAllCustomers();
+    const index = customers.findIndex(c => c.id === id);
+    
+    if (index === -1) throw new Error("Cliente não encontrado");
+    
+    customers[index].password = password;
+    customers[index].hasPortalAccess = true;
+    customers[index].updatedAt = new Date().toISOString();
+    
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(customers));
+    return customers[index];
+  },
+
+  authenticateCustomer(cpfCnpj: string, password: string): Customer | null {
+    const customer = this.getAllCustomers().find(
+      c => c.cpfCnpj === cpfCnpj && c.password === password && c.hasPortalAccess
+    );
+    return customer || null;
   },
 };

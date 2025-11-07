@@ -25,6 +25,8 @@ export interface Receivable {
   status: "pending" | "partial" | "paid"; // pending = não pago, partial = pago parcialmente, paid = quitado
   payments: ReceivablePayment[]; // Histórico de pagamentos
   source?: "catalog" | "quick" | "manual"; // Origem da venda: catálogo, venda rápida, ou manual
+  warranty?: number; // 0 = sem garantia, 7, 15, 30, 60, 90 dias
+  warrantyExpiresAt?: string; // Data de expiração da garantia
   notes?: string;
   createdAt: string;
   updatedAt: string;

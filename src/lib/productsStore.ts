@@ -35,6 +35,8 @@ export interface Product {
   invoiceUrl?: string;
   soldOnCredit?: boolean; // Indica se foi vendido a prazo
   receivableId?: string; // ID da conta a receber
+  warranty?: number; // Garantia do produto vendido (quando sold = true)
+  warrantyExpiresAt?: string;
   expenses: ProductExpense[];
   createdAt: string;
 }
@@ -305,7 +307,7 @@ export const productsStore = {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
   },
 
-  markAsSold(id: string, buyerName: string, buyerCpf: string, cash: number, pix: number, card: number): Product {
+  markAsSold(id: string, buyerName: string, buyerCpf: string, cash: number, pix: number, card: number, warranty?: number, warrantyExpiresAt?: string): Product {
     const products = this.getAllProducts();
     const product = products.find((p) => p.id === id);
     
@@ -331,6 +333,8 @@ export const productsStore = {
     product.saleDate = new Date().toISOString();
     product.buyerName = buyerName.trim();
     product.buyerCpf = buyerCpf.trim();
+    product.warranty = warranty;
+    product.warrantyExpiresAt = warrantyExpiresAt;
     
     localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
     return product;

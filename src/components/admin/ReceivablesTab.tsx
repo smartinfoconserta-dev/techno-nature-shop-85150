@@ -98,24 +98,36 @@ const ReceivablesTab = () => {
     setShowPaymentDialog(true);
   };
 
-  const handleConfirmPayment = (amount: number, method: "cash" | "pix" | "card", date: string, notes?: string) => {
+  const handleConfirmPayment = (
+    payments: Array<{method: "cash" | "pix" | "card", amount: number}>, 
+    date: string, 
+    notes?: string
+  ) => {
     try {
       if (!selectedReceivable) return;
 
-      receivablesStore.addPayment(selectedReceivable.id, {
-        amount,
-        paymentMethod: method,
-        paymentDate: date,
-        notes,
+      // Registrar cada pagamento
+      let updatedReceivable = selectedReceivable;
+      
+      payments.forEach(payment => {
+        updatedReceivable = receivablesStore.addPayment(updatedReceivable.id, {
+          amount: payment.amount,
+          paymentDate: date,
+          paymentMethod: payment.method,
+          notes: notes || `Pagamento via ${payment.method === "cash" ? "Dinheiro" : payment.method === "pix" ? "PIX" : "Cartão"}`,
+        });
       });
+
+      const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
 
       toast({
         title: "Pagamento registrado!",
-        description: `R$ ${amount.toFixed(2)} adicionado com sucesso`,
+        description: `R$ ${totalPaid.toFixed(2)} adicionado com sucesso`,
       });
 
       loadReceivables();
       setSelectedReceivable(null);
+      setShowPaymentDialog(false);
     } catch (error: any) {
       toast({
         title: "Erro ao registrar pagamento",

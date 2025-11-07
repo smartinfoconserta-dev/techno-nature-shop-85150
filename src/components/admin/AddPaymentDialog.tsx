@@ -12,36 +12,49 @@ interface AddPaymentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   receivable: Receivable | null;
-  onConfirm: (amount: number, method: "cash" | "pix" | "card", date: string, notes?: string) => void;
+  onConfirm: (payments: Array<{method: "cash" | "pix" | "card", amount: number}>, date: string, notes?: string) => void;
 }
 
 const AddPaymentDialog = ({ open, onOpenChange, receivable, onConfirm }: AddPaymentDialogProps) => {
-  const [amount, setAmount] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState<"cash" | "pix" | "card">("pix");
+  const [cash, setCash] = useState("");
+  const [pix, setPix] = useState("");
+  const [card, setCard] = useState("");
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split("T")[0]);
   const [notes, setNotes] = useState("");
 
   const handleConfirm = () => {
-    const amountValue = parseFloat(amount);
-    if (isNaN(amountValue) || amountValue <= 0) {
-      alert("Informe um valor válido");
+    const cashValue = parseFloat(cash) || 0;
+    const pixValue = parseFloat(pix) || 0;
+    const cardValue = parseFloat(card) || 0;
+    const totalPayment = cashValue + pixValue + cardValue;
+
+    if (totalPayment <= 0) {
+      alert("Informe ao menos uma forma de pagamento");
       return;
     }
 
     if (!receivable) return;
 
-    if (amountValue > receivable.remainingAmount) {
-      alert("Valor do pagamento é maior que o saldo devedor");
+    if (totalPayment > receivable.remainingAmount) {
+      alert("Valor total é maior que o saldo devedor");
       return;
     }
 
-    onConfirm(amountValue, paymentMethod, paymentDate, notes || undefined);
+    // Criar múltiplos pagamentos (um para cada método usado)
+    const payments: Array<{method: "cash" | "pix" | "card", amount: number}> = [];
+    
+    if (cashValue > 0) payments.push({ method: "cash", amount: cashValue });
+    if (pixValue > 0) payments.push({ method: "pix", amount: pixValue });
+    if (cardValue > 0) payments.push({ method: "card", amount: cardValue });
+
+    onConfirm(payments, paymentDate, notes || undefined);
     handleClose();
   };
 
   const handleClose = () => {
-    setAmount("");
-    setPaymentMethod("pix");
+    setCash("");
+    setPix("");
+    setCard("");
     setPaymentDate(new Date().toISOString().split("T")[0]);
     setNotes("");
     onOpenChange(false);
@@ -49,7 +62,8 @@ const AddPaymentDialog = ({ open, onOpenChange, receivable, onConfirm }: AddPaym
 
   if (!receivable) return null;
 
-  const newBalance = receivable.remainingAmount - (parseFloat(amount) || 0);
+  const totalPayment = (parseFloat(cash) || 0) + (parseFloat(pix) || 0) + (parseFloat(card) || 0);
+  const newBalance = receivable.remainingAmount - totalPayment;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -86,32 +100,51 @@ const AddPaymentDialog = ({ open, onOpenChange, receivable, onConfirm }: AddPaym
           <Separator />
 
           <div className="space-y-4">
-            <div>
-              <Label htmlFor="amount">Valor do Pagamento (R$) *</Label>
+            <h4 className="font-semibold">Formas de Pagamento</h4>
+            
+            <div className="space-y-2">
+              <Label>💵 Dinheiro</Label>
               <Input
-                id="amount"
                 type="number"
-                min="0"
-                max={receivable.remainingAmount}
                 step="0.01"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
+                min="0"
+                value={cash}
+                onChange={(e) => setCash(e.target.value)}
+                placeholder="0.00"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label>📱 PIX</Label>
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                value={pix}
+                onChange={(e) => setPix(e.target.value)}
+                placeholder="0.00"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label>💳 Cartão</Label>
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                value={card}
+                onChange={(e) => setCard(e.target.value)}
                 placeholder="0.00"
               />
             </div>
 
-            <div>
-              <Label htmlFor="method">Forma de Pagamento *</Label>
-              <Select value={paymentMethod} onValueChange={(v) => setPaymentMethod(v as any)}>
-                <SelectTrigger id="method">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="cash">💵 Dinheiro</SelectItem>
-                  <SelectItem value="pix">📱 PIX</SelectItem>
-                  <SelectItem value="card">💳 Cartão</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="bg-muted p-3 rounded-lg">
+              <div className="flex justify-between">
+                <span className="font-semibold">Total do Pagamento:</span>
+                <span className="text-xl font-bold text-green-600">
+                  R$ {totalPayment.toFixed(2)}
+                </span>
+              </div>
             </div>
 
             <div>
@@ -135,7 +168,7 @@ const AddPaymentDialog = ({ open, onOpenChange, receivable, onConfirm }: AddPaym
               />
             </div>
 
-            {amount && parseFloat(amount) > 0 && (
+            {totalPayment > 0 && (
               <div className="bg-primary/10 p-3 rounded-lg border border-primary/20">
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium">Novo Saldo Devedor:</span>

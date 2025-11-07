@@ -21,12 +21,13 @@ import { Check, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import CustomerSelector from "./CustomerSelector";
 import NewCustomerDialog from "./NewCustomerDialog";
+import WarrantySelector from "./WarrantySelector";
 
 interface MarkAsSoldDialogProps {
   product: Product;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onConfirm: (buyerName: string, buyerCpf: string, cash: number, pix: number, card: number) => void;
+  onConfirm: (buyerName: string, buyerCpf: string, cash: number, pix: number, card: number, warranty: number, warrantyExpires?: string) => void;
   onUpdate: () => void;
 }
 
@@ -56,6 +57,10 @@ const MarkAsSoldDialog = ({
   const [notes, setNotes] = useState("");
   const [showNewCustomerDialog, setShowNewCustomerDialog] = useState(false);
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [warrantyDays, setWarrantyDays] = useState(90);
+  const [initialCash, setInitialCash] = useState("");
+  const [initialPix, setInitialPix] = useState("");
+  const [initialCard, setInitialCard] = useState("");
 
   useEffect(() => {
     if (open) {
@@ -75,6 +80,10 @@ const MarkAsSoldDialog = ({
       setInitialPayment("");
       setDueDate("");
       setNotes("");
+      setWarrantyDays(90);
+      setInitialCash("");
+      setInitialPix("");
+      setInitialCard("");
     }
   }, [open]);
 
@@ -152,14 +161,27 @@ const MarkAsSoldDialog = ({
         return;
       }
 
-      onConfirm(trimmedName, buyerCpf, cashValue, pixValue, cardValue);
+      const warrantyExpires = warrantyDays > 0 
+        ? new Date(Date.now() + warrantyDays * 24 * 60 * 60 * 1000).toISOString()
+        : undefined;
+
+      onConfirm(trimmedName, buyerCpf, cashValue, pixValue, cardValue, warrantyDays, warrantyExpires);
     } else {
       if (!selectedCustomer) {
         toast({ title: "Erro", description: "Selecione um cliente", variant: "destructive" });
         return;
       }
 
+      const cashInitial = parseFloat(initialCash) || 0;
+      const pixInitial = parseFloat(initialPix) || 0;
+      const cardInitial = parseFloat(initialCard) || 0;
+      const totalInitial = cashInitial + pixInitial + cardInitial;
+
       try {
+        const warrantyExpires = warrantyDays > 0 
+          ? new Date(Date.now() + warrantyDays * 24 * 60 * 60 * 1000).toISOString()
+          : undefined;
+
         const receivable = receivablesStore.addReceivable({
           customerId: selectedCustomer.id,
           customerCode: selectedCustomer.code,
@@ -167,21 +189,45 @@ const MarkAsSoldDialog = ({
           productId: product.id,
           productName: product.name,
           totalAmount: finalPrice,
-          paidAmount: initialPaymentValue,
+          paidAmount: totalInitial,
           couponCode: couponValidated ? couponCode.trim().toUpperCase() : undefined,
           couponDiscount: couponValidated ? couponDiscount : undefined,
           dueDate: dueDate || undefined,
           notes: notes || undefined,
-        payments: initialPaymentValue > 0 ? [{
-          id: Date.now().toString(),
-          amount: initialPaymentValue,
-          paymentDate: new Date().toISOString(),
-          paymentMethod: "cash",
-          notes: "Pagamento inicial",
-        }] : [],
+          warranty: warrantyDays,
+          warrantyExpiresAt: warrantyExpires,
+          payments: [],
         });
 
-        productsStore.markAsSoldOnCredit(product.id, selectedCustomer.name, selectedCustomer.cpfCnpj, finalPrice, receivable.id);
+        // Adicionar pagamentos iniciais (um para cada método)
+        if (cashInitial > 0) {
+          receivablesStore.addPayment(receivable.id, {
+            amount: cashInitial,
+            paymentDate: new Date().toISOString().split('T')[0],
+            paymentMethod: "cash",
+            notes: "Pagamento inicial - Dinheiro",
+          });
+        }
+        
+        if (pixInitial > 0) {
+          receivablesStore.addPayment(receivable.id, {
+            amount: pixInitial,
+            paymentDate: new Date().toISOString().split('T')[0],
+            paymentMethod: "pix",
+            notes: "Pagamento inicial - PIX",
+          });
+        }
+        
+        if (cardInitial > 0) {
+          receivablesStore.addPayment(receivable.id, {
+            amount: cardInitial,
+            paymentDate: new Date().toISOString().split('T')[0],
+            paymentMethod: "card",
+            notes: "Pagamento inicial - Cartão",
+          });
+        }
+
+        productsStore.markAsSoldOnCredit(product.id, selectedCustomer.name, selectedCustomer.cpfCnpj, finalPrice, receivable.id, warrantyDays, warrantyExpires);
 
         toast({ title: "Venda registrada!", description: "Conta a receber criada com sucesso" });
         onUpdate();
@@ -235,9 +281,11 @@ const MarkAsSoldDialog = ({
               <div className="space-y-2"><Label>CPF *</Label><Input value={buyerCpf} onChange={(e) => setBuyerCpf(formatCpf(e.target.value))} maxLength={14} placeholder="000.000.000-00" /></div>
               <div><h4 className="font-semibold mb-3">Formas de Pagamento</h4><div className="space-y-3"><div className="space-y-2"><Label>💵 Dinheiro</Label><Input type="number" step="0.01" min="0" value={cash} onChange={(e) => setCash(e.target.value)} placeholder="0.00" /></div><div className="space-y-2"><Label>📱 PIX</Label><Input type="number" step="0.01" min="0" value={pix} onChange={(e) => setPix(e.target.value)} placeholder="0.00" /></div><div className="space-y-2"><Label>💳 Cartão</Label><Input type="number" step="0.01" min="0" value={card} onChange={(e) => setCard(e.target.value)} placeholder="0.00" /></div></div></div>
               <div className="bg-muted p-4 rounded-lg space-y-2"><div className="flex justify-between"><span className="font-semibold">Total:</span><span className="text-xl font-bold text-green-600">R$ {totalSale.toFixed(2)}</span></div><div className="flex justify-between text-sm"><span className="text-muted-foreground">Imposto ({digitalTaxRate}%):</span><span className="font-semibold text-orange-600">R$ {taxAmount.toFixed(2)}</span></div></div>
+              <Separator />
+              <WarrantySelector value={warrantyDays} onChange={setWarrantyDays} />
             </>
           ) : (
-            <><CustomerSelector selectedCustomer={selectedCustomer} customers={customers} onCustomerSelect={setSelectedCustomer} onNewCustomer={() => setShowNewCustomerDialog(true)} /><div className="bg-muted/50 p-4 rounded-lg space-y-3"><div className="flex justify-between"><span className="font-medium">Valor Total:</span><span className="text-xl font-bold">R$ {finalPrice.toFixed(2)}</span></div><div className="space-y-2"><Label>Pagamento Inicial</Label><Input type="number" step="0.01" min="0" max={finalPrice} value={initialPayment} onChange={(e) => setInitialPayment(e.target.value)} placeholder="0.00" /></div><div className="flex justify-between"><span className="text-muted-foreground">Restante:</span><span className="text-lg font-bold text-red-600">R$ {remainingAmount.toFixed(2)}</span></div><div className="space-y-2"><Label>Vencimento</Label><Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} /></div><div className="space-y-2"><Label>Observações</Label><Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Informações adicionais" /></div></div></>
+            <><CustomerSelector selectedCustomer={selectedCustomer} customers={customers} onCustomerSelect={setSelectedCustomer} onNewCustomer={() => setShowNewCustomerDialog(true)} /><div className="bg-muted/50 p-4 rounded-lg space-y-3"><div className="flex justify-between"><span className="font-medium">Valor Total:</span><span className="text-xl font-bold">R$ {finalPrice.toFixed(2)}</span></div><div className="space-y-2"><Label>Pagamento Inicial</Label><div className="space-y-3 pl-4 border-l-2 border-muted"><div className="space-y-2"><Label className="text-sm">💵 Dinheiro</Label><Input type="number" step="0.01" min="0" value={initialCash} onChange={(e) => setInitialCash(e.target.value)} placeholder="0.00" /></div><div className="space-y-2"><Label className="text-sm">📱 PIX</Label><Input type="number" step="0.01" min="0" value={initialPix} onChange={(e) => setInitialPix(e.target.value)} placeholder="0.00" /></div><div className="space-y-2"><Label className="text-sm">💳 Cartão</Label><Input type="number" step="0.01" min="0" value={initialCard} onChange={(e) => setInitialCard(e.target.value)} placeholder="0.00" /></div><div className="bg-primary/10 p-2 rounded"><div className="flex justify-between text-sm"><span>Total Inicial:</span><span className="font-bold">R$ {((parseFloat(initialCash) || 0) + (parseFloat(initialPix) || 0) + (parseFloat(initialCard) || 0)).toFixed(2)}</span></div></div></div></div><div className="flex justify-between"><span className="text-muted-foreground">Restante:</span><span className="text-lg font-bold text-red-600">R$ {(finalPrice - ((parseFloat(initialCash) || 0) + (parseFloat(initialPix) || 0) + (parseFloat(initialCard) || 0))).toFixed(2)}</span></div><div className="space-y-2"><Label>Vencimento</Label><Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} /></div><div className="space-y-2"><Label>Observações</Label><Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Informações adicionais" /></div></div><Separator /><WarrantySelector value={warrantyDays} onChange={setWarrantyDays} /></>
           )}
         </div>
 

@@ -7,7 +7,10 @@ import Index from "./pages/Index";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 import Install from "./pages/Install";
+import CustomerLogin from "./pages/CustomerLogin";
+import CustomerPortal from "./pages/CustomerPortal";
 import PrivateRoute from "./components/PrivateRoute";
+import CustomerPrivateRoute from "./components/CustomerPrivateRoute";
 
 const queryClient = new QueryClient();
 
@@ -20,6 +23,12 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/install" element={<Install />} />
+          <Route path="/customer-login" element={<CustomerLogin />} />
+          <Route path="/portal" element={
+            <CustomerPrivateRoute>
+              <CustomerPortal />
+            </CustomerPrivateRoute>
+          } />
           <Route path="/admin" element={
             <PrivateRoute>
               <Admin />

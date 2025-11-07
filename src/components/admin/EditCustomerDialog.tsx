@@ -25,6 +25,7 @@ const EditCustomerDialog = ({ open, onOpenChange, customer, onCustomerUpdated }:
   const [address, setAddress] = useState("");
   const [creditLimit, setCreditLimit] = useState("");
   const [notes, setNotes] = useState("");
+  const [password, setPassword] = useState("");
 
   useEffect(() => {
     if (customer && open) {
@@ -36,6 +37,7 @@ const EditCustomerDialog = ({ open, onOpenChange, customer, onCustomerUpdated }:
       setAddress(customer.address || "");
       setCreditLimit(customer.creditLimit ? customer.creditLimit.toString() : "");
       setNotes(customer.notes || "");
+      setPassword("");
     }
   }, [customer, open]);
 
@@ -71,6 +73,11 @@ const EditCustomerDialog = ({ open, onOpenChange, customer, onCustomerUpdated }:
         creditLimit: creditLimit ? parseFloat(creditLimit) : 0,
         notes: notes || undefined,
       });
+
+      // Atualizar senha se fornecida
+      if (password.trim()) {
+        customersStore.setPassword(customer.id, password.trim());
+      }
 
       toast({
         title: "Sucesso!",
@@ -196,6 +203,20 @@ const EditCustomerDialog = ({ open, onOpenChange, customer, onCustomerUpdated }:
               placeholder="Informações adicionais sobre o cliente"
               rows={3}
             />
+          </div>
+
+          <div>
+            <Label htmlFor="password">Senha do Portal (opcional)</Label>
+            <Input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Digite uma senha para acesso ao portal"
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Se preenchido, o cliente poderá acessar o portal com CPF/CNPJ e senha
+            </p>
           </div>
         </div>
 
