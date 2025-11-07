@@ -443,7 +443,7 @@ export const productsStore = {
     return product;
   },
 
-  markAsSoldOnCredit(id: string, buyerName: string, buyerCpf: string, totalAmount: number, receivableId: string): Product {
+  markAsSoldOnCredit(id: string, buyerName: string, buyerCpf: string, totalAmount: number, receivableId: string, warranty?: number, warrantyExpiresAt?: string): Product {
     const products = this.getAllProducts();
     const product = products.find((p) => p.id === id);
     
@@ -457,6 +457,8 @@ export const productsStore = {
     product.buyerCpf = buyerCpf.trim();
     product.salePrice = totalAmount;
     product.saleDate = new Date().toISOString();
+    product.warranty = warranty;
+    product.warrantyExpiresAt = warrantyExpiresAt;
     
     localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
     return product;
