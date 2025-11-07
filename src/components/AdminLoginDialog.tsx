@@ -48,7 +48,7 @@ const AdminLoginDialog = ({ open, onOpenChange }: AdminLoginDialogProps) => {
         toast({
           variant: "destructive",
           title: "Erro no login",
-          description: "Email ou senha incorretos.",
+          description: "Usuário ou senha incorretos.",
         });
       }
       
@@ -64,16 +64,16 @@ const AdminLoginDialog = ({ open, onOpenChange }: AdminLoginDialogProps) => {
         <DialogHeader>
           <DialogTitle>Acesso Administrativo</DialogTitle>
           <DialogDescription>
-            Digite suas credenciais para acessar o painel admin.
+            Digite seu usuário e senha para acessar o painel admin.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">Usuário</Label>
             <Input
               id="email"
-              type="email"
-              placeholder="seu@email.com"
+              type="text"
+              placeholder="Digite seu usuário"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
