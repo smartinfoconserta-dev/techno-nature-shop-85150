@@ -169,6 +169,7 @@ const CustomersTab = () => {
               <TableHead>Tipo</TableHead>
               <TableHead>Telefone</TableHead>
               <TableHead>Em Aberto</TableHead>
+              <TableHead>Crédito</TableHead>
               <TableHead>Portal</TableHead>
               <TableHead>Ações</TableHead>
             </TableRow>
@@ -176,7 +177,7 @@ const CustomersTab = () => {
           <TableBody>
             {filteredCustomers.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center text-muted-foreground">
+                <TableCell colSpan={8} className="text-center text-muted-foreground">
                   Nenhum cliente encontrado
                 </TableCell>
               </TableRow>
@@ -199,6 +200,15 @@ const CustomersTab = () => {
                       <span className={debt > 0 ? "text-red-600 font-semibold" : "text-muted-foreground"}>
                         R$ {debt.toFixed(2)}
                       </span>
+                    </TableCell>
+                    <TableCell>
+                      {customer.creditBalance && customer.creditBalance > 0 ? (
+                        <span className="text-green-600 font-semibold">
+                          💰 R$ {customer.creditBalance.toFixed(2)}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">R$ 0.00</span>
+                      )}
                     </TableCell>
                     <TableCell>
                       {customer.hasPortalAccess ? (
