@@ -26,7 +26,7 @@ export const useAuth = () => {
   const [authState, setAuthState] = useState<AuthState>(getInitialAuthState());
 
   const login = (email: string, password: string): boolean => {
-    if (email === "alvessramon@gmail.com" && password === "macacapreta02") {
+    if (email === "alvessramon" && password === "macacapreta02") {
       localStorage.setItem("auth_token", "admin_logged_in");
       localStorage.setItem("user_email", email);
       setAuthState({
