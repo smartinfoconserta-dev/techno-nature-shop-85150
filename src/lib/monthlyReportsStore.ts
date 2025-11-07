@@ -98,10 +98,17 @@ export const monthlyReportsStore = {
       totalGross += qs.salePrice;
       totalExpenses += qs.costPrice;
       
-      // Todas as vendas rápidas agora são à vista
-      if (qs.paymentMethod === "cash") totalCash += qs.salePrice;
-      if (qs.paymentMethod === "pix") totalPix += qs.salePrice;
-      if (qs.paymentMethod === "card") totalCard += qs.salePrice;
+      // Suporta pagamento misto e método único
+      if (qs.paymentBreakdown) {
+        totalCash += qs.paymentBreakdown.cash || 0;
+        totalPix += qs.paymentBreakdown.pix || 0;
+        totalCard += qs.paymentBreakdown.card || 0;
+      } else if (qs.paymentMethod) {
+        // Fallback para vendas antigas
+        if (qs.paymentMethod === "cash") totalCash += qs.salePrice;
+        if (qs.paymentMethod === "pix") totalPix += qs.salePrice;
+        if (qs.paymentMethod === "card") totalCard += qs.salePrice;
+      }
 
       const margin = qs.salePrice > 0 ? ((qs.salePrice - qs.costPrice) / qs.salePrice) * 100 : 0;
       totalMargins += margin;
@@ -204,10 +211,17 @@ export const monthlyReportsStore = {
       totalGross += qs.salePrice;
       totalExpenses += qs.costPrice;
       
-      // Todas as vendas rápidas agora são à vista
-      if (qs.paymentMethod === "cash") totalCash += qs.salePrice;
-      if (qs.paymentMethod === "pix") totalPix += qs.salePrice;
-      if (qs.paymentMethod === "card") totalCard += qs.salePrice;
+      // Suporta pagamento misto e método único
+      if (qs.paymentBreakdown) {
+        totalCash += qs.paymentBreakdown.cash || 0;
+        totalPix += qs.paymentBreakdown.pix || 0;
+        totalCard += qs.paymentBreakdown.card || 0;
+      } else if (qs.paymentMethod) {
+        // Fallback para vendas antigas
+        if (qs.paymentMethod === "cash") totalCash += qs.salePrice;
+        if (qs.paymentMethod === "pix") totalPix += qs.salePrice;
+        if (qs.paymentMethod === "card") totalCard += qs.salePrice;
+      }
 
       const margin = qs.salePrice > 0 ? ((qs.salePrice - qs.costPrice) / qs.salePrice) * 100 : 0;
       totalMargins += margin;

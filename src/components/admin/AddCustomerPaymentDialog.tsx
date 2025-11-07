@@ -35,10 +35,14 @@ import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const formSchema = z.object({
-  amount: z.number().min(0.01, "Valor deve ser maior que 0"),
-  paymentMethod: z.enum(["cash", "pix", "card"]),
+  cash: z.number().min(0, "Valor deve ser maior ou igual a 0"),
+  pix: z.number().min(0, "Valor deve ser maior ou igual a 0"),
+  card: z.number().min(0, "Valor deve ser maior ou igual a 0"),
   paymentDate: z.date(),
   notes: z.string().optional(),
+}).refine((data) => (data.cash + data.pix + data.card) > 0, {
+  message: "Pelo menos uma forma de pagamento deve ter valor",
+  path: ["cash"],
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -67,14 +71,19 @@ export function AddCustomerPaymentDialog({
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      amount: 0,
-      paymentMethod: "cash",
+      cash: 0,
+      pix: 0,
+      card: 0,
       paymentDate: new Date(),
       notes: "",
     },
   });
 
-  const amount = form.watch("amount");
+  const cash = form.watch("cash");
+  const pix = form.watch("pix");
+  const card = form.watch("card");
+  
+  const totalAmount = cash + pix + card;
 
   // Calcula preview da distribuição
   const calculateDistribution = (value: number) => {
@@ -127,6 +136,8 @@ export function AddCustomerPaymentDialog({
     setIsLoading(true);
 
     try {
+      const totalPayment = data.cash + data.pix + data.card;
+      
       const openReceivables = receivablesStore
         .getReceivablesByCustomer(customerId)
         .filter(r => r.status !== "paid")
@@ -136,33 +147,55 @@ export function AddCustomerPaymentDialog({
         throw new Error("Cliente não possui compras em aberto");
       }
 
-      let remaining = data.amount;
       const paymentDate = format(data.paymentDate, "yyyy-MM-dd");
+      const customerName = customersStore.getCustomerById(customerId)?.name || "Cliente";
+      
+      // Processa cada método de pagamento separadamente
+      const methods: Array<{ method: "cash" | "pix" | "card"; amount: number }> = [];
+      if (data.cash > 0) methods.push({ method: "cash", amount: data.cash });
+      if (data.pix > 0) methods.push({ method: "pix", amount: data.pix });
+      if (data.card > 0) methods.push({ method: "card", amount: data.card });
+
+      let totalApplied = 0;
       let appliedCount = 0;
 
-      for (const receivable of openReceivables) {
-        if (remaining <= 0) break;
+      for (const { method, amount } of methods) {
+        let remaining = amount;
+        
+        for (const receivable of openReceivables) {
+          if (remaining <= 0) break;
 
-        const allocation = Math.min(receivable.remainingAmount, remaining);
+          const currentRemaining = receivablesStore.getReceivablesByCustomer(customerId)
+            .find(r => r.id === receivable.id)?.remainingAmount || 0;
+          
+          if (currentRemaining <= 0) continue;
 
-        receivablesStore.addPayment(receivable.id, {
-          amount: allocation,
-          paymentMethod: data.paymentMethod,
-          paymentDate,
-          notes: data.notes || `Pagamento do cliente ${customersStore.getCustomerById(customerId)?.name}`,
-        });
+          const allocation = Math.min(currentRemaining, remaining);
 
-        remaining -= allocation;
-        appliedCount++;
+          receivablesStore.addPayment(receivable.id, {
+            amount: allocation,
+            paymentMethod: method,
+            paymentDate,
+            notes: data.notes || `Pagamento ${method.toUpperCase()} - ${customerName}`,
+          });
+
+          remaining -= allocation;
+          totalApplied += allocation;
+        }
       }
 
-      const totalApplied = data.amount - remaining;
+      appliedCount = openReceivables.filter(r => {
+        const updated = receivablesStore.getReceivablesByCustomer(customerId)
+          .find(rec => rec.id === r.id);
+        return updated && updated.remainingAmount < r.remainingAmount;
+      }).length;
 
       toast({
         title: "Pagamento registrado!",
         description: `R$ ${totalApplied.toFixed(2)} distribuído em ${appliedCount} compra${appliedCount > 1 ? 's' : ''}`,
       });
 
+      const remaining = totalPayment - totalApplied;
       if (remaining > 0) {
         toast({
           title: "Atenção",
@@ -219,30 +252,84 @@ export function AddCustomerPaymentDialog({
                 </AlertDescription>
               </Alert>
 
-              {/* Valor */}
-              <FormField
-                control={form.control}
-                name="amount"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Valor do Pagamento *</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        placeholder="0.00"
-                        {...field}
-                        onChange={e => {
-                          const value = parseFloat(e.target.value) || 0;
-                          field.onChange(value);
-                          handleAmountChange(value);
-                        }}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {/* Formas de Pagamento Misto */}
+              <div className="space-y-3">
+                <FormLabel>💰 Formas de Pagamento *</FormLabel>
+                <div className="grid grid-cols-3 gap-3">
+                  <FormField
+                    control={form.control}
+                    name="cash"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs">💵 Dinheiro</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            placeholder="0.00"
+                            {...field}
+                            onChange={e => {
+                              const value = parseFloat(e.target.value) || 0;
+                              field.onChange(value);
+                              handleAmountChange(value + pix + card);
+                            }}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="pix"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs">📱 PIX</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            placeholder="0.00"
+                            {...field}
+                            onChange={e => {
+                              const value = parseFloat(e.target.value) || 0;
+                              field.onChange(value);
+                              handleAmountChange(cash + value + card);
+                            }}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="card"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs">💳 Cartão</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            placeholder="0.00"
+                            {...field}
+                            onChange={e => {
+                              const value = parseFloat(e.target.value) || 0;
+                              field.onChange(value);
+                              handleAmountChange(cash + pix + value);
+                            }}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Total: <strong className="text-foreground">R$ {totalAmount.toFixed(2)}</strong>
+                </p>
+              </div>
 
               {/* Preview da Distribuição */}
               {distributionPreview.length > 0 && (
@@ -261,43 +348,6 @@ export function AddCustomerPaymentDialog({
                 </div>
               )}
 
-              {/* Forma de Pagamento */}
-              <FormField
-                control={form.control}
-                name="paymentMethod"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Forma de Pagamento *</FormLabel>
-                    <FormControl>
-                      <RadioGroup
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                        className="flex gap-4"
-                      >
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="cash" id="cash-payment" />
-                          <Label htmlFor="cash-payment" className="cursor-pointer">
-                            💵 Dinheiro
-                          </Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="pix" id="pix-payment" />
-                          <Label htmlFor="pix-payment" className="cursor-pointer">
-                            📱 PIX
-                          </Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="card" id="card-payment" />
-                          <Label htmlFor="card-payment" className="cursor-pointer">
-                            💳 Cartão
-                          </Label>
-                        </div>
-                      </RadioGroup>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
 
               {/* Data */}
               <FormField

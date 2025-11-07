@@ -13,7 +13,7 @@ const CustomerLogin = () => {
   const { login } = useCustomerAuth();
   const { toast } = useToast();
   
-  const [cpfCnpj, setCpfCnpj] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -22,7 +22,7 @@ const CustomerLogin = () => {
     setLoading(true);
 
     try {
-      const customer = customersStore.authenticateCustomer(cpfCnpj, password);
+      const customer = customersStore.authenticateCustomerByIdentifier(identifier, password);
       
       if (customer) {
         login(customer);
@@ -30,7 +30,7 @@ const CustomerLogin = () => {
       } else {
         toast({
           title: "Erro no login",
-          description: "CPF/CNPJ ou senha incorretos",
+          description: "CPF/CNPJ/Código ou senha incorretos",
           variant: "destructive",
         });
       }
@@ -55,11 +55,11 @@ const CustomerLogin = () => {
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
-              <Label>CPF/CNPJ</Label>
+              <Label>CPF/CNPJ ou Código</Label>
               <Input
-                value={cpfCnpj}
-                onChange={(e) => setCpfCnpj(e.target.value)}
-                placeholder="000.000.000-00"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
+                placeholder="000.000.000-00 ou CLI001"
                 required
               />
             </div>

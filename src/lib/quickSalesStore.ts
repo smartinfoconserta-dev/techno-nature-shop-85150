@@ -108,9 +108,17 @@ export const quickSalesStore = {
       totalProfit += sale.profit;
       totalTax += sale.taxAmount || 0;
 
-      if (sale.paymentMethod === "cash") totalCash += sale.salePrice;
-      if (sale.paymentMethod === "pix") totalPix += sale.salePrice;
-      if (sale.paymentMethod === "card") totalCard += sale.salePrice;
+      // Suporta pagamento misto e método único
+      if (sale.paymentBreakdown) {
+        totalCash += sale.paymentBreakdown.cash || 0;
+        totalPix += sale.paymentBreakdown.pix || 0;
+        totalCard += sale.paymentBreakdown.card || 0;
+      } else if (sale.paymentMethod) {
+        // Fallback para vendas antigas
+        if (sale.paymentMethod === "cash") totalCash += sale.salePrice;
+        if (sale.paymentMethod === "pix") totalPix += sale.salePrice;
+        if (sale.paymentMethod === "card") totalCard += sale.salePrice;
+      }
     });
 
     return {

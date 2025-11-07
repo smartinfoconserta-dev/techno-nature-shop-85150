@@ -34,13 +34,17 @@ import { receivablesStore } from "@/lib/receivablesStore";
 import { customersStore } from "@/lib/customersStore";
 import { productsStore } from "@/lib/productsStore";
 import { useToast } from "@/hooks/use-toast";
+import WarrantySelector from "./WarrantySelector";
 
 const formSchema = z.object({
   productName: z.string().min(1, "Nome do produto é obrigatório"),
   costPrice: z.number().optional(),
   salePrice: z.number().min(0.01, "Preço de venda deve ser maior que 0"),
   dueDate: z.date().optional(),
-  initialPayment: z.number().optional(),
+  initialCash: z.number().min(0).optional(),
+  initialPix: z.number().min(0).optional(),
+  initialCard: z.number().min(0).optional(),
+  warranty: z.number(),
   notes: z.string().optional(),
 });
 
@@ -72,7 +76,10 @@ export function AddManualReceivableDialog({
       productName: "",
       costPrice: 0,
       salePrice: 0,
-      initialPayment: 0,
+      initialCash: 0,
+      initialPix: 0,
+      initialCard: 0,
+      warranty: 0,
       notes: "",
     },
   });
@@ -106,6 +113,17 @@ export function AddManualReceivableDialog({
         ? selectedProductId 
         : `manual_${Date.now()}`;
 
+      // Calcula total de entrada
+      const totalInitial = (data.initialCash || 0) + (data.initialPix || 0) + (data.initialCard || 0);
+
+      // Calcula data de expiração da garantia
+      let warrantyExpiresAt: string | undefined;
+      if (data.warranty > 0) {
+        const expirationDate = new Date();
+        expirationDate.setDate(expirationDate.getDate() + data.warranty);
+        warrantyExpiresAt = expirationDate.toISOString();
+      }
+
       // Cria conta a receber
       const receivable = receivablesStore.addReceivable({
         customerId,
@@ -116,19 +134,38 @@ export function AddManualReceivableDialog({
         costPrice: data.costPrice || 0,
         salePrice: data.salePrice,
         totalAmount: data.salePrice,
-        paidAmount: data.initialPayment || 0,
+        paidAmount: totalInitial,
         dueDate: data.dueDate ? format(data.dueDate, "yyyy-MM-dd") : undefined,
         payments: [],
         source: productSource === "catalog" ? "catalog" : "manual",
+        warranty: data.warranty,
+        warrantyExpiresAt,
       });
 
-      // Adiciona pagamento inicial se houver
-      if (data.initialPayment && data.initialPayment > 0) {
+      // Adiciona pagamentos iniciais separados se houver
+      const paymentDate = format(new Date(), "yyyy-MM-dd");
+      if (data.initialCash && data.initialCash > 0) {
         receivablesStore.addPayment(receivable.id, {
-          amount: data.initialPayment,
-          paymentDate: format(new Date(), "yyyy-MM-dd"),
+          amount: data.initialCash,
+          paymentDate,
           paymentMethod: "cash",
-          notes: data.notes || "Pagamento inicial",
+          notes: data.notes || "Pagamento inicial - Dinheiro",
+        });
+      }
+      if (data.initialPix && data.initialPix > 0) {
+        receivablesStore.addPayment(receivable.id, {
+          amount: data.initialPix,
+          paymentDate,
+          paymentMethod: "pix",
+          notes: data.notes || "Pagamento inicial - PIX",
+        });
+      }
+      if (data.initialCard && data.initialCard > 0) {
+        receivablesStore.addPayment(receivable.id, {
+          amount: data.initialCard,
+          paymentDate,
+          paymentMethod: "card",
+          notes: data.notes || "Pagamento inicial - Cartão",
         });
       }
 
@@ -139,7 +176,9 @@ export function AddManualReceivableDialog({
           customer.name,
           customer.cpfCnpj || "",
           data.salePrice,
-          receivable.id
+          receivable.id,
+          data.warranty,
+          warrantyExpiresAt
         );
       }
 
@@ -319,69 +358,127 @@ export function AddManualReceivableDialog({
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-4">
-              {/* Data de Vencimento */}
-              <FormField
-                control={form.control}
-                name="dueDate"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Data Vencimento (opcional)</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant="outline"
-                            className={cn(
-                              "pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? (
-                              format(field.value, "dd/MM/yyyy", { locale: ptBR })
-                            ) : (
-                              <span>Selecione</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          disabled={(date) => date < new Date()}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Valor Entrada */}
-              <FormField
-                control={form.control}
-                name="initialPayment"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Valor Entrada (opcional)</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        placeholder="0.00"
-                        {...field}
-                        onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
+            {/* Data de Vencimento */}
+            <FormField
+              control={form.control}
+              name="dueDate"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>Data Vencimento (opcional)</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "pl-3 text-left font-normal",
+                            !field.value && "text-muted-foreground"
+                          )}
+                        >
+                          {field.value ? (
+                            format(field.value, "dd/MM/yyyy", { locale: ptBR })
+                          ) : (
+                            <span>Selecione</span>
+                          )}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field.value}
+                        onSelect={field.onChange}
+                        disabled={(date) => date < new Date()}
+                        initialFocus
                       />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                    </PopoverContent>
+                  </Popover>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Pagamento Inicial Misto */}
+            <div className="space-y-3">
+              <FormLabel>💵 Pagamento Inicial (opcional)</FormLabel>
+              <div className="grid grid-cols-3 gap-3">
+                <FormField
+                  control={form.control}
+                  name="initialCash"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs">💵 Dinheiro</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="0.00"
+                          {...field}
+                          onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="initialPix"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs">📱 PIX</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="0.00"
+                          {...field}
+                          onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="initialCard"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs">💳 Cartão</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="0.00"
+                          {...field}
+                          onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Total entrada: <strong className="text-foreground">
+                  R$ {((form.watch("initialCash") || 0) + (form.watch("initialPix") || 0) + (form.watch("initialCard") || 0)).toFixed(2)}
+                </strong>
+              </p>
             </div>
+
+            {/* Garantia */}
+            <FormField
+              control={form.control}
+              name="warranty"
+              render={({ field }) => (
+                <FormItem>
+                  <WarrantySelector value={field.value} onChange={field.onChange} />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             {/* Observações */}
             <FormField

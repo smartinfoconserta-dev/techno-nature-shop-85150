@@ -134,4 +134,21 @@ export const customersStore = {
     );
     return customer || null;
   },
+
+  authenticateCustomerByIdentifier(identifier: string, password: string): Customer | null {
+    const normalized = identifier.trim().toUpperCase();
+    const customer = this.getAllCustomers().find(
+      c => (c.code.toUpperCase() === normalized || c.cpfCnpj === identifier) 
+           && c.password === password 
+           && c.hasPortalAccess
+    );
+    return customer || null;
+  },
+
+  getCustomerByIdentifier(identifier: string): Customer | undefined {
+    const normalized = identifier.trim().toUpperCase();
+    return this.getAllCustomers().find(
+      c => c.code.toUpperCase() === normalized || c.cpfCnpj === identifier
+    );
+  },
 };

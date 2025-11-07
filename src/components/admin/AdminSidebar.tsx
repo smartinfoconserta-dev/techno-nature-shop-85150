@@ -34,6 +34,7 @@ const navItems: NavItem[] = [
   { title: "Produtos", value: "products", icon: Package },
   { title: "Vendas Rápidas", value: "quick-sales", icon: Zap },
   { title: "Caderneta", value: "receivables", icon: DollarSign },
+  { title: "Clientes", value: "customers", icon: Users },
   { title: "Financeiro", value: "finance", icon: BarChart3 },
   { title: "Histórico", value: "history", icon: History },
   { title: "Cupons", value: "coupons", icon: Ticket },
