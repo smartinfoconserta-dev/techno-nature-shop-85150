@@ -35,6 +35,8 @@ import EditCustomerDialog from "./EditCustomerDialog";
 import { RefundOptionsDialog } from "./RefundOptionsDialog";
 import { creditHistoryStore } from "@/lib/creditHistoryStore";
 import { useToast } from "@/hooks/use-toast";
+import { RemoveCreditDialog } from "./RemoveCreditDialog";
+import { AddCreditDialog } from "./AddCreditDialog";
 
 interface CustomerReceivablesDialogProps {
   open: boolean;
@@ -59,6 +61,9 @@ const CustomerReceivablesDialog = ({
   const [showEditCustomerDialog, setShowEditCustomerDialog] = useState(false);
   const [deleteReceivableId, setDeleteReceivableId] = useState<string | null>(null);
   const [receivableToRefund, setReceivableToRefund] = useState<Receivable | null>(null);
+  const [showCreditHistory, setShowCreditHistory] = useState(false);
+  const [showRemoveCreditDialog, setShowRemoveCreditDialog] = useState(false);
+  const [showAddCreditDialog, setShowAddCreditDialog] = useState(false);
 
   useEffect(() => {
     if (open && customerId) {
@@ -287,11 +292,70 @@ const CustomerReceivablesDialog = ({
               {customer && customer.creditBalance && customer.creditBalance > 0 && (
                 <Card className="border-green-500 bg-green-50 dark:bg-green-950/20">
                   <CardContent className="pt-4 pb-3">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-xs text-green-700 dark:text-green-400">💰 Crédito Disponível (Haver)</p>
-                        <p className="text-2xl font-bold text-green-600">R$ {customer.creditBalance.toFixed(2)}</p>
+                    <div className="space-y-3">
+                      {/* Header com saldo */}
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-xs text-green-700 dark:text-green-400">💰 Crédito Disponível (Haver)</p>
+                          <p className="text-2xl font-bold text-green-600">R$ {customer.creditBalance.toFixed(2)}</p>
+                        </div>
                       </div>
+
+                      {/* Botões de ação */}
+                      <div className="flex gap-2">
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => setShowCreditHistory(!showCreditHistory)}
+                        >
+                          📋 {showCreditHistory ? "Ocultar" : "Ver Histórico"}
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => setShowAddCreditDialog(true)}
+                        >
+                          ➕ Adicionar
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="destructive"
+                          onClick={() => setShowRemoveCreditDialog(true)}
+                        >
+                          💸 Remover
+                        </Button>
+                      </div>
+
+                      {/* Histórico (se expandido) */}
+                      {showCreditHistory && (
+                        <div className="border-t pt-3 space-y-2">
+                          <p className="text-xs font-semibold text-green-700 dark:text-green-400">
+                            📋 Histórico de Movimentações
+                          </p>
+                          {creditHistoryStore.getTransactionsByCustomer(customer.id).length === 0 ? (
+                            <p className="text-xs text-muted-foreground text-center py-2">
+                              Nenhuma movimentação registrada
+                            </p>
+                          ) : (
+                            creditHistoryStore
+                              .getTransactionsByCustomer(customer.id)
+                              .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                              .map(transaction => (
+                                <div key={transaction.id} className="text-xs p-2 bg-white dark:bg-gray-900 rounded border">
+                                  <div className="flex items-center justify-between">
+                                    <span className={transaction.type === "add" ? "text-green-600 font-semibold" : "text-red-600 font-semibold"}>
+                                      {transaction.type === "add" ? "✅ +" : "❌ -"}R$ {transaction.amount.toFixed(2)}
+                                    </span>
+                                    <span className="text-muted-foreground">
+                                      {format(new Date(transaction.createdAt), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+                                    </span>
+                                  </div>
+                                  <p className="text-muted-foreground mt-1">{transaction.description}</p>
+                                </div>
+                              ))
+                          )}
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -519,6 +583,20 @@ const CustomerReceivablesDialog = ({
           </AlertDialogContent>
         </AlertDialog>
       )}
+
+      <RemoveCreditDialog
+        open={showRemoveCreditDialog}
+        onOpenChange={setShowRemoveCreditDialog}
+        customer={customer}
+        onConfirm={loadCustomerReceivables}
+      />
+
+      <AddCreditDialog
+        open={showAddCreditDialog}
+        onOpenChange={setShowAddCreditDialog}
+        customer={customer}
+        onConfirm={loadCustomerReceivables}
+      />
     </>
   );
 };
