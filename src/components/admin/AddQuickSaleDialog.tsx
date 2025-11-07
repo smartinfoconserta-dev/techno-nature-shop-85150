@@ -39,6 +39,9 @@ const formSchema = z.object({
 }).refine((data) => (data.cash + data.pix + data.card) > 0, {
   message: "Pelo menos uma forma de pagamento deve ter valor",
   path: ["cash"],
+}).refine((data) => (data.cash + data.pix + data.card) <= data.salePrice, {
+  message: "Total dos pagamentos não pode exceder o preço de venda",
+  path: ["cash"],
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -75,6 +78,7 @@ export function AddQuickSaleDialog({
   const pix = form.watch("pix");
   const card = form.watch("card");
   const costPrice = form.watch("costPrice");
+  const salePrice = form.watch("salePrice");
 
   const totalPayment = cash + pix + card;
   
@@ -85,7 +89,7 @@ export function AddQuickSaleDialog({
 
   const getProfit = () => {
     const tax = getTaxAmount();
-    return totalPayment - costPrice - tax;
+    return salePrice - costPrice - tax;
   };
 
   const onSubmit = async (data: FormData) => {
@@ -93,6 +97,17 @@ export function AddQuickSaleDialog({
 
     try {
       const totalPaid = data.cash + data.pix + data.card;
+      
+      if (totalPaid > data.salePrice) {
+        toast({
+          title: "Erro",
+          description: "Total dos pagamentos não pode exceder o preço de venda",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+      
       const taxAmount = getTaxAmount();
       const saleDate = format(new Date(), "yyyy-MM-dd");
 
@@ -108,7 +123,7 @@ export function AddQuickSaleDialog({
       quickSalesStore.addQuickSale({
         productName: data.productName,
         costPrice: data.costPrice,
-        salePrice: totalPaid,
+        salePrice: data.salePrice,
         paymentBreakdown: {
           cash: data.cash,
           pix: data.pix,
@@ -123,7 +138,7 @@ export function AddQuickSaleDialog({
 
       toast({
         title: "Venda registrada!",
-        description: `${data.productName} - R$ ${totalPaid.toFixed(2)}`,
+        description: `${data.productName} - R$ ${data.salePrice.toFixed(2)}`,
       });
 
       form.reset();
@@ -167,26 +182,47 @@ export function AddQuickSaleDialog({
               )}
             />
 
-            {/* Preço de Custo */}
-            <FormField
-              control={form.control}
-              name="costPrice"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Preço de Custo *</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      placeholder="0.00"
-                      {...field}
-                      onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {/* Preços */}
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="costPrice"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Preço de Custo *</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        placeholder="0.00"
+                        {...field}
+                        onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="salePrice"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Preço de Venda *</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        placeholder="0.00"
+                        {...field}
+                        onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             {/* Formas de Pagamento Misto */}
             <div className="space-y-3">
@@ -250,9 +286,21 @@ export function AddQuickSaleDialog({
                   )}
                 />
               </div>
-              <p className="text-sm text-muted-foreground">
-                Total: <strong className="text-foreground">R$ {totalPayment.toFixed(2)}</strong>
-              </p>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Total Pago:</span>
+                <strong className="text-foreground">R$ {totalPayment.toFixed(2)}</strong>
+              </div>
+              {totalPayment > 0 && salePrice > 0 && totalPayment !== salePrice && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Preço de Venda:</span>
+                  <strong className="text-foreground">R$ {salePrice.toFixed(2)}</strong>
+                </div>
+              )}
+              {totalPayment > salePrice && (
+                <p className="text-xs text-destructive">
+                  ⚠️ Pagamento excede o preço de venda
+                </p>
+              )}
             </div>
 
             {/* Lucro Calculado */}

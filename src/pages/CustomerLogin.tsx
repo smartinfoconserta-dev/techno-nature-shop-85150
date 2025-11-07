@@ -49,8 +49,8 @@ const CustomerLogin = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/20 to-secondary/20 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Portal do Cliente</CardTitle>
-          <CardDescription>Acesse suas compras e acompanhe pagamentos</CardDescription>
+          <CardTitle className="text-2xl">Área de Parceiros</CardTitle>
+          <CardDescription>Acesse suas compras e acompanhe seus pagamentos</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">

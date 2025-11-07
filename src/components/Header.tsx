@@ -19,6 +19,15 @@ const Header = () => {
         <Button 
           variant="ghost" 
           size="sm" 
+          onClick={() => navigate('/customer-login')}
+          className="opacity-80 hover:opacity-100 transition-opacity text-white border border-white/20 hover:bg-white/10"
+        >
+          <span>Parceiros</span>
+        </Button>
+        
+        <Button 
+          variant="ghost" 
+          size="sm" 
           onClick={() => navigate('/install')}
           className="opacity-80 hover:opacity-100 transition-opacity text-white border border-white/20 hover:bg-white/10"
         >
