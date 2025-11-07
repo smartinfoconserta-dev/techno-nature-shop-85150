@@ -1,6 +1,7 @@
 import { format, startOfMonth, endOfMonth } from "date-fns";
 import { productsStore } from "./productsStore";
 import { quickSalesStore } from "./quickSalesStore";
+import { receivablesStore } from "./receivablesStore";
 
 export interface MonthlyReport {
   month: string; // "2025-11" (YYYY-MM)
@@ -106,6 +107,34 @@ export const monthlyReportsStore = {
       totalMargins += margin;
     });
 
+    // Adiciona pagamentos da caderneta recebidos no mês
+    const receivables = receivablesStore.getAllReceivables();
+    receivables.forEach(receivable => {
+      // Para cada pagamento da caderneta feito neste mês
+      receivable.payments?.forEach(payment => {
+        const paymentDate = new Date(payment.paymentDate);
+        if (paymentDate >= monthStart && paymentDate <= monthEnd) {
+          // Adiciona o valor pago ao total
+          totalGross += payment.amount;
+          
+          // Contabiliza a forma de pagamento
+          if (payment.paymentMethod === "cash") totalCash += payment.amount;
+          if (payment.paymentMethod === "pix") totalPix += payment.amount;
+          if (payment.paymentMethod === "card") totalCard += payment.amount;
+          
+          // Adiciona custos proporcionais (se existirem)
+          if (receivable.costPrice && receivable.salePrice) {
+            const costRatio = receivable.costPrice / receivable.salePrice;
+            const costPortion = payment.amount * costRatio;
+            totalExpenses += costPortion;
+            
+            const margin = payment.amount > 0 ? ((payment.amount - costPortion) / payment.amount) * 100 : 0;
+            totalMargins += margin;
+          }
+        }
+      });
+    });
+
     totalDigital = totalPix + totalCard;
     const totalTax = totalDigital * 0.06;
     const netProfit = totalGross - totalExpenses - totalTax;
@@ -182,6 +211,30 @@ export const monthlyReportsStore = {
 
       const margin = qs.salePrice > 0 ? ((qs.salePrice - qs.costPrice) / qs.salePrice) * 100 : 0;
       totalMargins += margin;
+    });
+
+    // Adiciona pagamentos da caderneta do mês atual
+    const allReceivables = receivablesStore.getAllReceivables();
+    allReceivables.forEach(receivable => {
+      receivable.payments?.forEach(payment => {
+        const paymentDate = new Date(payment.paymentDate);
+        if (paymentDate >= monthStart) {
+          totalGross += payment.amount;
+          
+          if (payment.paymentMethod === "cash") totalCash += payment.amount;
+          if (payment.paymentMethod === "pix") totalPix += payment.amount;
+          if (payment.paymentMethod === "card") totalCard += payment.amount;
+          
+          if (receivable.costPrice && receivable.salePrice) {
+            const costRatio = receivable.costPrice / receivable.salePrice;
+            const costPortion = payment.amount * costRatio;
+            totalExpenses += costPortion;
+            
+            const margin = payment.amount > 0 ? ((payment.amount - costPortion) / payment.amount) * 100 : 0;
+            totalMargins += margin;
+          }
+        }
+      });
     });
 
     totalDigital = totalPix + totalCard;

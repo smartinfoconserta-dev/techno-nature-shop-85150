@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { productsStore, Product } from "@/lib/productsStore";
 import { monthlyReportsStore } from "@/lib/monthlyReportsStore";
 import { quickSalesStore } from "@/lib/quickSalesStore";
+import { receivablesStore } from "@/lib/receivablesStore";
 import { MetricCard } from "./MetricCard";
 import { AlertsSection } from "./AlertsSection";
 import { SalesTrendChart } from "./SalesTrendChart";
@@ -13,6 +14,8 @@ import {
   Calendar,
   ShoppingBag,
   Zap,
+  CreditCard,
+  AlertCircle,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -35,6 +38,11 @@ const DashboardTab = () => {
   const [stockCount, setStockCount] = useState(0);
   const [recentSales, setRecentSales] = useState<Product[]>([]);
   const [quickSalesCount, setQuickSalesCount] = useState(0);
+  const [receivablesData, setReceivablesData] = useState({
+    totalReceivable: 0,
+    overdueTotal: 0,
+    paymentsThisMonth: 0,
+  });
 
   useEffect(() => {
     loadData();
@@ -72,6 +80,32 @@ const DashboardTab = () => {
     // Últimas 3 vendas
     const sold = productsStore.getSoldProducts();
     setRecentSales(sold.slice(0, 3));
+
+    // Dados da caderneta
+    const totalReceivable = receivablesStore.getTotalReceivable();
+    const overdueReceivables = receivablesStore.getOverdueReceivables();
+    const overdueTotal = overdueReceivables.reduce((sum, r) => sum + r.remainingAmount, 0);
+    
+    // Calcula pagamentos recebidos no mês atual
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const allReceivables = receivablesStore.getAllReceivables();
+    let paymentsThisMonth = 0;
+    
+    allReceivables.forEach(receivable => {
+      receivable.payments?.forEach(payment => {
+        const paymentDate = new Date(payment.paymentDate);
+        if (paymentDate >= monthStart) {
+          paymentsThisMonth += payment.amount;
+        }
+      });
+    });
+
+    setReceivablesData({
+      totalReceivable,
+      overdueTotal,
+      paymentsThisMonth,
+    });
   };
 
   const getCurrentMonthName = () => {
@@ -133,25 +167,86 @@ const DashboardTab = () => {
         />
       </div>
 
-      {/* Card de Vendas Rápidas */}
-      {quickSalesCount > 0 && (
-        <Card className="bg-blue-50 border-blue-200">
+      {/* Cards de Informações Adicionais */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Card de Vendas Rápidas */}
+        {quickSalesCount > 0 && (
+          <Card className="bg-blue-50 border-blue-200">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Vendas Rápidas (mês)</p>
+                  <p className="text-2xl font-bold text-blue-600">
+                    {quickSalesCount} {quickSalesCount === 1 ? "venda" : "vendas"}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Produtos não catalogados
+                  </p>
+                </div>
+                <Zap className="h-8 w-8 text-blue-600" />
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Card de Total a Receber */}
+        <Card className="bg-orange-50 border-orange-200">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Vendas Rápidas (mês)</p>
-                <p className="text-2xl font-bold text-blue-600">
-                  {quickSalesCount} {quickSalesCount === 1 ? "venda" : "vendas"}
+                <p className="text-sm text-muted-foreground">Total a Receber</p>
+                <p className="text-2xl font-bold text-orange-600">
+                  {formatCurrency(receivablesData.totalReceivable)}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Produtos não catalogados
+                  Vendas na caderneta
                 </p>
               </div>
-              <Zap className="h-8 w-8 text-blue-600" />
+              <CreditCard className="h-8 w-8 text-orange-600" />
             </div>
           </CardContent>
         </Card>
-      )}
+
+        {/* Card de Valores Vencidos */}
+        {receivablesData.overdueTotal > 0 && (
+          <Card className="bg-red-50 border-red-200">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Valores Vencidos</p>
+                  <p className="text-2xl font-bold text-red-600">
+                    {formatCurrency(receivablesData.overdueTotal)}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Pagamentos atrasados
+                  </p>
+                </div>
+                <AlertCircle className="h-8 w-8 text-red-600" />
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Card de Pagamentos Recebidos no Mês */}
+        {receivablesData.paymentsThisMonth > 0 && (
+          <Card className="bg-green-50 border-green-200">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Recebimentos (mês)</p>
+                  <p className="text-2xl font-bold text-green-600">
+                    {formatCurrency(receivablesData.paymentsThisMonth)}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Pagamentos da caderneta
+                  </p>
+                </div>
+                <Receipt className="h-8 w-8 text-green-600" />
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
 
       {/* Gráfico de Vendas */}
       <SalesTrendChart />
