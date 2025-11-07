@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import { productsStore, Product } from "@/lib/productsStore";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { TrendingUp, DollarSign, Package, Percent, Pencil, FileText, XCircle } from "lucide-react";
+import { TrendingUp, DollarSign, Package, Percent, Pencil, FileText, XCircle, Search } from "lucide-react";
 import EditSaleDialog from "./EditSaleDialog";
 import WarrantyBadge from "./WarrantyBadge";
 import { calculateWarranty } from "@/lib/warrantyHelper";
@@ -39,6 +40,7 @@ const SalesHistoryTab = () => {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [warrantyFilter, setWarrantyFilter] = useState<"all" | "active" | "expired">("all");
   const [cancelingProduct, setCancelingProduct] = useState<Product | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     loadData();
@@ -118,6 +120,20 @@ const SalesHistoryTab = () => {
   };
 
   const filteredProducts = soldProducts.filter(product => {
+    // Filtro de busca
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      const matchesName = product.name.toLowerCase().includes(query);
+      const matchesBrand = product.brand.toLowerCase().includes(query);
+      const matchesBuyer = product.buyerName?.toLowerCase().includes(query);
+      const matchesCpf = product.buyerCpf?.toLowerCase().includes(query);
+      
+      if (!matchesName && !matchesBrand && !matchesBuyer && !matchesCpf) {
+        return false;
+      }
+    }
+    
+    // Filtro de garantia
     if (warrantyFilter === "all") return true;
     if (!product.saleDate) return false;
     
@@ -199,6 +215,17 @@ const SalesHistoryTab = () => {
             <p className="text-xs text-muted-foreground mt-1">Vendidos</p>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Campo de Busca */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="🔍 Buscar por produto, comprador ou CPF..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-10"
+        />
       </div>
 
       {/* Filtros de garantia */}
