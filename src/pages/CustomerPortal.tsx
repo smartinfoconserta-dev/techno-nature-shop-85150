@@ -16,7 +16,7 @@ const CustomerPortal = () => {
 
   useEffect(() => {
     if (!customer) {
-      navigate("/customer-login");
+      navigate("/login");
       return;
     }
 
@@ -27,7 +27,7 @@ const CustomerPortal = () => {
 
   const handleLogout = () => {
     logout();
-    navigate("/customer-login");
+    navigate("/login");
   };
 
   if (!customer) return null;

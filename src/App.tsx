@@ -9,6 +9,8 @@ import NotFound from "./pages/NotFound";
 import Install from "./pages/Install";
 import CustomerLogin from "./pages/CustomerLogin";
 import CustomerPortal from "./pages/CustomerPortal";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import PrivateRoute from "./components/PrivateRoute";
 import CustomerPrivateRoute from "./components/CustomerPrivateRoute";
 
@@ -23,7 +25,9 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/install" element={<Install />} />
-          <Route path="/customer-login" element={<CustomerLogin />} />
+          <Route path="/login" element={<CustomerLogin />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/portal" element={
             <CustomerPrivateRoute>
               <CustomerPortal />

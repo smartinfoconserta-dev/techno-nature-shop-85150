@@ -5,7 +5,7 @@ const CustomerPrivateRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated } = useCustomerAuth();
 
   if (!isAuthenticated) {
-    return <Navigate to="/customer-login" replace />;
+    return <Navigate to="/login" replace />;
   }
 
   return <>{children}</>;

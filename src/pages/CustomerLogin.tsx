@@ -88,6 +88,16 @@ const CustomerLogin = () => {
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Entrando..." : "Entrar"}
             </Button>
+
+            <div className="text-center mt-4">
+              <Button
+                variant="link"
+                className="text-sm"
+                onClick={() => navigate("/forgot-password")}
+              >
+                Esqueceu sua senha?
+              </Button>
+            </div>
           </form>
         </CardContent>
       </Card>
