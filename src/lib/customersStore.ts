@@ -2,13 +2,14 @@ export interface Customer {
   id: string;
   code: string; // Código único (ex: "LOJ001", "CLI042")
   name: string;
-  cpfCnpj: string;
+  cpfCnpj?: string; // Tornado opcional
   phone?: string;
   email?: string;
   address?: string;
   type: "lojista" | "cliente"; // Tipo de cliente
   creditLimit?: number; // Limite de crédito
   notes?: string;
+  username?: string; // Username para login no portal
   password?: string; // Senha para acessar o portal (opcional)
   hasPortalAccess?: boolean; // Se tem acesso ao portal
   active: boolean;
@@ -59,11 +60,12 @@ export const customersStore = {
     
     // Validações
     if (!data.name?.trim()) throw new Error("Nome é obrigatório");
-    if (!data.cpfCnpj?.trim()) throw new Error("CPF/CNPJ é obrigatório");
     
-    // Verificar CPF/CNPJ único
-    const exists = customers.find(c => c.cpfCnpj === data.cpfCnpj.trim());
-    if (exists) throw new Error("CPF/CNPJ já cadastrado");
+    // Verificar CPF/CNPJ único (se fornecido)
+    if (data.cpfCnpj?.trim()) {
+      const exists = customers.find(c => c.cpfCnpj === data.cpfCnpj.trim());
+      if (exists) throw new Error("CPF/CNPJ já cadastrado");
+    }
     
     const code = this.generateNextCode(data.type);
     
@@ -114,12 +116,42 @@ export const customersStore = {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(customers));
   },
 
-  setPassword(id: string, password: string): Customer {
+  isUsernameAvailable(username: string, excludeId?: string): boolean {
+    const normalized = username.trim().toLowerCase();
+    const customers = this.getAllCustomers();
+    return !customers.some(c => 
+      c.id !== excludeId && 
+      c.username?.toLowerCase() === normalized
+    );
+  },
+
+  setPassword(id: string, username: string, password: string): Customer {
     const customers = this.getAllCustomers();
     const index = customers.findIndex(c => c.id === id);
     
     if (index === -1) throw new Error("Cliente não encontrado");
     
+    // Validar username
+    const normalizedUsername = username.trim().toLowerCase();
+    
+    if (!normalizedUsername) {
+      throw new Error("Username é obrigatório");
+    }
+    
+    if (normalizedUsername.length < 3) {
+      throw new Error("Username deve ter no mínimo 3 caracteres");
+    }
+    
+    if (!/^[a-z0-9._]+$/.test(normalizedUsername)) {
+      throw new Error("Username deve conter apenas letras, números, pontos e underscores");
+    }
+    
+    // Verificar se username já existe
+    if (!this.isUsernameAvailable(username, id)) {
+      throw new Error("Username já está em uso");
+    }
+    
+    customers[index].username = normalizedUsername;
     customers[index].password = password;
     customers[index].hasPortalAccess = true;
     customers[index].updatedAt = new Date().toISOString();
@@ -136,11 +168,16 @@ export const customersStore = {
   },
 
   authenticateCustomerByIdentifier(identifier: string, password: string): Customer | null {
-    const normalized = identifier.trim().toUpperCase();
+    const normalized = identifier.trim();
+    const normalizedUpper = normalized.toUpperCase();
+    const normalizedLower = normalized.toLowerCase();
+    
     const customer = this.getAllCustomers().find(
-      c => (c.code.toUpperCase() === normalized || c.cpfCnpj === identifier) 
-           && c.password === password 
-           && c.hasPortalAccess
+      c => (
+        c.code.toUpperCase() === normalizedUpper || 
+        c.cpfCnpj === normalized ||
+        c.username?.toLowerCase() === normalizedLower
+      ) && c.password === password && c.hasPortalAccess
     );
     return customer || null;
   },

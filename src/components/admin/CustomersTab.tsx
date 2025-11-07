@@ -33,6 +33,7 @@ const CustomersTab = () => {
   const [filterType, setFilterType] = useState<"all" | "lojista" | "cliente">("all");
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [newUsername, setNewUsername] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [showReceivablesDialog, setShowReceivablesDialog] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -63,7 +64,25 @@ const CustomersTab = () => {
   };
 
   const handleSetPassword = () => {
-    if (!selectedCustomer || !newPassword.trim()) {
+    if (!selectedCustomer) {
+      toast({
+        title: "Erro",
+        description: "Cliente não selecionado",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!newUsername.trim()) {
+      toast({
+        title: "Erro",
+        description: "Preencha o usuário",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!newPassword.trim()) {
       toast({
         title: "Erro",
         description: "Preencha a senha",
@@ -73,13 +92,14 @@ const CustomersTab = () => {
     }
 
     try {
-      customersStore.setPassword(selectedCustomer.id, newPassword);
+      customersStore.setPassword(selectedCustomer.id, newUsername, newPassword);
       toast({
-        title: "Senha definida!",
-        description: `Acesso ao portal habilitado para ${selectedCustomer.name}`,
+        title: "Acesso configurado!",
+        description: `Username: ${newUsername.toLowerCase()} | Acesso ao portal habilitado para ${selectedCustomer.name}`,
       });
       setShowPasswordDialog(false);
       setSelectedCustomer(null);
+      setNewUsername("");
       setNewPassword("");
       setRefreshKey(prev => prev + 1);
     } catch (error: any) {
@@ -208,6 +228,8 @@ const CustomersTab = () => {
                           variant="outline"
                           onClick={() => {
                             setSelectedCustomer(customer);
+                            setNewUsername(customer.username || "");
+                            setNewPassword("");
                             setShowPasswordDialog(true);
                           }}
                           title="Definir/Alterar senha"
@@ -247,23 +269,36 @@ const CustomersTab = () => {
       <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>🔑 Definir/Alterar Senha do Portal</DialogTitle>
+            <DialogTitle>🔑 Definir Username e Senha do Portal</DialogTitle>
             <DialogDescription>
               {selectedCustomer && `Cliente: ${selectedCustomer.code} - ${selectedCustomer.name}`}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label>Nova Senha</Label>
+              <Label>Usuário (Username)</Label>
               <Input
                 type="text"
-                placeholder="Digite a nova senha"
+                placeholder="Ex: batista, loja123"
+                value={newUsername}
+                onChange={(e) => setNewUsername(e.target.value)}
+                autoComplete="off"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Mínimo 3 caracteres. Apenas letras, números, pontos e underscores.
+              </p>
+            </div>
+            <div>
+              <Label>Senha</Label>
+              <Input
+                type="text"
+                placeholder="Digite a senha"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
               />
             </div>
             <p className="text-sm text-muted-foreground">
-              💡 Esta senha será usada pelo cliente para acessar o portal junto com CPF/CNPJ ou código.
+              💡 O cliente fará login usando o username e senha definidos aqui.
             </p>
           </div>
           <DialogFooter>

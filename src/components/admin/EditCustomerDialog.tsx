@@ -25,6 +25,7 @@ const EditCustomerDialog = ({ open, onOpenChange, customer, onCustomerUpdated }:
   const [address, setAddress] = useState("");
   const [creditLimit, setCreditLimit] = useState("");
   const [notes, setNotes] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
   useEffect(() => {
@@ -37,6 +38,7 @@ const EditCustomerDialog = ({ open, onOpenChange, customer, onCustomerUpdated }:
       setAddress(customer.address || "");
       setCreditLimit(customer.creditLimit ? customer.creditLimit.toString() : "");
       setNotes(customer.notes || "");
+      setUsername(customer.username || "");
       setPassword("");
     }
   }, [customer, open]);
@@ -76,7 +78,15 @@ const EditCustomerDialog = ({ open, onOpenChange, customer, onCustomerUpdated }:
 
       // Atualizar senha se fornecida
       if (password.trim()) {
-        customersStore.setPassword(customer.id, password.trim());
+        if (!username.trim()) {
+          toast({
+            title: "Erro",
+            description: "Username é obrigatório ao definir senha",
+            variant: "destructive",
+          });
+          return;
+        }
+        customersStore.setPassword(customer.id, username.trim(), password.trim());
       }
 
       toast({
@@ -206,6 +216,21 @@ const EditCustomerDialog = ({ open, onOpenChange, customer, onCustomerUpdated }:
           </div>
 
           <div>
+            <Label htmlFor="username">Username do Portal (opcional)</Label>
+            <Input
+              id="username"
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Ex: batista, loja123"
+              autoComplete="off"
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Username para acesso ao portal (mínimo 3 caracteres)
+            </p>
+          </div>
+
+          <div>
             <Label htmlFor="password">Senha do Portal (opcional)</Label>
             <Input
               id="password"
@@ -215,7 +240,7 @@ const EditCustomerDialog = ({ open, onOpenChange, customer, onCustomerUpdated }:
               placeholder="Digite uma senha para acesso ao portal"
             />
             <p className="text-xs text-muted-foreground mt-1">
-              Se preenchido, o cliente poderá acessar o portal com CPF/CNPJ e senha
+              Se preenchido, o cliente poderá acessar o portal com username e senha
             </p>
           </div>
         </div>

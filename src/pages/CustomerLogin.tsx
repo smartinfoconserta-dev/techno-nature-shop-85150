@@ -31,7 +31,7 @@ const CustomerLogin = () => {
       } else {
         toast({
           title: "Erro no login",
-          description: "CPF/CNPJ/Código ou senha incorretos",
+          description: "Usuário, CPF/CNPJ, Código ou senha incorretos",
           variant: "destructive",
         });
       }
@@ -60,16 +60,16 @@ const CustomerLogin = () => {
         </Button>
         <CardHeader className="text-center pt-16">
           <CardTitle className="text-2xl">Área de Parceiros</CardTitle>
-          <CardDescription>Acesse suas compras e acompanhe seus pagamentos</CardDescription>
+          <CardDescription>Entre com seu usuário ou código para acessar</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
-              <Label>CPF/CNPJ ou Código</Label>
+              <Label>Usuário, CPF/CNPJ ou Código</Label>
               <Input
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
-                placeholder="000.000.000-00 ou CLI001"
+                placeholder="batista, 000.000.000-00 ou CLI001"
                 required
               />
             </div>
