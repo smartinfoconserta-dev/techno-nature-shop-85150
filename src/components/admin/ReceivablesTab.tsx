@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DollarSign, Calendar, Eye, Trash2, AlertCircle, UserPlus, Edit, FileDown } from "lucide-react";
+import { DollarSign, Calendar, Eye, Trash2, AlertCircle, UserPlus, Edit, FileDown, ShoppingCart } from "lucide-react";
 import { generateCustomerReportPDF } from "@/lib/generateCustomerReportPDF";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -16,6 +16,7 @@ import CustomerReceivablesDialog from "./CustomerReceivablesDialog";
 import { AddCustomerPaymentDialog } from "./AddCustomerPaymentDialog";
 import NewCustomerDialog from "./NewCustomerDialog";
 import EditCustomerDialog from "./EditCustomerDialog";
+import QuickSaleDialog from "./QuickSaleDialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -54,6 +55,7 @@ const ReceivablesTab = () => {
   const [showEditCustomerDialog, setShowEditCustomerDialog] = useState(false);
   const [customerToEdit, setCustomerToEdit] = useState<Customer | null>(null);
   const [showCustomerPaymentDialog, setShowCustomerPaymentDialog] = useState(false);
+  const [showQuickSaleDialog, setShowQuickSaleDialog] = useState(false);
 
   useEffect(() => {
     loadReceivables();
@@ -228,9 +230,13 @@ const ReceivablesTab = () => {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button onClick={() => setShowNewCustomerDialog(true)} className="gap-2">
+          <Button onClick={() => setShowNewCustomerDialog(true)} variant="outline" className="gap-2">
             <UserPlus className="h-4 w-4" />
             Novo Cliente
+          </Button>
+          <Button onClick={() => setShowQuickSaleDialog(true)} className="gap-2">
+            <ShoppingCart className="h-4 w-4" />
+            Nova Venda
           </Button>
         </div>
       </div>
@@ -601,6 +607,12 @@ const ReceivablesTab = () => {
         open={showCustomerPaymentDialog}
         onOpenChange={setShowCustomerPaymentDialog}
         customerId={selectedCustomerId}
+        onSuccess={loadReceivables}
+      />
+
+      <QuickSaleDialog
+        open={showQuickSaleDialog}
+        onOpenChange={setShowQuickSaleDialog}
         onSuccess={loadReceivables}
       />
 
