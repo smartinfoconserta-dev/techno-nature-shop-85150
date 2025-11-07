@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -30,6 +31,9 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
   const [discountPrice, setDiscountPrice] = useState(
     product?.discountPrice?.toString() || ""
   );
+  const [passOnCashDiscount, setPassOnCashDiscount] = useState(
+    product?.passOnCashDiscount || false
+  );
   const [images, setImages] = useState<string[]>(product?.images || []);
   const [newImageUrl, setNewImageUrl] = useState("");
   const [availableBrands, setAvailableBrands] = useState<string[]>([]);
@@ -44,6 +48,12 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
   useEffect(() => {
     loadBrands();
   }, [category]);
+
+  useEffect(() => {
+    if (product) {
+      setPassOnCashDiscount(product.passOnCashDiscount || false);
+    }
+  }, [product]);
 
   const loadBrands = () => {
     const brands = brandsStore.getBrandsByCategory(category);
@@ -84,6 +94,7 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
       description,
       price: parseFloat(price),
       discountPrice: discountPrice ? parseFloat(discountPrice) : undefined,
+      passOnCashDiscount,
       images,
     });
   };
@@ -167,6 +178,39 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
             onChange={(e) => setDiscountPrice(e.target.value)}
             placeholder="0.00"
           />
+        </div>
+
+        <div className="col-span-2">
+          <div className="flex items-start space-x-3 p-4 border rounded-lg bg-muted/50">
+            <Checkbox
+              id="passOnCashDiscount"
+              checked={passOnCashDiscount}
+              onCheckedChange={(checked) => setPassOnCashDiscount(checked as boolean)}
+            />
+            <div className="flex-1 space-y-1">
+              <Label 
+                htmlFor="passOnCashDiscount" 
+                className="cursor-pointer font-semibold"
+              >
+                Repassar 5% de desconto no preço anunciado
+              </Label>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                {passOnCashDiscount ? (
+                  <>
+                    ✅ <strong>Ativado:</strong> O preço anunciado será{" "}
+                    <strong>R$ {price ? (parseFloat(price) / 0.95).toFixed(2) : "0,00"}</strong>
+                    {" "}para que você receba <strong>R$ {price || "0,00"}</strong> após o desconto à vista
+                  </>
+                ) : (
+                  <>
+                    ❌ <strong>Desativado:</strong> O desconto de 5% será aplicado sobre{" "}
+                    <strong>R$ {price || "0,00"}</strong>, você receberá{" "}
+                    <strong>R$ {price ? (parseFloat(price) * 0.95).toFixed(2) : "0,00"}</strong> à vista
+                  </>
+                )}
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 

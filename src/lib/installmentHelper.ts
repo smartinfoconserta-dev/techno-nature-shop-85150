@@ -49,3 +49,34 @@ export function getAllInstallmentOptions(desiredAmount: number): InstallmentOpti
 export function calculateCashDiscount(price: number): number {
   return Math.round(price * 0.95 * 100) / 100;
 }
+
+/**
+ * Calcula o preço a ser exibido baseado se deve repassar desconto ou não
+ * Se repassar: aumenta o preço para que após 5% de desconto, receba o valor desejado
+ */
+export function calculateDisplayPrice(
+  desiredPrice: number, 
+  passOnDiscount: boolean
+): number {
+  if (!passOnDiscount) {
+    return desiredPrice;
+  }
+  // Fórmula: preçoAnunciado = preçoDesejado / 0.95
+  return Math.round((desiredPrice / 0.95) * 100) / 100;
+}
+
+/**
+ * Calcula o valor à vista considerando se o desconto foi repassado
+ */
+export function calculateCashPriceWithPassOn(
+  displayPrice: number,
+  passOnDiscount: boolean,
+  desiredPrice: number
+): number {
+  if (passOnDiscount) {
+    // Se repassou, o valor à vista é o desejado
+    return desiredPrice;
+  }
+  // Se não repassou, aplica 5% de desconto no preço exibido
+  return Math.round(displayPrice * 0.95 * 100) / 100;
+}

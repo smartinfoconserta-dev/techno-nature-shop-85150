@@ -2,12 +2,14 @@ import { useState, useEffect } from "react";
 import { monthlyReportsStore, MonthlyReport } from "@/lib/monthlyReportsStore";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DollarSign, TrendingUp, TrendingDown, ShoppingBag, Receipt, Calendar } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 
 const MonthlyReportsTab = () => {
   const [reports, setReports] = useState<MonthlyReport[]>([]);
+  const [periodFilter, setPeriodFilter] = useState("all");
 
   useEffect(() => {
     loadReports();
@@ -39,6 +41,11 @@ const MonthlyReportsTab = () => {
 
   const currentMonth = format(new Date(), "yyyy-MM");
 
+  // Filtrar relatórios baseado no período selecionado
+  const filteredReports = periodFilter === "all" 
+    ? reports 
+    : reports.slice(0, parseInt(periodFilter));
+
   if (reports.length === 0) {
     return (
       <div className="space-y-6">
@@ -54,11 +61,24 @@ const MonthlyReportsTab = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-foreground">📊 Comparação Mensal</h2>
-        <p className="text-sm text-muted-foreground">
-          Compare o desempenho financeiro entre os meses
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-foreground">📊 Comparação Mensal</h2>
+          <p className="text-sm text-muted-foreground">
+            Compare o desempenho financeiro entre os meses
+          </p>
+        </div>
+        <Select value={periodFilter} onValueChange={setPeriodFilter}>
+          <SelectTrigger className="w-[200px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="3">Últimos 3 meses</SelectItem>
+            <SelectItem value="6">Últimos 6 meses</SelectItem>
+            <SelectItem value="12">Último ano</SelectItem>
+            <SelectItem value="all">Todos os períodos</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <Card>
@@ -105,7 +125,7 @@ const MonthlyReportsTab = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {reports.map((report) => {
+                {filteredReports.map((report) => {
                   const isCurrentMonth = report.month === currentMonth;
                   return (
                     <TableRow key={report.month} className={isCurrentMonth ? "bg-muted/50" : ""}>

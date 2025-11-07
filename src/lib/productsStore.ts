@@ -25,6 +25,7 @@ export interface Product {
   price: number;
   costPrice?: number; // Preço de custo do produto
   discountPrice?: number;
+  passOnCashDiscount?: boolean; // Se true, repassa desconto 5% no preço anunciado
   order: number;
   sold: boolean;
   salePrice?: number;

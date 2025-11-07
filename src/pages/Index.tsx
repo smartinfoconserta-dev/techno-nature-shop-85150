@@ -80,6 +80,7 @@ const Index = () => {
                 price={product.price}
                 costPrice={product.costPrice}
                 discountPrice={product.discountPrice}
+                passOnCashDiscount={product.passOnCashDiscount}
               />
             ))}
           </div>

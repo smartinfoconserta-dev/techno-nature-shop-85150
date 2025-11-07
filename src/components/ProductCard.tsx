@@ -6,7 +6,7 @@ import { MessageCircle, Image } from "lucide-react";
 import { useState } from "react";
 import ProductGalleryDialog from "./ProductGalleryDialog";
 import InstallmentSelector from "./InstallmentSelector";
-import { InstallmentOption } from "@/lib/installmentHelper";
+import { InstallmentOption, calculateCashPriceWithPassOn } from "@/lib/installmentHelper";
 import { couponsStore } from "@/lib/couponsStore";
 
 interface ProductCardProps {
@@ -19,9 +19,10 @@ interface ProductCardProps {
   price: number;
   costPrice?: number;
   discountPrice?: number;
+  passOnCashDiscount?: boolean;
 }
 
-const ProductCard = ({ images, name, brand, specs, description, price, costPrice, discountPrice }: ProductCardProps) => {
+const ProductCard = ({ images, name, brand, specs, description, price, costPrice, discountPrice, passOnCashDiscount = false }: ProductCardProps) => {
   const [coupon, setCoupon] = useState("");
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<{ type: 'cash' | 'installment', data?: InstallmentOption, cashValue?: number } | null>(null);
@@ -42,7 +43,7 @@ const ProductCard = ({ images, name, brand, specs, description, price, costPrice
     displayMode = 'coupon';
   } else if (selectedPayment) {
     if (selectedPayment.type === 'cash') {
-      finalPrice = selectedPayment.cashValue || price;
+      finalPrice = calculateCashPriceWithPassOn(price, passOnCashDiscount, price);
       displayMode = 'cash';
     } else if (selectedPayment.type === 'installment' && selectedPayment.data) {
       finalPrice = selectedPayment.data.totalAmount;
@@ -74,8 +75,11 @@ const ProductCard = ({ images, name, brand, specs, description, price, costPrice
 
     // Adicionar informações de pagamento selecionado
     if (displayMode === 'cash') {
-      messageLines.push(`• *Valor à vista:* R$ ${finalPrice.toFixed(2)} (5% desconto)`);
-      messageLines.push(`• Valor original: R$ ${price.toFixed(2)}`);
+      messageLines.push(`💰 *Pagamento à vista (5% desconto)*`);
+      messageLines.push(`• Valor final: R$ ${finalPrice.toFixed(2)}`);
+      if (passOnCashDiscount) {
+        messageLines.push(`• Preço de tabela: R$ ${price.toFixed(2)}`);
+      }
     } else if (displayMode === 'installment' && paymentDetails.installments) {
       messageLines.push(`• *Parcelado:* ${paymentDetails.installments}x de R$ ${paymentDetails.installmentValue?.toFixed(2)}`);
       messageLines.push(`• Total: R$ ${paymentDetails.totalAmount?.toFixed(2)}`);
