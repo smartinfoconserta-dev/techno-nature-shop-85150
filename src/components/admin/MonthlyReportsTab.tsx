@@ -1,52 +1,31 @@
 import { useState, useEffect } from "react";
 import { monthlyReportsStore, MonthlyReport } from "@/lib/monthlyReportsStore";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DollarSign, TrendingUp, TrendingDown, ShoppingBag, Receipt, Calendar } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 
 const MonthlyReportsTab = () => {
-  const [selectedMonth, setSelectedMonth] = useState<string>("");
-  const [currentReport, setCurrentReport] = useState<MonthlyReport | null>(null);
-  const [availableMonths, setAvailableMonths] = useState<string[]>([]);
-  const [isCurrentMonth, setIsCurrentMonth] = useState(true);
+  const [reports, setReports] = useState<MonthlyReport[]>([]);
 
   useEffect(() => {
-    loadAvailableMonths();
+    loadReports();
   }, []);
 
-  useEffect(() => {
-    if (selectedMonth) {
-      loadReportData(selectedMonth);
-    }
-  }, [selectedMonth]);
-
-  const loadAvailableMonths = () => {
-    const months = monthlyReportsStore.getAvailableMonths();
-    setAvailableMonths(months);
-    
-    if (months.length > 0) {
-      setSelectedMonth(months[0]); // Seleciona mês atual por padrão
-    }
-  };
-
-  const loadReportData = (monthString: string) => {
+  const loadReports = () => {
+    const availableMonths = monthlyReportsStore.getAvailableMonths();
     const currentMonth = format(new Date(), "yyyy-MM");
-    const isCurrent = monthString === currentMonth;
-    setIsCurrentMonth(isCurrent);
-
-    let report: MonthlyReport | null;
-
-    if (isCurrent) {
-      // Mês atual = dados em tempo real
-      report = monthlyReportsStore.getCurrentMonthData();
-    } else {
-      // Mês anterior = dados salvos (histórico)
-      report = monthlyReportsStore.getReportByMonth(monthString);
-    }
-
-    setCurrentReport(report);
+    
+    const allReports: MonthlyReport[] = availableMonths.map((monthString) => {
+      if (monthString === currentMonth) {
+        return monthlyReportsStore.getCurrentMonthData();
+      } else {
+        return monthlyReportsStore.getReportByMonth(monthString);
+      }
+    }).filter((report): report is MonthlyReport => report !== null);
+    
+    setReports(allReports);
   };
 
   const getMonthDisplayName = (monthString: string): string => {
@@ -58,11 +37,13 @@ const MonthlyReportsTab = () => {
     return `${monthNames[month - 1]} ${year}`;
   };
 
-  if (availableMonths.length === 0) {
+  const currentMonth = format(new Date(), "yyyy-MM");
+
+  if (reports.length === 0) {
     return (
       <div className="space-y-6">
         <div>
-          <h2 className="text-2xl font-bold text-foreground">📊 Relatórios Mensais</h2>
+          <h2 className="text-2xl font-bold text-foreground">📊 Comparação Mensal</h2>
           <p className="text-sm text-muted-foreground">
             Nenhum relatório disponível ainda
           </p>
@@ -74,143 +55,113 @@ const MonthlyReportsTab = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-foreground">📊 Relatórios Mensais</h2>
+        <h2 className="text-2xl font-bold text-foreground">📊 Comparação Mensal</h2>
         <p className="text-sm text-muted-foreground">
-          Visualize o desempenho financeiro por mês
+          Compare o desempenho financeiro entre os meses
         </p>
       </div>
 
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-lg font-medium">Selecione o mês</CardTitle>
-            {isCurrentMonth ? (
-              <Badge variant="default" className="bg-green-600 hover:bg-green-700">
-                Mês Atual
-              </Badge>
-            ) : (
-              <Badge variant="secondary">
-                Histórico
-              </Badge>
-            )}
-          </div>
+          <CardTitle>Histórico de Desempenho</CardTitle>
         </CardHeader>
         <CardContent>
-          <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Escolha um mês" />
-            </SelectTrigger>
-            <SelectContent>
-              {availableMonths.map((month) => {
-                const isCurrent = month === format(new Date(), "yyyy-MM");
-                return (
-                  <SelectItem key={month} value={month}>
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4" />
-                      {getMonthDisplayName(month)}
-                      {isCurrent && <span className="text-xs text-green-600">(atual)</span>}
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="min-w-[120px]">Mês</TableHead>
+                  <TableHead className="text-right min-w-[120px]">
+                    <div className="flex items-center justify-end gap-2">
+                      <DollarSign className="h-4 w-4" />
+                      Total Vendas
                     </div>
-                  </SelectItem>
-                );
-              })}
-            </SelectContent>
-          </Select>
+                  </TableHead>
+                  <TableHead className="text-right min-w-[120px]">
+                    <div className="flex items-center justify-end gap-2">
+                      <TrendingDown className="h-4 w-4" />
+                      Compras
+                    </div>
+                  </TableHead>
+                  <TableHead className="text-right min-w-[120px]">
+                    <div className="flex items-center justify-end gap-2">
+                      <TrendingUp className="h-4 w-4" />
+                      Lucro Líquido
+                    </div>
+                  </TableHead>
+                  <TableHead className="text-right min-w-[100px]">
+                    <div className="flex items-center justify-end gap-2">
+                      <ShoppingBag className="h-4 w-4" />
+                      Margem
+                    </div>
+                  </TableHead>
+                  <TableHead className="text-right min-w-[120px]">
+                    <div className="flex items-center justify-end gap-2">
+                      <Receipt className="h-4 w-4" />
+                      Impostos
+                    </div>
+                  </TableHead>
+                  <TableHead className="text-center min-w-[80px]">Qtd</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {reports.map((report) => {
+                  const isCurrentMonth = report.month === currentMonth;
+                  return (
+                    <TableRow key={report.month} className={isCurrentMonth ? "bg-muted/50" : ""}>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4 text-muted-foreground" />
+                          {getMonthDisplayName(report.month)}
+                          {isCurrentMonth && (
+                            <Badge variant="default" className="bg-green-600 hover:bg-green-700 text-xs">
+                              Atual
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right font-semibold text-green-600">
+                        R$ {report.totalSales.toFixed(2)}
+                      </TableCell>
+                      <TableCell className="text-right font-semibold text-red-600">
+                        R$ {report.totalPurchases.toFixed(2)}
+                      </TableCell>
+                      <TableCell className={`text-right font-bold ${report.netProfit >= 0 ? "text-green-600" : "text-red-600"}`}>
+                        R$ {report.netProfit.toFixed(2)}
+                      </TableCell>
+                      <TableCell className="text-right font-semibold">
+                        {report.averageMargin.toFixed(1)}%
+                      </TableCell>
+                      <TableCell className="text-right font-semibold text-orange-600">
+                        R$ {report.totalTax.toFixed(2)}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {report.soldCount}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
 
-      {currentReport && (
-        <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Vendas</CardTitle>
-                <DollarSign className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-green-600">
-                  R$ {currentReport.totalSales.toFixed(2)}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {currentReport.soldCount} {currentReport.soldCount === 1 ? "vendido" : "vendidos"}
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Compras</CardTitle>
-                <TrendingDown className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-red-600">
-                  R$ {currentReport.totalPurchases.toFixed(2)}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Lucro Líquido</CardTitle>
-                <TrendingUp className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div
-                  className={`text-2xl font-bold ${
-                    currentReport.netProfit >= 0 ? "text-green-600" : "text-red-600"
-                  }`}
-                >
-                  R$ {currentReport.netProfit.toFixed(2)}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Margem Média</CardTitle>
-                <ShoppingBag className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-foreground">
-                  {currentReport.averageMargin.toFixed(1)}%
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-800">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Impostos Pagos</CardTitle>
-                <Receipt className="h-4 w-4 text-orange-600" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-orange-600">
-                  R$ {currentReport.totalTax.toFixed(2)}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  6% do digital
-                </p>
-              </CardContent>
-            </Card>
+      <Card className="bg-muted/50">
+        <CardContent className="pt-6">
+          <div className="flex items-start gap-2 text-sm text-muted-foreground">
+            <Calendar className="h-4 w-4 mt-0.5" />
+            <div>
+              <p className="font-medium">📌 Sobre os dados:</p>
+              <ul className="list-disc list-inside mt-2 space-y-1">
+                <li>O mês <strong className="text-green-600">Atual</strong> mostra dados em tempo real</li>
+                <li>Meses anteriores mostram dados históricos fechados</li>
+                <li>Compare a evolução do negócio ao longo do tempo</li>
+              </ul>
+            </div>
           </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>📆 {currentReport.monthName}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2 text-sm text-muted-foreground">
-                {isCurrentMonth ? (
-                  <p>✅ Dados atualizados em tempo real - O relatório final será gerado automaticamente no primeiro dia do próximo mês.</p>
-                ) : (
-                  <p>🔒 Relatório fechado - Dados finais do mês encerrado.</p>
-                )}
-                <p className="text-xs">
-                  Gerado em: {format(new Date(currentReport.generatedAt), "dd/MM/yyyy 'às' HH:mm")}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </>
-      )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
