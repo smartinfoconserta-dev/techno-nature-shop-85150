@@ -47,8 +47,20 @@ const CustomerLogin = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/20 to-secondary/20 p-4">
-      <Card className="w-full max-w-md relative">
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Imagem de fundo tecnológica */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        style={{
+          backgroundImage: "url('/tech-background.jpg')",
+          filter: "brightness(0.4) blur(1px)",
+        }}
+      />
+      
+      {/* Overlay gradiente para contraste */}
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/40 to-secondary/40" />
+      
+      <Card className="w-full max-w-md relative z-10">
         <Button
           variant="ghost"
           size="sm"
@@ -65,11 +77,11 @@ const CustomerLogin = () => {
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
-              <Label>Usuário, CPF/CNPJ ou Código</Label>
+              <Label>Usuário ou Código</Label>
               <Input
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
-                placeholder="batista, 000.000.000-00 ou CLI001"
+                placeholder="Digite seu usuário ou código"
                 required
               />
             </div>
