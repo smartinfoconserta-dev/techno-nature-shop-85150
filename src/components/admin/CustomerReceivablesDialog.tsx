@@ -50,6 +50,7 @@ const CustomerReceivablesDialog = ({
   customerId,
 }: CustomerReceivablesDialogProps) => {
   const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState<"active" | "archived">("active");
   const [receivables, setReceivables] = useState<Receivable[]>([]);
   const [selectedReceivable, setSelectedReceivable] = useState<Receivable | null>(null);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
@@ -69,12 +70,18 @@ const CustomerReceivablesDialog = ({
     if (open && customerId) {
       loadCustomerReceivables();
     }
-  }, [open, customerId]);
+  }, [open, customerId, activeTab]);
 
   const loadCustomerReceivables = () => {
     if (!customerId) return;
-    const data = receivablesStore.getReceivablesByCustomer(customerId);
-    setReceivables(data.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+    
+    const allCustomerReceivables = receivablesStore.getReceivablesByCustomer(customerId);
+    
+    const filtered = activeTab === "active"
+      ? allCustomerReceivables.filter(r => !r.archived)
+      : allCustomerReceivables.filter(r => r.archived);
+    
+    setReceivables(filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
   };
 
   const customer = customerId ? customersStore.getCustomerById(customerId) : null;
@@ -361,6 +368,30 @@ const CustomerReceivablesDialog = ({
                 </Card>
               )}
 
+              {/* Tabs Ativas/Arquivadas */}
+              <Card>
+                <CardContent className="pt-4">
+                  <div className="flex items-center gap-3">
+                    <Button
+                      size="sm"
+                      variant={activeTab === "active" ? "default" : "outline"}
+                      onClick={() => setActiveTab("active")}
+                      className="flex-1"
+                    >
+                      📋 ATIVAS
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={activeTab === "archived" ? "default" : "outline"}
+                      onClick={() => setActiveTab("archived")}
+                      className="flex-1"
+                    >
+                      📦 HISTÓRICO
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
               {/* Botões de Ação do Cliente */}
               <div className="flex flex-wrap gap-2">
                 <Button onClick={() => setShowNewSaleDialog(true)} variant="default">
@@ -491,6 +522,30 @@ const CustomerReceivablesDialog = ({
                             <Trash2 className="h-4 w-4 mr-1" />
                             Devolver Produto
                           </Button>
+                          {receivable.status === "paid" && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                if (activeTab === "active") {
+                                  receivablesStore.archiveReceivable(receivable.id);
+                                  toast({
+                                    title: "Venda arquivada!",
+                                    description: "Movida para o histórico",
+                                  });
+                                } else {
+                                  receivablesStore.unarchiveReceivable(receivable.id);
+                                  toast({
+                                    title: "Venda reativada!",
+                                    description: "Voltou para lista ativa",
+                                  });
+                                }
+                                loadCustomerReceivables();
+                              }}
+                            >
+                              {activeTab === "active" ? "📦 Arquivar" : "♻️ Desarquivar"}
+                            </Button>
+                          )}
                         </div>
                       </div>
                     ))}

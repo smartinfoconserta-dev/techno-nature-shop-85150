@@ -28,6 +28,8 @@ export interface Receivable {
   warranty?: number; // 0 = sem garantia, 7, 15, 30, 60, 90 dias
   warrantyExpiresAt?: string; // Data de expiração da garantia
   notes?: string;
+  archived?: boolean; // NOVO: indica se está arquivado (histórico)
+  archivedAt?: string; // NOVO: data do arquivamento
   createdAt: string;
   updatedAt: string;
 }
@@ -178,5 +180,41 @@ export const receivablesStore = {
   deleteReceivable(id: string): void {
     const receivables = this.getAllReceivables().filter(r => r.id !== id);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(receivables));
+  },
+
+  archiveReceivable(id: string): Receivable {
+    const receivables = this.getAllReceivables();
+    const index = receivables.findIndex(r => r.id === id);
+    
+    if (index === -1) throw new Error("Conta a receber não encontrada");
+    
+    receivables[index].archived = true;
+    receivables[index].archivedAt = new Date().toISOString();
+    receivables[index].updatedAt = new Date().toISOString();
+    
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(receivables));
+    return receivables[index];
+  },
+
+  unarchiveReceivable(id: string): Receivable {
+    const receivables = this.getAllReceivables();
+    const index = receivables.findIndex(r => r.id === id);
+    
+    if (index === -1) throw new Error("Conta a receber não encontrada");
+    
+    receivables[index].archived = false;
+    receivables[index].archivedAt = undefined;
+    receivables[index].updatedAt = new Date().toISOString();
+    
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(receivables));
+    return receivables[index];
+  },
+
+  getActiveReceivables(): Receivable[] {
+    return this.getAllReceivables().filter(r => !r.archived);
+  },
+
+  getArchivedReceivables(): Receivable[] {
+    return this.getAllReceivables().filter(r => r.archived);
   },
 };

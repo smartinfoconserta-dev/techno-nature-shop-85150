@@ -40,6 +40,7 @@ interface CustomerGroup {
 
 const ReceivablesTab = () => {
   const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState<"active" | "archived">("active");
   const [viewMode, setViewMode] = useState<"customer" | "purchase">("customer");
   const [receivables, setReceivables] = useState<Receivable[]>([]);
   const [filteredReceivables, setFilteredReceivables] = useState<Receivable[]>([]);
@@ -59,14 +60,16 @@ const ReceivablesTab = () => {
 
   useEffect(() => {
     loadReceivables();
-  }, []);
+  }, [activeTab]);
 
   useEffect(() => {
     applyFilters();
   }, [receivables, statusFilter, customerFilter]);
 
   const loadReceivables = () => {
-    const data = receivablesStore.getAllReceivables();
+    const data = activeTab === "active" 
+      ? receivablesStore.getActiveReceivables()
+      : receivablesStore.getArchivedReceivables();
     setReceivables(data.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
   };
 
@@ -252,6 +255,28 @@ const ReceivablesTab = () => {
           </Button>
         </div>
       </div>
+
+      {/* Tabs Ativas/Arquivadas */}
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex items-center gap-4">
+            <Button
+              variant={activeTab === "active" ? "default" : "outline"}
+              onClick={() => setActiveTab("active")}
+              className="flex-1 gap-2"
+            >
+              📋 ATIVAS ({receivablesStore.getActiveReceivables().length})
+            </Button>
+            <Button
+              variant={activeTab === "archived" ? "default" : "outline"}
+              onClick={() => setActiveTab("archived")}
+              className="flex-1 gap-2"
+            >
+              📦 HISTÓRICO ({receivablesStore.getArchivedReceivables().length})
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Filtros e Modo de Visualização */}
       <Card>
@@ -463,6 +488,32 @@ const ReceivablesTab = () => {
                           <FileDown className="h-4 w-4 mr-1" />
                           Baixar PDF
                         </Button>
+                        {group.remainingAmount === 0 && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              group.receivables.forEach(r => {
+                                if (activeTab === "active") {
+                                  receivablesStore.archiveReceivable(r.id);
+                                } else {
+                                  receivablesStore.unarchiveReceivable(r.id);
+                                }
+                              });
+                              
+                              toast({
+                                title: activeTab === "active" ? "Cliente arquivado!" : "Cliente reativado!",
+                                description: activeTab === "active" 
+                                  ? "Contas movidas para o histórico" 
+                                  : "Contas voltaram para ativas",
+                              });
+                              
+                              loadReceivables();
+                            }}
+                          >
+                            {activeTab === "active" ? "📦 Arquivar" : "♻️ Desarquivar"}
+                          </Button>
+                        )}
                       </div>
                     </div>
                   );
@@ -571,6 +622,30 @@ const ReceivablesTab = () => {
                       <Trash2 className="h-4 w-4 mr-1" />
                       Remover
                     </Button>
+                    {receivable.status === "paid" && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          if (activeTab === "active") {
+                            receivablesStore.archiveReceivable(receivable.id);
+                            toast({
+                              title: "Venda arquivada!",
+                              description: "Movida para o histórico",
+                            });
+                          } else {
+                            receivablesStore.unarchiveReceivable(receivable.id);
+                            toast({
+                              title: "Venda reativada!",
+                              description: "Voltou para lista ativa",
+                            });
+                          }
+                          loadReceivables();
+                        }}
+                      >
+                        {activeTab === "active" ? "📦 Arquivar" : "♻️ Desarquivar"}
+                      </Button>
+                    )}
                   </div>
                 </div>
               ))}
