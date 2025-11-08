@@ -26,36 +26,34 @@ const AdminLoginDialog = ({ open, onOpenChange }: AdminLoginDialogProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    setTimeout(() => {
-      const success = login(email, password);
-      
-      if (success) {
-        toast({
-          title: "Login realizado com sucesso!",
-          description: "Redirecionando para o painel administrativo...",
-        });
-        onOpenChange(false);
-        
-        // Usar window.location para garantir o redirecionamento
-        setTimeout(() => {
-          window.location.href = "/admin";
-        }, 500);
-      } else {
-        toast({
-          variant: "destructive",
-          title: "Erro no login",
-          description: "Usuário ou senha incorretos.",
-        });
-      }
-      
-      setIsLoading(false);
+    const { error } = await login(email, password);
+    
+    if (!error) {
+      toast({
+        title: "Login realizado com sucesso!",
+        description: "Redirecionando para o painel administrativo...",
+      });
+      onOpenChange(false);
       setEmail("");
       setPassword("");
-    }, 500);
+      
+      setTimeout(() => {
+        navigate("/admin");
+      }, 500);
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Erro no login",
+        description: error.message === "Invalid login credentials" 
+          ? "Email ou senha incorretos." 
+          : error.message,
+      });
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -72,8 +70,8 @@ const AdminLoginDialog = ({ open, onOpenChange }: AdminLoginDialogProps) => {
             <Label htmlFor="email">Usuário</Label>
             <Input
               id="email"
-              type="text"
-              placeholder="Digite seu usuário"
+              type="email"
+              placeholder="Digite seu email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required

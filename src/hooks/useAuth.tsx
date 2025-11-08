@@ -1,50 +1,97 @@
 import { useState, useEffect } from "react";
+import { User, Session } from '@supabase/supabase-js';
+import { supabase } from "@/integrations/supabase/client";
 
 interface AuthState {
   isAuthenticated: boolean;
-  user: { email: string } | null;
+  user: User | null;
+  session: Session | null;
+  isAdmin: boolean;
+  isLoading: boolean;
 }
 
-const getInitialAuthState = (): AuthState => {
-  const token = localStorage.getItem("auth_token");
-  const userEmail = localStorage.getItem("user_email");
-  
-  if (token === "admin_logged_in" && userEmail) {
-    return {
-      isAuthenticated: true,
-      user: { email: userEmail },
-    };
-  }
-  
-  return {
+export const useAuth = () => {
+  const [authState, setAuthState] = useState<AuthState>({
     isAuthenticated: false,
     user: null,
-  };
-};
+    session: null,
+    isAdmin: false,
+    isLoading: true,
+  });
 
-export const useAuth = () => {
-  const [authState, setAuthState] = useState<AuthState>(getInitialAuthState());
+  useEffect(() => {
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (session?.user) {
+          // Check if user is admin
+          const { data: roles } = await supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', session.user.id)
+            .eq('role', 'admin')
+            .maybeSingle();
 
-  const login = (email: string, password: string): boolean => {
-    if (email === "alvessramon" && password === "macacapreta02") {
-      localStorage.setItem("auth_token", "admin_logged_in");
-      localStorage.setItem("user_email", email);
-      setAuthState({
-        isAuthenticated: true,
-        user: { email },
-      });
-      return true;
-    }
-    return false;
-  };
+          setAuthState({
+            isAuthenticated: true,
+            user: session.user,
+            session: session,
+            isAdmin: !!roles,
+            isLoading: false,
+          });
+        } else {
+          setAuthState({
+            isAuthenticated: false,
+            user: null,
+            session: null,
+            isAdmin: false,
+            isLoading: false,
+          });
+        }
+      }
+    );
 
-  const logout = () => {
-    localStorage.removeItem("auth_token");
-    localStorage.removeItem("user_email");
-    setAuthState({
-      isAuthenticated: false,
-      user: null,
+    // Check for existing session
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (session?.user) {
+        const { data: roles } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', session.user.id)
+          .eq('role', 'admin')
+          .maybeSingle();
+
+        setAuthState({
+          isAuthenticated: true,
+          user: session.user,
+          session: session,
+          isAdmin: !!roles,
+          isLoading: false,
+        });
+      } else {
+        setAuthState({
+          isAuthenticated: false,
+          user: null,
+          session: null,
+          isAdmin: false,
+          isLoading: false,
+        });
+      }
     });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const login = async (email: string, password: string) => {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    return { error, data };
+  };
+
+  const logout = async () => {
+    await supabase.auth.signOut();
   };
 
   return { ...authState, login, logout };
