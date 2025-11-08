@@ -118,22 +118,22 @@ const DashboardTab = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 p-6">
       {/* Header */}
-      <div>
+      <div className="border-b pb-4">
         <div className="flex items-center gap-3">
-          <h2 className="text-3xl font-bold text-foreground">Dashboard</h2>
+          <h2 className="text-3xl font-semibold text-gray-900">Dashboard</h2>
           <Badge variant="outline" className="capitalize">
             {getCurrentMonthName()}
           </Badge>
         </div>
-        <p className="text-sm text-muted-foreground mt-1">
+        <p className="text-sm text-gray-500 mt-1">
           Visão geral do seu negócio
         </p>
       </div>
 
       {/* Cards de Métricas Principais */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <MetricCard
           title="Total em Vendas"
           value={formatCurrency(totals.totalGross)}
@@ -168,60 +168,66 @@ const DashboardTab = () => {
       </div>
 
       {/* Cards de Informações Adicionais */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Card de Vendas Rápidas */}
         {quickSalesCount > 0 && (
-          <Card className="bg-blue-50 border-blue-200">
+          <Card className="relative overflow-hidden border-t-4 border-t-blue-600 shadow-sm hover:shadow-md transition-all duration-200">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Vendas Rápidas (mês)</p>
-                  <p className="text-2xl font-bold text-blue-600">
-                    {quickSalesCount} {quickSalesCount === 1 ? "venda" : "vendas"}
+                  <p className="text-sm text-gray-600">Vendas Rápidas (mês)</p>
+                  <p className="text-3xl font-semibold text-gray-900 mt-1">
+                    {quickSalesCount}
                   </p>
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <p className="text-xs text-gray-500 mt-1">
                     Produtos não catalogados
                   </p>
                 </div>
-                <Zap className="h-8 w-8 text-blue-600" />
+                <div className="bg-blue-100 p-3 rounded-full">
+                  <Zap className="h-6 w-6 text-blue-600" />
+                </div>
               </div>
             </CardContent>
           </Card>
         )}
 
         {/* Card de Total a Receber */}
-        <Card className="bg-orange-50 border-orange-200">
+        <Card className="relative overflow-hidden border-t-4 border-t-amber-600 shadow-sm hover:shadow-md transition-all duration-200">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Total a Receber</p>
-                <p className="text-2xl font-bold text-orange-600">
+                <p className="text-sm text-gray-600">Total a Receber</p>
+                <p className="text-3xl font-semibold text-gray-900 mt-1">
                   {formatCurrency(receivablesData.totalReceivable)}
                 </p>
-                <p className="text-xs text-muted-foreground mt-1">
+                <p className="text-xs text-gray-500 mt-1">
                   Vendas na caderneta
                 </p>
               </div>
-              <CreditCard className="h-8 w-8 text-orange-600" />
+              <div className="bg-amber-100 p-3 rounded-full">
+                <CreditCard className="h-6 w-6 text-amber-600" />
+              </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Card de Valores Vencidos */}
         {receivablesData.overdueTotal > 0 && (
-          <Card className="bg-red-50 border-red-200">
+          <Card className="relative overflow-hidden border-t-4 border-t-rose-600 shadow-sm hover:shadow-md transition-all duration-200">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Valores Vencidos</p>
-                  <p className="text-2xl font-bold text-red-600">
+                  <p className="text-sm text-gray-600">Valores Vencidos</p>
+                  <p className="text-3xl font-semibold text-gray-900 mt-1">
                     {formatCurrency(receivablesData.overdueTotal)}
                   </p>
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <p className="text-xs text-gray-500 mt-1">
                     Pagamentos atrasados
                   </p>
                 </div>
-                <AlertCircle className="h-8 w-8 text-red-600" />
+                <div className="bg-rose-100 p-3 rounded-full">
+                  <AlertCircle className="h-6 w-6 text-rose-600" />
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -229,19 +235,21 @@ const DashboardTab = () => {
 
         {/* Card de Pagamentos Recebidos no Mês */}
         {receivablesData.paymentsThisMonth > 0 && (
-          <Card className="bg-green-50 border-green-200">
+          <Card className="relative overflow-hidden border-t-4 border-t-emerald-600 shadow-sm hover:shadow-md transition-all duration-200">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Recebimentos (mês)</p>
-                  <p className="text-2xl font-bold text-green-600">
+                  <p className="text-sm text-gray-600">Recebimentos (mês)</p>
+                  <p className="text-3xl font-semibold text-gray-900 mt-1">
                     {formatCurrency(receivablesData.paymentsThisMonth)}
                   </p>
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <p className="text-xs text-gray-500 mt-1">
                     Pagamentos da caderneta
                   </p>
                 </div>
-                <Receipt className="h-8 w-8 text-green-600" />
+                <div className="bg-emerald-100 p-3 rounded-full">
+                  <Receipt className="h-6 w-6 text-emerald-600" />
+                </div>
               </div>
             </CardContent>
           </Card>

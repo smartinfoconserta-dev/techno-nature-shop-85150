@@ -15,29 +15,29 @@ interface MetricCardProps {
 
 const variantStyles = {
   default: {
-    card: "",
-    icon: "text-muted-foreground",
-    value: "text-foreground",
+    card: "shadow-sm hover:shadow-md transition-shadow",
+    icon: "text-gray-500",
+    value: "text-gray-900",
   },
   success: {
-    card: "border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-950/20",
-    icon: "text-green-600 dark:text-green-400",
-    value: "text-green-700 dark:text-green-300",
+    card: "shadow-sm hover:shadow-md transition-shadow",
+    icon: "text-emerald-600",
+    value: "text-gray-900",
   },
   danger: {
-    card: "border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-950/20",
-    icon: "text-red-600 dark:text-red-400",
-    value: "text-red-700 dark:text-red-300",
+    card: "shadow-sm hover:shadow-md transition-shadow",
+    icon: "text-rose-600",
+    value: "text-gray-900",
   },
   warning: {
-    card: "border-orange-200 dark:border-orange-800 bg-orange-50/50 dark:bg-orange-950/20",
-    icon: "text-orange-600 dark:text-orange-400",
-    value: "text-orange-700 dark:text-orange-300",
+    card: "shadow-sm hover:shadow-md transition-shadow",
+    icon: "text-amber-600",
+    value: "text-gray-900",
   },
   info: {
-    card: "border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/20",
-    icon: "text-blue-600 dark:text-blue-400",
-    value: "text-blue-700 dark:text-blue-300",
+    card: "shadow-sm hover:shadow-md transition-shadow",
+    icon: "text-blue-600",
+    value: "text-gray-900",
   },
 };
 

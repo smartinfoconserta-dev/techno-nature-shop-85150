@@ -8,14 +8,14 @@ const Header = () => {
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const navigate = useNavigate();
 
-  return <header className="relative h-[400px] md:h-[500px] flex items-center justify-center overflow-hidden">
+  return <header className="relative h-[200px] md:h-[280px] flex items-center justify-center overflow-hidden">
       <div className="absolute inset-0 bg-cover bg-center" style={{
       backgroundImage: `url(${heroBanner})`
     }}>
-        <div className="absolute inset-0 bg-gradient-to-b from-black/40 to-black/60" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/30 to-black/50" />
       </div>
       
-      <div className="absolute top-4 right-4 z-20 flex gap-2">
+      <div className="absolute top-4 right-4 z-20 flex gap-2 backdrop-blur-sm bg-black/10 p-2 rounded-lg">
         <Button 
           variant="ghost" 
           size="sm" 
@@ -46,8 +46,8 @@ const Header = () => {
       </div>
       
       <div className="relative z-10 text-center px-4">
-        <h1 className="text-4xl md:text-6xl font-bold text-white mb-4 drop-shadow-lg">Ramon Tech Solutions</h1>
-        <p className="text-lg md:text-xl text-white/90 drop-shadow-md">
+        <h1 className="text-3xl md:text-4xl font-bold text-white mb-2 drop-shadow-lg">Ramon Tech Solutions</h1>
+        <p className="text-sm md:text-base text-white/80 drop-shadow-md">
           Catálogo Digital de Tecnologia
         </p>
       </div>
