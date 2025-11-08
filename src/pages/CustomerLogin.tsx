@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useCustomerAuth } from "@/hooks/useCustomerAuth";
 import { customersStore } from "@/lib/customersStore";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 
 const CustomerLogin = () => {
   const navigate = useNavigate();
@@ -20,13 +20,43 @@ const CustomerLogin = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Verificar se localStorage está disponível
+    try {
+      localStorage.setItem('test', 'test');
+      localStorage.removeItem('test');
+    } catch (e) {
+      toast({
+        title: "Erro de armazenamento",
+        description: "Seu navegador está bloqueando o armazenamento. Desative o modo anônimo ou limpe o cache.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setLoading(true);
 
+    // Timeout de segurança: 5 segundos
+    const timeoutId = setTimeout(() => {
+      setLoading(false);
+      toast({
+        title: "Tempo esgotado",
+        description: "O login demorou muito. Tente novamente.",
+        variant: "destructive",
+      });
+    }, 5000);
+
     try {
+      console.log("[LOGIN] Iniciando autenticação...");
       const customer = customersStore.authenticateCustomerByIdentifier(identifier, password);
+      console.log("[LOGIN] Resultado da autenticação:", customer ? "Sucesso" : "Falhou");
+      
+      clearTimeout(timeoutId);
       
       if (customer) {
+        console.log("[LOGIN] Salvando sessão...");
         login(customer);
+        console.log("[LOGIN] Navegando para portal...");
         navigate("/portal");
       } else {
         toast({
@@ -36,9 +66,11 @@ const CustomerLogin = () => {
         });
       }
     } catch (error) {
+      clearTimeout(timeoutId);
+      console.error("Erro detalhado no login:", error);
       toast({
         title: "Erro",
-        description: "Ocorreu um erro ao fazer login",
+        description: "Ocorreu um erro ao fazer login. Verifique sua conexão.",
         variant: "destructive",
       });
     } finally {
@@ -98,8 +130,23 @@ const CustomerLogin = () => {
             </div>
             
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Entrando..." : "Entrar"}
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {loading ? "Verificando credenciais..." : "Entrar"}
             </Button>
+
+            {loading && (
+              <Button 
+                variant="outline" 
+                className="w-full mt-2"
+                onClick={() => {
+                  setLoading(false);
+                  setIdentifier("");
+                  setPassword("");
+                }}
+              >
+                Cancelar e tentar novamente
+              </Button>
+            )}
 
             <div className="text-center mt-4">
               <Button
