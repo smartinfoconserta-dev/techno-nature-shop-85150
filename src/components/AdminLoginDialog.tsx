@@ -22,7 +22,7 @@ const AdminLoginDialog = ({ open, onOpenChange }: AdminLoginDialogProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, logout, checkIsAdmin } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -30,27 +30,37 @@ const AdminLoginDialog = ({ open, onOpenChange }: AdminLoginDialogProps) => {
     e.preventDefault();
     setIsLoading(true);
 
-    const { error } = await login(email, password);
+    const { error, data } = await login(email, password);
     
-    if (!error) {
-      toast({
-        title: "Login realizado com sucesso!",
-        description: "Redirecionando para o painel administrativo...",
-      });
-      onOpenChange(false);
-      setEmail("");
-      setPassword("");
+    if (!error && data) {
+      // Aguardar confirmação do role de admin
+      const isUserAdmin = await checkIsAdmin();
       
-      setTimeout(() => {
+      if (isUserAdmin) {
+        toast({
+          title: "Login realizado com sucesso!",
+          description: "Redirecionando para o painel administrativo...",
+        });
+        onOpenChange(false);
+        setEmail("");
+        setPassword("");
         navigate("/admin");
-      }, 500);
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Acesso negado",
+          description: "Você não tem permissão de administrador.",
+        });
+        await logout();
+        setIsLoading(false);
+      }
     } else {
       toast({
         variant: "destructive",
         title: "Erro no login",
-        description: error.message === "Invalid login credentials" 
+        description: error?.message === "Invalid login credentials" 
           ? "Email ou senha incorretos." 
-          : error.message,
+          : error?.message || "Erro desconhecido",
       });
       setIsLoading(false);
     }

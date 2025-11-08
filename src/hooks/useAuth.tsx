@@ -108,5 +108,19 @@ export const useAuth = () => {
     await supabase.auth.signOut();
   };
 
-  return { ...authState, login, logout };
+  const checkIsAdmin = async (): Promise<boolean> => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) return false;
+    
+    const { data: roles } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', session.user.id)
+      .eq('role', 'admin')
+      .maybeSingle();
+    
+    return !!roles;
+  };
+
+  return { ...authState, login, logout, checkIsAdmin };
 };
