@@ -6,7 +6,7 @@ import { MessageCircle, Image } from "lucide-react";
 import { useState } from "react";
 import ProductGalleryDialog from "./ProductGalleryDialog";
 import InstallmentSelector from "./InstallmentSelector";
-import { InstallmentOption, calculateCashPriceWithPassOn } from "@/lib/installmentHelper";
+import { InstallmentOption, calculateCashPriceWithPassOn, getAllInstallmentOptions } from "@/lib/installmentHelper";
 import { couponsStore } from "@/lib/couponsStore";
 
 const sanitizeForWhatsApp = (text: string): string => {
@@ -103,7 +103,33 @@ const ProductCard = ({ images, name, brand, specs, description, price, costPrice
       messageLines.push(`• *Com cupom:* R$ ${finalPrice.toFixed(2)}`);
       messageLines.push(`• Valor original: R$ ${price.toFixed(2)}`);
     } else {
-      messageLines.push(`• *Preço de Venda:* R$ ${price.toFixed(2)}`);
+      // Cliente não selecionou forma de pagamento - mostrar todas as opções
+      messageLines.push("");
+      
+      // 1. Opção à vista
+      const cashPrice = calculateCashPriceWithPassOn(price, passOnCashDiscount || false, price);
+      messageLines.push(`💵 *À Vista (5% desconto):*`);
+      messageLines.push(`• R$ ${cashPrice.toFixed(2)}`);
+      messageLines.push("");
+      
+      // 2. Opções de parcelamento
+      const installmentOptions = getAllInstallmentOptions(price);
+      messageLines.push(`💳 *Parcelado (Visa/Mastercard):*`);
+      installmentOptions.forEach(option => {
+        messageLines.push(
+          `• ${option.installments}x de R$ ${option.installmentValue.toFixed(2)} ` +
+          `(Total: R$ ${option.totalAmount.toFixed(2)})`
+        );
+      });
+      messageLines.push("");
+      
+      // 3. Lembrar do cupom
+      messageLines.push(`🎟️ *Possui cupom de desconto?*`);
+      messageLines.push(`Insira no site para ver o preço especial!`);
+      messageLines.push("");
+      
+      // 4. Preço de referência
+      messageLines.push(`📋 *Preço de tabela:* R$ ${price.toFixed(2)}`);
     }
 
 
