@@ -8,11 +8,17 @@ import { Badge } from "@/components/ui/badge";
 import { LogOut, ShoppingBag, DollarSign, Clock, Shield } from "lucide-react";
 import { calculateWarranty } from "@/lib/warrantyHelper";
 import { format } from "date-fns";
+import { CustomerStatsChart } from "@/components/customer/CustomerStatsChart";
+import { SummaryCard } from "@/components/customer/SummaryCard";
+import { PurchaseFilters } from "@/components/customer/PurchaseFilters";
 
 const CustomerPortal = () => {
   const navigate = useNavigate();
   const { customer, logout } = useCustomerAuth();
   const [receivables, setReceivables] = useState<Receivable[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [periodFilter, setPeriodFilter] = useState("all");
 
   useEffect(() => {
     if (!customer) {
@@ -35,6 +41,42 @@ const CustomerPortal = () => {
   const totalComprado = receivables.reduce((sum, r) => sum + r.totalAmount, 0);
   const totalPago = receivables.reduce((sum, r) => sum + r.paidAmount, 0);
   const totalDevedor = receivables.reduce((sum, r) => sum + r.remainingAmount, 0);
+
+  // Filtrar compras
+  const filteredReceivables = receivables.filter(r => {
+    // Filtro por nome do produto
+    if (searchTerm && !r.productName.toLowerCase().includes(searchTerm.toLowerCase())) {
+      return false;
+    }
+    
+    // Filtro por status
+    if (statusFilter !== "all" && r.status !== statusFilter) {
+      return false;
+    }
+    
+    // Filtro por período
+    if (periodFilter !== "all") {
+      const now = new Date();
+      const createdDate = new Date(r.createdAt);
+      const daysAgo = Math.ceil((now.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24));
+      
+      if (periodFilter === "30days" && daysAgo > 30) return false;
+      if (periodFilter === "90days" && daysAgo > 90) return false;
+      if (periodFilter === "180days" && daysAgo > 180) return false;
+    }
+    
+    return true;
+  });
+
+  // Calcular progresso de pagamento
+  const progressoPagamento = totalComprado > 0 ? (totalPago / totalComprado) * 100 : 0;
+
+  // Verificar vencimentos próximos (7 dias)
+  const proximosVencimentos = receivables.filter(r => {
+    if (!r.dueDate || r.status === "paid") return false;
+    const daysUntilDue = Math.ceil((new Date(r.dueDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+    return daysUntilDue >= 0 && daysUntilDue <= 7;
+  });
 
   const getStatusBadge = (status: Receivable["status"]) => {
     const variants = {
@@ -66,42 +108,41 @@ const CustomerPortal = () => {
       <main className="container mx-auto px-4 py-8">
         {/* Cards de Resumo */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <ShoppingBag className="h-4 w-4" />
-                Total Comprado
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold">R$ {totalComprado.toFixed(2)}</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <DollarSign className="h-4 w-4" />
-                Total Pago
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold text-green-600">R$ {totalPago.toFixed(2)}</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <Clock className="h-4 w-4" />
-                Saldo Devedor
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold text-red-600">R$ {totalDevedor.toFixed(2)}</p>
-            </CardContent>
-          </Card>
+          <SummaryCard
+            title="Total Comprado"
+            value={`R$ ${totalComprado.toFixed(2)}`}
+            icon={ShoppingBag}
+            animated
+          />
+          
+          <SummaryCard
+            title="Total Pago"
+            value={`R$ ${totalPago.toFixed(2)}`}
+            icon={DollarSign}
+            valueColor="text-green-600"
+            progress={progressoPagamento}
+            animated
+          />
+          
+          <SummaryCard
+            title="Saldo Devedor"
+            value={`R$ ${totalDevedor.toFixed(2)}`}
+            icon={Clock}
+            valueColor="text-red-600"
+            alert={
+              proximosVencimentos.length > 0
+                ? {
+                    show: true,
+                    text: `⚠️ ${proximosVencimentos.length} conta(s) vencendo em até 7 dias`
+                  }
+                : undefined
+            }
+            animated
+          />
         </div>
+
+        {/* Gráficos */}
+        <CustomerStatsChart receivables={receivables} />
 
         {/* Card de Crédito Disponível */}
         {customer.creditBalance && customer.creditBalance > 0 && (
@@ -129,11 +170,23 @@ const CustomerPortal = () => {
             <CardTitle>Minhas Compras</CardTitle>
           </CardHeader>
           <CardContent>
-            {receivables.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">Nenhuma compra registrada</p>
+            {/* Filtros */}
+            <PurchaseFilters
+              searchTerm={searchTerm}
+              onSearchChange={setSearchTerm}
+              statusFilter={statusFilter}
+              onStatusFilterChange={setStatusFilter}
+              periodFilter={periodFilter}
+              onPeriodFilterChange={setPeriodFilter}
+            />
+
+            {filteredReceivables.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">
+                {receivables.length === 0 ? "Nenhuma compra registrada" : "Nenhuma compra encontrada com os filtros aplicados"}
+              </p>
             ) : (
               <div className="space-y-4">
-                {receivables.map(receivable => {
+                {filteredReceivables.map(receivable => {
                   const warranty = receivable.warranty && receivable.warrantyExpiresAt
                     ? calculateWarranty(receivable.createdAt, receivable.warranty)
                     : null;
