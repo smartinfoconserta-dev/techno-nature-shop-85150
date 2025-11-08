@@ -104,10 +104,26 @@ const QuickSalesTab = () => {
     return `R$ ${value.toFixed(2)}`;
   };
 
-  // Filtrar vendas por busca e garantia
+  // Filtrar vendas por busca avançada e garantia
   const filteredSales = sales.filter(sale => {
-    // Filtro de busca
-    const matchesSearch = sale.productName.toLowerCase().includes(searchTerm.toLowerCase());
+    // BUSCA AVANÇADA: Procura em múltiplos campos
+    const searchLower = searchTerm.toLowerCase().trim();
+    
+    let matchesSearch = true;
+    if (searchLower !== "") {
+      matchesSearch = 
+        // Busca no nome do produto
+        sale.productName.toLowerCase().includes(searchLower) ||
+        // Busca no nome do cliente
+        (sale.customerName && sale.customerName.toLowerCase().includes(searchLower)) ||
+        // Busca no CPF (remove pontuação para buscar só números também)
+        (sale.customerCpf && (
+          sale.customerCpf.includes(searchLower) ||
+          sale.customerCpf.replace(/\D/g, '').includes(searchLower.replace(/\D/g, ''))
+        )) ||
+        // Busca nas notas
+        (sale.notes && sale.notes.toLowerCase().includes(searchLower));
+    }
     
     // Filtro de garantia
     let matchesWarranty = true;
@@ -176,7 +192,7 @@ const QuickSalesTab = () => {
           <div className="relative flex-1 min-w-[200px]">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Buscar produto..."
+              placeholder="Buscar por produto, cliente, CPF..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-9"
@@ -292,11 +308,12 @@ const QuickSalesTab = () => {
                     <TableHead>Data</TableHead>
                     <TableHead>Garantia</TableHead>
                     <TableHead>Produto</TableHead>
+                    <TableHead>Cliente</TableHead>
                     <TableHead className="text-right">Custo</TableHead>
                     <TableHead className="text-right">Venda</TableHead>
                     <TableHead className="text-right">Lucro</TableHead>
                     <TableHead>Tipo</TableHead>
-                    <TableHead>Pagamento/Cliente</TableHead>
+                    <TableHead>Pagamento</TableHead>
                     <TableHead className="text-center">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -322,6 +339,22 @@ const QuickSalesTab = () => {
                         {sale.productName}
                         {sale.notes && (
                           <p className="text-xs text-muted-foreground">{sale.notes}</p>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {sale.customerName || sale.customerCpf ? (
+                          <div className="space-y-0.5">
+                            {sale.customerName && (
+                              <p className="font-medium text-sm">{sale.customerName}</p>
+                            )}
+                            {sale.customerCpf && (
+                              <p className="text-xs text-muted-foreground font-mono">
+                                {sale.customerCpf}
+                              </p>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">-</span>
                         )}
                       </TableCell>
                       <TableCell className="text-right">

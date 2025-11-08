@@ -29,6 +29,8 @@ import WarrantySelector from "./WarrantySelector";
 
 const formSchema = z.object({
   productName: z.string().min(1, "Nome do produto é obrigatório"),
+  customerName: z.string().optional(),
+  customerCpf: z.string().optional(),
   costPrice: z.number().min(0, "Preço de custo deve ser maior ou igual a 0"),
   salePrice: z.number().min(0.01, "Preço de venda deve ser maior que 0"),
   cash: z.number().min(0, "Valor deve ser maior ou igual a 0"),
@@ -64,6 +66,8 @@ export function AddQuickSaleDialog({
     resolver: zodResolver(formSchema),
     defaultValues: {
       productName: "",
+      customerName: "",
+      customerCpf: "",
       costPrice: 0,
       salePrice: 0,
       cash: 0,
@@ -122,6 +126,8 @@ export function AddQuickSaleDialog({
       // Venda à vista com pagamento misto
       quickSalesStore.addQuickSale({
         productName: data.productName,
+        customerName: data.customerName || undefined,
+        customerCpf: data.customerCpf || undefined,
         costPrice: data.costPrice,
         salePrice: data.salePrice,
         paymentBreakdown: {
@@ -181,6 +187,43 @@ export function AddQuickSaleDialog({
                 </FormItem>
               )}
             />
+
+            {/* Identificação do Cliente (Opcional) */}
+            <div className="border-l-4 border-blue-400 pl-4 py-3 bg-blue-50 rounded">
+              <p className="text-sm font-medium text-blue-900 mb-3">
+                👤 Identificação do Cliente (Opcional)
+              </p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="customerName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nome da Pessoa</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Ex: João Silva" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="customerCpf"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>CPF</FormLabel>
+                      <FormControl>
+                        <Input placeholder="000.000.000-00" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
 
             {/* Preços */}
             <div className="grid grid-cols-2 gap-4">

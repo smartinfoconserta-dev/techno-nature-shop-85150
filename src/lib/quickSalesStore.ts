@@ -8,6 +8,10 @@ export interface QuickSale {
   salePrice: number;
   profit: number;
   
+  // Identificação do cliente (opcional)
+  customerName?: string;
+  customerCpf?: string;
+  
   // Pagamento (pode ser misto agora)
   paymentBreakdown?: { cash: number; pix: number; card: number };
   paymentMethod?: "cash" | "pix" | "card"; // Mantido para compatibilidade com vendas antigas

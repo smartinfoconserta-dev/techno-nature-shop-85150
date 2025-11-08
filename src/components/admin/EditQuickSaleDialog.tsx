@@ -38,6 +38,8 @@ import { useToast } from "@/hooks/use-toast";
 
 const formSchema = z.object({
   productName: z.string().min(1, "Nome do produto é obrigatório"),
+  customerName: z.string().optional(),
+  customerCpf: z.string().optional(),
   notes: z.string().optional(),
 });
 
@@ -65,6 +67,8 @@ export function EditQuickSaleDialog({
     resolver: zodResolver(formSchema),
     defaultValues: {
       productName: "",
+      customerName: "",
+      customerCpf: "",
       notes: "",
     },
   });
@@ -76,6 +80,8 @@ export function EditQuickSaleDialog({
         setSale(foundSale);
         form.reset({
           productName: foundSale.productName,
+          customerName: foundSale.customerName || "",
+          customerCpf: foundSale.customerCpf || "",
           notes: foundSale.notes || "",
         });
       }
@@ -89,6 +95,8 @@ export function EditQuickSaleDialog({
     try {
       quickSalesStore.updateQuickSale(saleId, {
         productName: data.productName,
+        customerName: data.customerName || undefined,
+        customerCpf: data.customerCpf || undefined,
         notes: data.notes,
       });
 
@@ -193,6 +201,37 @@ export function EditQuickSaleDialog({
                   </FormItem>
                 )}
               />
+
+              {/* Campos de Cliente */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="customerName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nome da Pessoa (Opcional)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Ex: João Silva" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="customerCpf"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>CPF (Opcional)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="000.000.000-00" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
               {/* Observações */}
               <FormField
