@@ -67,117 +67,119 @@ const AddPaymentDialog = ({ open, onOpenChange, receivable, onConfirm }: AddPaym
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>💵 Registrar Pagamento</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
-          <div className="space-y-2 bg-muted/50 p-4 rounded-lg">
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Cliente:</span>
-              <span className="font-medium">{receivable.customerCode} - {receivable.customerName}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Produto:</span>
-              <span>{receivable.productName}</span>
-            </div>
-            <Separator className="my-2" />
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Valor Total:</span>
-              <span className="font-semibold">R$ {receivable.totalAmount.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Já Pago:</span>
-              <span className="text-green-600">R$ {receivable.paidAmount.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Restante:</span>
-              <span className="font-bold text-red-600">R$ {receivable.remainingAmount.toFixed(2)}</span>
-            </div>
-          </div>
-
-          <Separator />
-
-          <div className="space-y-4">
-            <h4 className="font-semibold">Formas de Pagamento</h4>
-            
-            <div className="space-y-2">
-              <Label>💵 Dinheiro</Label>
-              <Input
-                type="number"
-                step="0.01"
-                min="0"
-                value={cash}
-                onChange={(e) => setCash(e.target.value)}
-                placeholder="0.00"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label>📱 PIX</Label>
-              <Input
-                type="number"
-                step="0.01"
-                min="0"
-                value={pix}
-                onChange={(e) => setPix(e.target.value)}
-                placeholder="0.00"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label>💳 Cartão</Label>
-              <Input
-                type="number"
-                step="0.01"
-                min="0"
-                value={card}
-                onChange={(e) => setCard(e.target.value)}
-                placeholder="0.00"
-              />
-            </div>
-
-            <div className="bg-muted p-3 rounded-lg">
-              <div className="flex justify-between">
-                <span className="font-semibold">Total do Pagamento:</span>
-                <span className="text-xl font-bold text-green-600">
-                  R$ {totalPayment.toFixed(2)}
-                </span>
+        <div className="flex-1 overflow-y-auto pr-2">
+          <div className="space-y-4 py-4">
+            <div className="space-y-2 bg-muted/50 p-4 rounded-lg">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Cliente:</span>
+                <span className="font-medium">{receivable.customerCode} - {receivable.customerName}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Produto:</span>
+                <span>{receivable.productName}</span>
+              </div>
+              <Separator className="my-2" />
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Valor Total:</span>
+                <span className="font-semibold">R$ {receivable.totalAmount.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Já Pago:</span>
+                <span className="text-green-600">R$ {receivable.paidAmount.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Restante:</span>
+                <span className="font-bold text-red-600">R$ {receivable.remainingAmount.toFixed(2)}</span>
               </div>
             </div>
 
-            <div>
-              <Label htmlFor="date">Data do Pagamento *</Label>
-              <Input
-                id="date"
-                type="date"
-                value={paymentDate}
-                onChange={(e) => setPaymentDate(e.target.value)}
-              />
-            </div>
+            <Separator />
 
-            <div>
-              <Label htmlFor="notes">Observações</Label>
-              <Textarea
-                id="notes"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Informações adicionais sobre o pagamento"
-                rows={2}
-              />
-            </div>
+            <div className="space-y-4">
+              <h4 className="font-semibold">Formas de Pagamento</h4>
+              
+              <div className="space-y-2">
+                <Label>💵 Dinheiro</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={cash}
+                  onChange={(e) => setCash(e.target.value)}
+                  placeholder="0.00"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label>📱 PIX</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={pix}
+                  onChange={(e) => setPix(e.target.value)}
+                  placeholder="0.00"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label>💳 Cartão</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={card}
+                  onChange={(e) => setCard(e.target.value)}
+                  placeholder="0.00"
+                />
+              </div>
 
-            {totalPayment > 0 && (
-              <div className="bg-primary/10 p-3 rounded-lg border border-primary/20">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">Novo Saldo Devedor:</span>
-                  <span className="text-lg font-bold">
-                    R$ {Math.max(0, newBalance).toFixed(2)}
+              <div className="bg-muted p-3 rounded-lg">
+                <div className="flex justify-between">
+                  <span className="font-semibold">Total do Pagamento:</span>
+                  <span className="text-xl font-bold text-green-600">
+                    R$ {totalPayment.toFixed(2)}
                   </span>
                 </div>
               </div>
-            )}
+
+              <div>
+                <Label htmlFor="date">Data do Pagamento *</Label>
+                <Input
+                  id="date"
+                  type="date"
+                  value={paymentDate}
+                  onChange={(e) => setPaymentDate(e.target.value)}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="notes">Observações</Label>
+                <Textarea
+                  id="notes"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Informações adicionais sobre o pagamento"
+                  rows={2}
+                />
+              </div>
+
+              {totalPayment > 0 && (
+                <div className="bg-primary/10 p-3 rounded-lg border border-primary/20">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium">Novo Saldo Devedor:</span>
+                    <span className="text-lg font-bold">
+                      R$ {Math.max(0, newBalance).toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
