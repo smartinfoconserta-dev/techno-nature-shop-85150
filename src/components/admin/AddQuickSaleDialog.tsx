@@ -30,10 +30,7 @@ import WarrantySelector from "./WarrantySelector";
 const formSchema = z.object({
   productName: z.string().min(1, "Nome do produto é obrigatório"),
   customerName: z.string().optional(),
-  customerCpf: z.string().optional().refine(
-    (val) => !val || val.trim() === '' || /^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(val),
-    { message: "CPF deve estar no formato 000.000.000-00" }
-  ),
+  customerCpf: z.string().optional(),
   costPrice: z.number().min(0, "Preço de custo deve ser maior ou igual a 0"),
   salePrice: z.number().min(0.01, "Preço de venda deve ser maior que 0"),
   cash: z.number().min(0, "Valor deve ser maior ou igual a 0"),
@@ -219,7 +216,7 @@ export function AddQuickSaleDialog({
                     <FormItem>
                       <FormLabel>CPF</FormLabel>
                       <FormControl>
-                        <Input placeholder="000.000.000-00" maxLength={14} {...field} />
+                        <Input placeholder="Qualquer formato" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
