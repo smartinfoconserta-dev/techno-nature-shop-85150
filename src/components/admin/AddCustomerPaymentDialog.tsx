@@ -33,7 +33,7 @@ import { receivablesStore } from "@/lib/receivablesStore";
 import { customersStore } from "@/lib/customersStore";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ScrollArea } from "@/components/ui/scroll-area";
+
 
 const formSchema = z.object({
   cash: z.number().min(0, "Valor deve ser maior ou igual a 0"),
@@ -230,7 +230,7 @@ export function AddCustomerPaymentDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh]">
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>💰 Registrar Pagamento do Cliente</DialogTitle>
           <DialogDescription>
@@ -238,194 +238,195 @@ export function AddCustomerPaymentDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="max-h-[calc(90vh-10rem)] pr-4">
-          {totalDue === 0 ? (
-            <Alert>
-              <AlertDescription>
-                Este cliente não possui dívidas em aberto.
-              </AlertDescription>
-            </Alert>
-          ) : (
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <Alert>
-                  <AlertDescription>
-                    <strong>Total devedor:</strong> R$ {totalDue.toFixed(2)}
-                  </AlertDescription>
-                </Alert>
+        {totalDue === 0 ? (
+          <Alert>
+            <AlertDescription>
+              Este cliente não possui dívidas em aberto.
+            </AlertDescription>
+          </Alert>
+        ) : (
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col h-full">
+              <div className="flex-1 overflow-y-auto pr-2">
+                <div className="space-y-4 py-4">
+                  <Alert>
+                    <AlertDescription>
+                      <strong>Total devedor:</strong> R$ {totalDue.toFixed(2)}
+                    </AlertDescription>
+                  </Alert>
 
-                {/* Formas de Pagamento Misto */}
-                <div className="space-y-3">
-                  <FormLabel>💰 Formas de Pagamento *</FormLabel>
-                  <div className="grid grid-cols-3 gap-3">
-                    <FormField
-                      control={form.control}
-                      name="cash"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-xs">💵 Dinheiro</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              step="0.01"
-                              placeholder="0.00"
-                              value={field.value || ""}
-                              onChange={e => {
-                                const value = parseFloat(e.target.value) || 0;
-                                field.onChange(value);
-                                handleAmountChange(value + pix + card);
-                              }}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="pix"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-xs">📱 PIX</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              step="0.01"
-                              placeholder="0.00"
-                              value={field.value || ""}
-                              onChange={e => {
-                                const value = parseFloat(e.target.value) || 0;
-                                field.onChange(value);
-                                handleAmountChange(cash + value + card);
-                              }}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="card"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-xs">💳 Cartão</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              step="0.01"
-                              placeholder="0.00"
-                              value={field.value || ""}
-                              onChange={e => {
-                                const value = parseFloat(e.target.value) || 0;
-                                field.onChange(value);
-                                handleAmountChange(cash + pix + value);
-                              }}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Total: <strong className="text-foreground">R$ {totalAmount.toFixed(2)}</strong>
-                  </p>
-                </div>
-
-                {/* Preview da Distribuição */}
-                {distributionPreview.length > 0 && (
-                  <div className="p-4 bg-muted rounded-lg">
-                    <h4 className="font-semibold text-sm mb-2">📋 Distribuição do Pagamento:</h4>
-                    <div className="space-y-2">
-                      {distributionPreview.map((item, idx) => (
-                        <div key={idx} className="text-sm flex justify-between">
-                          <span>{item.productName}</span>
-                          <span className="font-semibold text-green-600">
-                            R$ {item.amount.toFixed(2)}
-                          </span>
-                        </div>
-                      ))}
+                  {/* Formas de Pagamento Misto */}
+                  <div className="space-y-3">
+                    <FormLabel>💰 Formas de Pagamento *</FormLabel>
+                    <div className="grid grid-cols-3 gap-3">
+                      <FormField
+                        control={form.control}
+                        name="cash"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs">💵 Dinheiro</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                placeholder="0.00"
+                                value={field.value || ""}
+                                onChange={e => {
+                                  const value = parseFloat(e.target.value) || 0;
+                                  field.onChange(value);
+                                  handleAmountChange(value + pix + card);
+                                }}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="pix"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs">📱 PIX</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                placeholder="0.00"
+                                value={field.value || ""}
+                                onChange={e => {
+                                  const value = parseFloat(e.target.value) || 0;
+                                  field.onChange(value);
+                                  handleAmountChange(cash + value + card);
+                                }}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="card"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs">💳 Cartão</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                placeholder="0.00"
+                                value={field.value || ""}
+                                onChange={e => {
+                                  const value = parseFloat(e.target.value) || 0;
+                                  field.onChange(value);
+                                  handleAmountChange(cash + pix + value);
+                                }}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                     </div>
+                    <p className="text-sm text-muted-foreground">
+                      Total: <strong className="text-foreground">R$ {totalAmount.toFixed(2)}</strong>
+                    </p>
                   </div>
-                )}
 
+                  {/* Preview da Distribuição */}
+                  {distributionPreview.length > 0 && (
+                    <div className="p-4 bg-muted rounded-lg">
+                      <h4 className="font-semibold text-sm mb-2">📋 Distribuição do Pagamento:</h4>
+                      <div className="space-y-2">
+                        {distributionPreview.map((item, idx) => (
+                          <div key={idx} className="text-sm flex justify-between">
+                            <span>{item.productName}</span>
+                            <span className="font-semibold text-green-600">
+                              R$ {item.amount.toFixed(2)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
-                {/* Data */}
-                <FormField
-                  control={form.control}
-                  name="paymentDate"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>Data do Pagamento *</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant="outline"
-                              className={cn(
-                                "pl-3 text-left font-normal",
-                                !field.value && "text-muted-foreground"
-                              )}
-                            >
-                              {field.value ? (
-                                format(field.value, "dd/MM/yyyy", { locale: ptBR })
-                              ) : (
-                                <span>Selecione</span>
-                              )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            initialFocus
+                  {/* Data */}
+                  <FormField
+                    control={form.control}
+                    name="paymentDate"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col">
+                        <FormLabel>Data do Pagamento *</FormLabel>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant="outline"
+                                className={cn(
+                                  "pl-3 text-left font-normal",
+                                  !field.value && "text-muted-foreground"
+                                )}
+                              >
+                                {field.value ? (
+                                  format(field.value, "dd/MM/yyyy", { locale: ptBR })
+                                ) : (
+                                  <span>Selecione</span>
+                                )}
+                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={field.value}
+                              onSelect={field.onChange}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Observações */}
+                  <FormField
+                    control={form.control}
+                    name="notes"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Observações (opcional)</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Detalhes sobre o pagamento..."
+                            {...field}
                           />
-                        </PopoverContent>
-                      </Popover>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
 
-                {/* Observações */}
-                <FormField
-                  control={form.control}
-                  name="notes"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Observações (opcional)</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="Detalhes sobre o pagamento..."
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <DialogFooter>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => onOpenChange(false)}
-                    disabled={isLoading}
-                  >
-                    Cancelar
-                  </Button>
-                  <Button type="submit" disabled={isLoading || totalDue === 0}>
-                    {isLoading ? "Registrando..." : "Registrar Pagamento"}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </Form>
-          )}
-        </ScrollArea>
+              <DialogFooter className="pt-4 border-t">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => onOpenChange(false)}
+                  disabled={isLoading}
+                >
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={isLoading || totalDue === 0}>
+                  {isLoading ? "Registrando..." : "Registrar Pagamento"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        )}
       </DialogContent>
     </Dialog>
   );

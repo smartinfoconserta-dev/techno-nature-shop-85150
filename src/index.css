@@ -114,3 +114,9 @@ All colors MUST be HSL.
     white-space: nowrap;
   }
 }
+
+/* Garantir background sólido em dropdowns */
+[data-radix-select-content],
+[data-radix-popover-content] {
+  background-color: hsl(var(--popover)) !important;
+}

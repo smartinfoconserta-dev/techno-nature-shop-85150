@@ -9,6 +9,13 @@ import InstallmentSelector from "./InstallmentSelector";
 import { InstallmentOption, calculateCashPriceWithPassOn } from "@/lib/installmentHelper";
 import { couponsStore } from "@/lib/couponsStore";
 
+const sanitizeForWhatsApp = (text: string): string => {
+  return text
+    .replace(/\n{3,}/g, '\n\n')
+    .replace(/[*_~`]/g, '')
+    .trim();
+};
+
 interface ProductCardProps {
   id: string;
   images: string[];
@@ -37,7 +44,9 @@ const ProductCard = ({ images, name, brand, specs, description, price, costPrice
   let displayMode: 'original' | 'coupon' | 'cash' | 'installment' = 'original';
   let paymentDetails: { installments?: number; installmentValue?: number; totalAmount?: number } = {};
 
-  if (isDiscountActive && couponValidation.coupon) {
+  if (isDiscountActive && couponValidation.coupon && 
+      typeof couponValidation.coupon.discountPercent === 'number' &&
+      couponValidation.coupon.discountPercent > 0) {
     const discount = couponValidation.coupon.discountPercent / 100;
     finalPrice = price * (1 - discount);
     displayMode = 'coupon';
@@ -62,13 +71,13 @@ const ProductCard = ({ images, name, brand, specs, description, price, costPrice
     let messageLines = [
       "🛒 *INTERESSE EM PRODUTO*",
       "",
-      `📦 *Produto:* ${name} - ${brand}`,
+      `📦 *Produto:* ${sanitizeForWhatsApp(name)} - ${sanitizeForWhatsApp(brand)}`,
       "",
       "📋 *Especificações:*",
-      specs,
+      sanitizeForWhatsApp(specs),
       "",
       "📝 *Descrição:*",
-      description,
+      sanitizeForWhatsApp(description),
       "",
       "💰 *Valores:*",
     ];

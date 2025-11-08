@@ -116,9 +116,9 @@ const QuickSalesTab = () => {
         sale.productName.toLowerCase().includes(searchLower) ||
         // Busca no nome do cliente
         (sale.customerName && sale.customerName.toLowerCase().includes(searchLower)) ||
-        // Busca no CPF (remove pontuação para buscar só números também)
+        // Busca no CPF (normaliza ambos os lados)
         (sale.customerCpf && (
-          sale.customerCpf.includes(searchLower) ||
+          sale.customerCpf.toLowerCase().includes(searchLower) ||
           sale.customerCpf.replace(/\D/g, '').includes(searchLower.replace(/\D/g, ''))
         )) ||
         // Busca nas notas

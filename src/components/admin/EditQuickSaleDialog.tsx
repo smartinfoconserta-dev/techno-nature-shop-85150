@@ -39,7 +39,10 @@ import { useToast } from "@/hooks/use-toast";
 const formSchema = z.object({
   productName: z.string().min(1, "Nome do produto é obrigatório"),
   customerName: z.string().optional(),
-  customerCpf: z.string().optional(),
+  customerCpf: z.string().optional().refine(
+    (val) => !val || val.trim() === '' || /^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(val),
+    { message: "CPF deve estar no formato 000.000.000-00" }
+  ),
   notes: z.string().optional(),
 });
 
@@ -225,7 +228,7 @@ export function EditQuickSaleDialog({
                     <FormItem>
                       <FormLabel>CPF (Opcional)</FormLabel>
                       <FormControl>
-                        <Input placeholder="000.000.000-00" {...field} />
+                        <Input placeholder="000.000.000-00" maxLength={14} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
