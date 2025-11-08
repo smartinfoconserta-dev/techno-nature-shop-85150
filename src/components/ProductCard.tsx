@@ -47,8 +47,14 @@ const ProductCard = ({ images, name, brand, specs, description, price, costPrice
   if (isDiscountActive && couponValidation.coupon && 
       typeof couponValidation.coupon.discountPercent === 'number' &&
       couponValidation.coupon.discountPercent > 0) {
-    const discount = couponValidation.coupon.discountPercent / 100;
-    finalPrice = price * (1 - discount);
+    // Priorizar discountPrice (preço lojista) se configurado
+    if (discountPrice && discountPrice < price) {
+      finalPrice = discountPrice;
+    } else {
+      // Fallback para desconto percentual
+      const discount = couponValidation.coupon.discountPercent / 100;
+      finalPrice = price * (1 - discount);
+    }
     displayMode = 'coupon';
   } else if (selectedPayment) {
     if (selectedPayment.type === 'cash') {
@@ -198,7 +204,10 @@ const ProductCard = ({ images, name, brand, specs, description, price, costPrice
                 R$ {finalPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
               </p>
               <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                🎟️ {couponValidation.coupon?.discountPercent}% de desconto aplicado!
+                {discountPrice && discountPrice < price 
+                  ? `🎟️ Preço especial para lojistas! Economia de R$ ${(price - finalPrice).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                  : `🎟️ ${couponValidation.coupon?.discountPercent}% de desconto aplicado!`
+                }
               </p>
               <p className="text-xs text-muted-foreground line-through">
                 De: R$ {price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
