@@ -11,9 +11,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { X, Plus, GripVertical } from "lucide-react";
+import { X, Plus, GripVertical, Upload } from "lucide-react";
 import { Product } from "@/lib/productsStore";
 import { brandsStore } from "@/lib/brandsStore";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface ProductFormProps {
   product?: Product;
@@ -35,9 +37,9 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
     product?.passOnCashDiscount || false
   );
   const [images, setImages] = useState<string[]>(product?.images || []);
-  const [newImageUrl, setNewImageUrl] = useState("");
   const [availableBrands, setAvailableBrands] = useState<string[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     import("@/lib/categoriesStore").then(({ categoriesStore }) => {
@@ -60,10 +62,45 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
     setAvailableBrands(brands.map((b) => b.name));
   };
 
-  const handleAddImage = () => {
-    if (newImageUrl.trim()) {
-      setImages([...images, newImageUrl.trim()]);
-      setNewImageUrl("");
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploading(true);
+    const uploadedUrls: string[] = [];
+
+    try {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
+        const filePath = `${fileName}`;
+
+        const { data, error } = await supabase.storage
+          .from('product-images')
+          .upload(filePath, file);
+
+        if (error) {
+          console.error('Upload error:', error);
+          toast.error(`Erro ao fazer upload de ${file.name}`);
+          continue;
+        }
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('product-images')
+          .getPublicUrl(filePath);
+
+        uploadedUrls.push(publicUrl);
+      }
+
+      setImages([...images, ...uploadedUrls]);
+      toast.success(`${uploadedUrls.length} imagem(ns) adicionada(s)`);
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast.error('Erro ao fazer upload das imagens');
+    } finally {
+      setUploading(false);
+      e.target.value = '';
     }
   };
 
@@ -229,14 +266,18 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
         <Label>Imagens do Produto *</Label>
         <div className="flex gap-2">
           <Input
-            value={newImageUrl}
-            onChange={(e) => setNewImageUrl(e.target.value)}
-            placeholder="Cole o link da imagem aqui"
-            onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddImage())}
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={handleFileUpload}
+            disabled={uploading}
+            className="cursor-pointer"
           />
-          <Button type="button" onClick={handleAddImage} variant="secondary">
-            <Plus className="h-4 w-4 mr-2" />
-            Adicionar
+          <Button type="button" disabled={uploading} variant="secondary" asChild>
+            <label className="cursor-pointer">
+              <Upload className="h-4 w-4 mr-2" />
+              {uploading ? "Enviando..." : "Adicionar Fotos"}
+            </label>
           </Button>
         </div>
 
