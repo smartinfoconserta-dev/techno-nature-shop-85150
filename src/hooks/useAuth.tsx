@@ -20,25 +20,39 @@ export const useAuth = () => {
   });
 
   useEffect(() => {
+    const checkAdminRole = async (userId: string) => {
+      const { data: roles } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .eq('role', 'admin')
+        .maybeSingle();
+      
+      return !!roles;
+    };
+
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         if (session?.user) {
-          // Check if user is admin
-          const { data: roles } = await supabase
-            .from('user_roles')
-            .select('role')
-            .eq('user_id', session.user.id)
-            .eq('role', 'admin')
-            .maybeSingle();
-
+          // Update state synchronously first
           setAuthState({
             isAuthenticated: true,
             user: session.user,
             session: session,
-            isAdmin: !!roles,
+            isAdmin: false,
             isLoading: false,
           });
+
+          // Then check admin role asynchronously
+          setTimeout(() => {
+            checkAdminRole(session.user.id).then(isAdmin => {
+              setAuthState(prev => ({
+                ...prev,
+                isAdmin
+              }));
+            });
+          }, 0);
         } else {
           setAuthState({
             isAuthenticated: false,
@@ -52,21 +66,21 @@ export const useAuth = () => {
     );
 
     // Check for existing session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
-        const { data: roles } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', session.user.id)
-          .eq('role', 'admin')
-          .maybeSingle();
-
         setAuthState({
           isAuthenticated: true,
           user: session.user,
           session: session,
-          isAdmin: !!roles,
+          isAdmin: false,
           isLoading: false,
+        });
+
+        checkAdminRole(session.user.id).then(isAdmin => {
+          setAuthState(prev => ({
+            ...prev,
+            isAdmin
+          }));
         });
       } else {
         setAuthState({
