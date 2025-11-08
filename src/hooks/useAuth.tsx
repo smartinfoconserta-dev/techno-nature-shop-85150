@@ -35,24 +35,23 @@ export const useAuth = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         if (session?.user) {
-          // Update state synchronously first
+          // Keep loading while verifying admin role
           setAuthState({
             isAuthenticated: true,
             user: session.user,
             session: session,
             isAdmin: false,
-            isLoading: false,
+            isLoading: true,
           });
 
-          // Then check admin role asynchronously
-          setTimeout(() => {
-            checkAdminRole(session.user.id).then(isAdmin => {
-              setAuthState(prev => ({
-                ...prev,
-                isAdmin
-              }));
-            });
-          }, 0);
+          // Check admin role directly without setTimeout
+          checkAdminRole(session.user.id).then(isAdmin => {
+            setAuthState(prev => ({
+              ...prev,
+              isAdmin,
+              isLoading: false
+            }));
+          });
         } else {
           setAuthState({
             isAuthenticated: false,
@@ -73,13 +72,14 @@ export const useAuth = () => {
           user: session.user,
           session: session,
           isAdmin: false,
-          isLoading: false,
+          isLoading: true,
         });
 
         checkAdminRole(session.user.id).then(isAdmin => {
           setAuthState(prev => ({
             ...prev,
-            isAdmin
+            isAdmin,
+            isLoading: false
           }));
         });
       } else {
