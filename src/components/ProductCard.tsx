@@ -106,15 +106,6 @@ const ProductCard = ({ images, name, brand, specs, description, price, costPrice
       messageLines.push(`• *Preço de Venda:* R$ ${price.toFixed(2)}`);
     }
 
-    // Adicionar preço de custo e margem (informação interna)
-    if (costPrice) {
-      const margin = price - costPrice;
-      const marginPercent = ((margin / costPrice) * 100).toFixed(1);
-      messageLines.push("");
-      messageLines.push("📊 *Info Interna (Negociação):*");
-      messageLines.push(`• Preço de Custo: R$ ${costPrice.toFixed(2)}`);
-      messageLines.push(`• Margem: R$ ${margin.toFixed(2)} (${marginPercent}%)`);
-    }
 
     // Adicionar link da imagem
     if (imageLink) {
