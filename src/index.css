@@ -126,3 +126,14 @@ All colors MUST be HSL.
 [data-radix-popover-content] {
   background-color: hsl(var(--popover)) !important;
 }
+
+/* Esconder scrollbar mantendo funcionalidade */
+@layer utilities {
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}

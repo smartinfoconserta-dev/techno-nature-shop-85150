@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import ProductCard from "@/components/ProductCard";
 import { productsStore } from "@/lib/productsStore";
 import { categoriesStore } from "@/lib/categoriesStore";
@@ -22,6 +23,9 @@ const categoryIcons: Record<string, string> = {
 
 const CategorySection = ({ categoryName, onViewAll }: CategorySectionProps) => {
   const [products, setProducts] = useState<Product[]>([]);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
 
   useEffect(() => {
     const categoryProducts = productsStore
@@ -32,6 +36,34 @@ const CategorySection = ({ categoryName, onViewAll }: CategorySectionProps) => {
     
     setProducts(categoryProducts);
   }, [categoryName]);
+
+  useEffect(() => {
+    checkScrollButtons();
+  }, [products]);
+
+  const checkScrollButtons = () => {
+    if (scrollRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+      setCanScrollLeft(scrollLeft > 0);
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
+    }
+  };
+
+  const scroll = (direction: 'left' | 'right') => {
+    if (scrollRef.current) {
+      const scrollAmount = 200;
+      const newScrollLeft = direction === 'left' 
+        ? scrollRef.current.scrollLeft - scrollAmount
+        : scrollRef.current.scrollLeft + scrollAmount;
+      
+      scrollRef.current.scrollTo({
+        left: newScrollLeft,
+        behavior: 'smooth'
+      });
+      
+      setTimeout(checkScrollButtons, 100);
+    }
+  };
 
   if (products.length === 0) {
     return null;
@@ -75,11 +107,27 @@ const CategorySection = ({ categoryName, onViewAll }: CategorySectionProps) => {
         ))}
       </div>
 
-      {/* Mobile: Scroll horizontal */}
-      <ScrollArea className="w-full md:hidden">
-        <div className="flex gap-3 pb-4">
+      {/* Mobile: Scroll horizontal com botões de navegação */}
+      <div className="relative md:hidden">
+        {canScrollLeft && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-background/80 backdrop-blur-sm shadow-lg"
+            onClick={() => scroll('left')}
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </Button>
+        )}
+        
+        <div 
+          ref={scrollRef}
+          onScroll={checkScrollButtons}
+          className="flex gap-3 pb-4 overflow-x-auto scroll-smooth snap-x snap-mandatory hide-scrollbar"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        >
           {products.map((product) => (
-            <div key={product.id} className="inline-block min-w-[160px]">
+            <div key={product.id} className="inline-block min-w-[160px] snap-start">
               <ProductCard 
                 id={product.id}
                 images={product.images}
@@ -96,7 +144,18 @@ const CategorySection = ({ categoryName, onViewAll }: CategorySectionProps) => {
             </div>
           ))}
         </div>
-      </ScrollArea>
+
+        {canScrollRight && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-background/80 backdrop-blur-sm shadow-lg"
+            onClick={() => scroll('right')}
+          >
+            <ChevronRight className="h-5 w-5" />
+          </Button>
+        )}
+      </div>
     </div>
   );
 };
