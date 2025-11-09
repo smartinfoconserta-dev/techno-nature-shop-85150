@@ -348,9 +348,9 @@ const ProductDetailsDialog = ({
                       </Button>
                     )}
 
-                    <div className="border-t pt-2">
-                      <div className="text-xs text-muted-foreground mb-2">💳 Parcelamento (Visa/Mastercard)</div>
-                      <div className="max-h-64 overflow-y-auto pr-1 scrollbar-hide">
+                <div className="border-t pt-2">
+                  <div className="text-xs text-muted-foreground mb-2">💳 Parcelamento (Visa/Mastercard)</div>
+                  <div className="max-h-64 overflow-y-auto pr-1">
                         {getAllInstallmentOptions(isDiscountActive ? finalPrice : price).map((option) => (
                           <Button
                             key={option.installments}
