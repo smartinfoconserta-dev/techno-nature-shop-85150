@@ -1,58 +1,61 @@
 import { useState } from "react";
-import { Settings, Download } from "lucide-react";
+import { Settings, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import heroBanner from "@/assets/hero-banner.jpg";
 import AdminLoginDialog from "./AdminLoginDialog";
-import { Button } from "./ui/button";
-const Header = () => {
+import MobileMenu from "./MobileMenu";
+import SearchBar from "./SearchBar";
+
+interface HeaderProps {
+  searchValue: string;
+  onSearchChange: (value: string) => void;
+}
+
+const Header = ({ searchValue, onSearchChange }: HeaderProps) => {
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const navigate = useNavigate();
 
-  return <header className="relative h-[200px] md:h-[280px] flex items-center justify-center overflow-hidden">
-      <div className="absolute inset-0 bg-cover bg-center" style={{
-      backgroundImage: `url(${heroBanner})`
-    }}>
-        <div className="absolute inset-0 bg-gradient-to-b from-black/30 to-black/50" />
-      </div>
-      
-      <div className="absolute top-4 right-4 z-20 flex gap-2 backdrop-blur-sm bg-black/10 p-2 rounded-lg">
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={() => navigate('/login')}
-          className="opacity-80 hover:opacity-100 transition-opacity text-white border border-white/20 hover:bg-white/10"
-        >
-          <span>Parceiros</span>
-        </Button>
-        
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={() => navigate('/install')}
-          className="opacity-80 hover:opacity-100 transition-opacity text-white border border-white/20 hover:bg-white/10"
-        >
-          <Download className="mr-2 h-4 w-4" />
-          <span className="hidden sm:inline">Instalar App</span>
-        </Button>
-        
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          onClick={() => setShowLoginDialog(true)} 
-          className="opacity-30 hover:opacity-100 transition-opacity"
-        >
-          <Settings className="h-5 w-5 text-white" />
-        </Button>
-      </div>
-      
-      <div className="relative z-10 text-center px-4">
-        <h1 className="text-3xl md:text-4xl font-bold text-white mb-2 drop-shadow-lg">Ramon Tech Solutions</h1>
-        <p className="text-sm md:text-base text-white/80 drop-shadow-md">
-          Catálogo Digital de Tecnologia
-        </p>
-      </div>
+  return (
+    <>
+      <header className="sticky top-0 z-50 w-full bg-background border-b border-border shadow-sm">
+        <div className="container mx-auto px-4 h-14 flex items-center gap-3">
+          <MobileMenu />
+          
+          <div className="flex items-center gap-2 min-w-0">
+            <h1 className="text-lg font-bold text-foreground whitespace-nowrap hidden sm:block">
+              Ramon Tech
+            </h1>
+            <h1 className="text-lg font-bold text-foreground whitespace-nowrap sm:hidden">
+              RT
+            </h1>
+          </div>
+          
+          <SearchBar 
+            value={searchValue}
+            onChange={onSearchChange}
+            placeholder="Buscar produtos..."
+          />
+          
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => navigate('/login')}
+              className="h-10 w-10 flex items-center justify-center rounded-full hover:bg-muted transition-colors"
+            >
+              <User className="h-5 w-5 text-foreground" />
+            </button>
+            
+            <button
+              onClick={() => setShowLoginDialog(true)}
+              className="h-10 w-10 flex items-center justify-center rounded-full hover:bg-muted transition-colors opacity-30 hover:opacity-100"
+            >
+              <Settings className="h-5 w-5 text-foreground" />
+            </button>
+          </div>
+        </div>
+      </header>
 
       <AdminLoginDialog open={showLoginDialog} onOpenChange={setShowLoginDialog} />
-    </header>;
+    </>
+  );
 };
+
 export default Header;

@@ -147,134 +147,40 @@ const ProductCard = ({ id, images, name, brand, specs, description, price, costP
 
   return (
     <>
-      <Card className="overflow-hidden transition-all duration-300 hover:shadow-[--card-shadow-hover] shadow-[--card-shadow]">
-        <div 
-          className="aspect-square overflow-hidden bg-muted relative cursor-pointer group"
-          onClick={() => setIsDetailsOpen(true)}
-        >
+      <Card 
+        className="overflow-hidden transition-all duration-200 hover:shadow-md cursor-pointer border-border/50"
+        onClick={() => setIsDetailsOpen(true)}
+      >
+        <div className="aspect-square overflow-hidden bg-muted relative group">
           <img 
             src={mainImage} 
             alt={name}
-            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+            className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
           />
           {hasMultipleImages && (
-            <Badge className="absolute bottom-2 right-2 gap-1">
+            <Badge className="absolute bottom-2 right-2 gap-1 text-xs">
               <Image className="h-3 w-3" />
-              Ver fotos
+              +{images.length - 1}
             </Badge>
           )}
         </div>
       
-      <CardContent className="p-6 space-y-4">
-        <div>
-          <h3 className="text-xl font-semibold text-foreground">{name}</h3>
-          <p className="text-sm text-muted-foreground font-medium">{brand}</p>
-        </div>
-        
-        <p className="text-sm text-muted-foreground">{specs}</p>
-        <p className="text-sm text-foreground/80">{description}</p>
-        
-        <div className="pt-2 border-t">
-          {displayMode === 'original' && (
-            <div>
-              <p className="text-2xl font-bold text-primary">
-                R$ {price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-              </p>
-              {!isDiscountActive && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  ou 5% à vista
-                </p>
-              )}
-            </div>
-          )}
+        <CardContent className="p-3 space-y-2">
+          <h3 className="text-sm font-semibold text-foreground line-clamp-2 min-h-[2.5rem]">
+            {name}
+          </h3>
+          <p className="text-xs text-muted-foreground font-medium">{brand}</p>
           
-          {displayMode === 'cash' && (
-            <div>
-              <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                R$ {finalPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-              </p>
-              <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                💰 5% de desconto à vista
-              </p>
-              <p className="text-xs text-muted-foreground line-through">
-                De: R$ {price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-              </p>
-            </div>
-          )}
-          
-          {displayMode === 'installment' && paymentDetails.installments && (
-            <div>
-              <p className="text-2xl font-bold text-primary">
-                {paymentDetails.installments}x de R$ {paymentDetails.installmentValue?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Total: R$ {paymentDetails.totalAmount?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-              </p>
-              <div className="flex gap-1 mt-2">
-                <Badge variant="secondary" className="text-xs">💳 Visa</Badge>
-                <Badge variant="secondary" className="text-xs">💳 Mastercard</Badge>
-              </div>
-            </div>
-          )}
-          
-          {displayMode === 'coupon' && (
-            <div>
-              <p className="text-2xl font-bold text-primary">
-                R$ {finalPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-              </p>
-              <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                {discountPrice && discountPrice < price 
-                  ? `🎟️ Preço especial para lojistas! Economia de R$ ${(price - finalPrice).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-                  : `🎟️ ${couponValidation.coupon?.discountPercent}% de desconto aplicado!`
-                }
-              </p>
-              <p className="text-xs text-muted-foreground line-through">
-                De: R$ {price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-              </p>
-            </div>
-          )}
-        </div>
-        
-        <InstallmentSelector 
-          basePrice={isDiscountActive ? finalPrice : price}
-          hasCouponActive={isDiscountActive}
-          onSelect={setSelectedPayment}
-        />
-        
-        <div className="space-y-2">
-          <Input
-            placeholder="Insira o cupom de desconto"
-            value={coupon}
-            onChange={(e) => setCoupon(e.target.value)}
-            className="transition-all duration-200"
-          />
-          {isDiscountActive && (
-            <p className="text-xs text-green-600 dark:text-green-400">
-              ✅ Cupom válido! Desconto aplicado.
+          <div className="pt-2">
+            <p className="text-xl font-bold text-primary">
+              R$ {price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </p>
-          )}
-        </div>
-        
-        <div className="flex gap-2">
-          <Button 
-            onClick={() => setIsDetailsOpen(true)}
-            variant="outline"
-            className="flex-1"
-          >
-            <Info className="w-4 h-4 mr-2" />
-            Ver Detalhes
-          </Button>
-          
-          <Button 
-            onClick={handleWhatsAppClick}
-            className="flex-1 bg-[hsl(var(--whatsapp))] hover:bg-[hsl(var(--whatsapp))]/90 text-[hsl(var(--whatsapp-foreground))]"
-          >
-            <MessageCircle className="w-4 h-4 mr-2" />
-            WhatsApp
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              em até 12x sem juros
+            </p>
+          </div>
+        </CardContent>
+      </Card>
 
     <ProductGalleryDialog
       open={isGalleryOpen}
