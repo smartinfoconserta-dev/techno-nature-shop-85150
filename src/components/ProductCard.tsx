@@ -150,7 +150,7 @@ const ProductCard = ({ id, images, name, brand, specs, description, price, costP
       <Card className="overflow-hidden transition-all duration-300 hover:shadow-[--card-shadow-hover] shadow-[--card-shadow]">
         <div 
           className="aspect-square overflow-hidden bg-muted relative cursor-pointer group"
-          onClick={() => setIsGalleryOpen(true)}
+          onClick={() => setIsDetailsOpen(true)}
         >
           <img 
             src={mainImage} 
