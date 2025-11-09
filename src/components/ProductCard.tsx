@@ -212,6 +212,13 @@ const ProductCard = ({ id, images, name, brand, category, specs, description, pr
           </h3>
           <p className="text-xs text-muted-foreground font-medium">{brand}</p>
           
+          {/* Especificações */}
+          {specs && (
+            <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+              {specs}
+            </p>
+          )}
+          
           <div className="pt-2">
             <p className="text-xl font-bold text-primary">
               R$ {price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}

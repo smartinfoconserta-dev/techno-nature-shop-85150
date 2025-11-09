@@ -41,6 +41,13 @@ const ProductQuickCard = ({ product, onClick }: ProductQuickCardProps) => {
           <span>📱</span> {product.brand}
         </p>
 
+        {/* Especificações */}
+        {product.specs && (
+          <p className="text-xs text-muted-foreground line-clamp-2">
+            {product.specs}
+          </p>
+        )}
+
         {/* Preço */}
         <div className="flex items-center justify-between">
           <p className="text-lg font-bold text-foreground">
