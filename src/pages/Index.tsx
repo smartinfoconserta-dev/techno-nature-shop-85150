@@ -2,11 +2,14 @@ import { useState, useEffect, useMemo } from "react";
 import Header from "@/components/Header";
 import ProductFilters from "@/components/ProductFilters";
 import ProductCard from "@/components/ProductCard";
+import CategorySection from "@/components/CategorySection";
+import { Button } from "@/components/ui/button";
 import { brandsStore } from "@/lib/brandsStore";
 import { productsStore } from "@/lib/productsStore";
 import { categoriesStore } from "@/lib/categoriesStore";
 
 const Index = () => {
+  const [viewMode, setViewMode] = useState<"home" | "filtered">("home");
   const [selectedCategory, setSelectedCategory] = useState("Todos");
   const [selectedBrand, setSelectedBrand] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -22,6 +25,12 @@ const Index = () => {
     loadBrands();
     loadProducts();
   }, [selectedCategory]);
+
+  useEffect(() => {
+    if (searchQuery !== "") {
+      setViewMode("filtered");
+    }
+  }, [searchQuery]);
 
   const loadBrands = () => {
     if (selectedCategory === "Todos") {
@@ -53,53 +62,105 @@ const Index = () => {
     });
   }, [products, selectedCategory, selectedBrand, searchQuery]);
 
+  const handleViewAll = (category: string) => {
+    setSelectedCategory(category);
+    setViewMode("filtered");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleBackToHome = () => {
+    setSelectedCategory("Todos");
+    setSelectedBrand("all");
+    setSearchQuery("");
+    setViewMode("home");
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Header searchValue={searchQuery} onSearchChange={setSearchQuery} />
       
       <main className="container mx-auto px-4 py-6">
-        <div className="mb-6 flex items-center gap-3">
-          <ProductFilters
-            selectedCategory={selectedCategory}
-            onCategoryChange={setSelectedCategory}
-            selectedBrand={selectedBrand}
-            onBrandChange={setSelectedBrand}
-            brands={brands}
-            categories={categories}
-          />
-          <p className="text-sm text-muted-foreground">
-            {filteredProducts.length} {filteredProducts.length === 1 ? 'produto' : 'produtos'}
-          </p>
-        </div>
-        
-        {filteredProducts.length === 0 ? (
-          <div className="text-center py-20">
-            <p className="text-muted-foreground text-lg">
-              Nenhum produto encontrado
-            </p>
-            <p className="text-sm text-muted-foreground mt-2">
-              Tente ajustar os filtros ou buscar por outro termo
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4 pb-20">
-            {filteredProducts.map((product) => (
-              <ProductCard 
-                key={product.id} 
-                id={product.id}
-                images={product.images}
-                name={product.name}
-                brand={product.brand}
-                category={product.category}
-                specs={product.specs}
-                description={product.description}
-                price={product.price}
-                costPrice={product.costPrice}
-                discountPrice={product.discountPrice}
-                passOnCashDiscount={product.passOnCashDiscount}
+        {viewMode === "home" ? (
+          // Modo Home: Categorias com 3 produtos cada
+          <div className="space-y-8 pb-20">
+            {categoriesStore.getAllCategories().map((category) => (
+              <CategorySection
+                key={category.id}
+                categoryName={category.name}
+                onViewAll={handleViewAll}
               />
             ))}
+            
+            {categoriesStore.getAllCategories().every(cat => 
+              productsStore.getProductsByCategory(cat.name).filter(p => !p.sold).length === 0
+            ) && (
+              <div className="text-center py-20">
+                <p className="text-muted-foreground text-lg">
+                  Catálogo em breve
+                </p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Novos produtos serão adicionados em breve
+                </p>
+              </div>
+            )}
           </div>
+        ) : (
+          // Modo Filtered: Grid com filtros
+          <>
+            <div className="mb-6 flex flex-col gap-3">
+              <Button 
+                variant="ghost" 
+                onClick={handleBackToHome}
+                className="self-start"
+              >
+                ← Voltar para início
+              </Button>
+              
+              <div className="flex items-center gap-3">
+                <ProductFilters
+                  selectedCategory={selectedCategory}
+                  onCategoryChange={setSelectedCategory}
+                  selectedBrand={selectedBrand}
+                  onBrandChange={setSelectedBrand}
+                  brands={brands}
+                  categories={categories}
+                />
+                <p className="text-sm text-muted-foreground">
+                  {filteredProducts.length} {filteredProducts.length === 1 ? 'produto' : 'produtos'}
+                </p>
+              </div>
+            </div>
+            
+            {filteredProducts.length === 0 ? (
+              <div className="text-center py-20">
+                <p className="text-muted-foreground text-lg">
+                  Nenhum produto encontrado
+                </p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Tente ajustar os filtros ou buscar por outro termo
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4 pb-20">
+                {filteredProducts.map((product) => (
+                  <ProductCard 
+                    key={product.id} 
+                    id={product.id}
+                    images={product.images}
+                    name={product.name}
+                    brand={product.brand}
+                    category={product.category}
+                    specs={product.specs}
+                    description={product.description}
+                    price={product.price}
+                    costPrice={product.costPrice}
+                    discountPrice={product.discountPrice}
+                    passOnCashDiscount={product.passOnCashDiscount}
+                  />
+                ))}
+              </div>
+            )}
+          </>
         )}
       </main>
       
