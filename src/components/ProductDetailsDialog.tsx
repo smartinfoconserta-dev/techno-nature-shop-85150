@@ -8,6 +8,7 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { InstallmentOption, calculateCashPriceWithPassOn, getAllInstallmentOptions } from "@/lib/installmentHelper";
 import { couponsStore } from "@/lib/couponsStore";
 
@@ -350,30 +351,32 @@ const ProductDetailsDialog = ({
 
                 <div className="border-t pt-2">
                   <div className="text-xs text-muted-foreground mb-2">💳 Parcelamento (Visa/Mastercard)</div>
-                  <div className="max-h-64 overflow-y-auto pr-1">
-                        {getAllInstallmentOptions(isDiscountActive ? finalPrice : price).map((option) => (
-                          <Button
-                            key={option.installments}
-                            variant="ghost"
-                            onClick={() => {
-                              setSelectedPayment({ type: 'installment', data: option });
-                              setPaymentPopoverOpen(false);
-                            }}
-                            className="w-full justify-start text-sm h-auto py-2 mb-1"
-                          >
-                            <div className="text-left">
-                              <div className="font-medium">
-                                {option.installments}x de R$ {option.installmentValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                              </div>
-                              <div className="text-xs text-muted-foreground">
-                                Total: R$ {option.totalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                {option.rate > 0 && ` (${option.rate.toFixed(2)}% juros)`}
-                              </div>
+                  <ScrollArea className="h-64 w-full">
+                    <div className="pr-2">
+                      {getAllInstallmentOptions(isDiscountActive ? finalPrice : price).map((option) => (
+                        <Button
+                          key={option.installments}
+                          variant="ghost"
+                          onClick={() => {
+                            setSelectedPayment({ type: 'installment', data: option });
+                            setPaymentPopoverOpen(false);
+                          }}
+                          className="w-full justify-start text-sm h-auto py-2 mb-1"
+                        >
+                          <div className="text-left">
+                            <div className="font-medium">
+                              {option.installments}x de R$ {option.installmentValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                             </div>
-                          </Button>
-                        ))}
-                      </div>
+                            <div className="text-xs text-muted-foreground">
+                              Total: R$ {option.totalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                              {option.rate > 0 && ` (${option.rate.toFixed(2)}% juros)`}
+                            </div>
+                          </div>
+                        </Button>
+                      ))}
                     </div>
+                  </ScrollArea>
+                </div>
                   </div>
                 </PopoverContent>
               </Popover>
