@@ -1,1 +1,4 @@
 project_id = "rqngbtkdjrgoevnmgfys"
+
+[functions.compare-products]
+verify_jwt = false

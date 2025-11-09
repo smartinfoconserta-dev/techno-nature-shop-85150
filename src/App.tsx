@@ -13,6 +13,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import PrivateRoute from "./components/PrivateRoute";
 import CustomerPrivateRoute from "./components/CustomerPrivateRoute";
+import { ComparisonBar } from "./components/ComparisonBar";
 
 const queryClient = new QueryClient();
 
@@ -41,6 +42,7 @@ const App = () => (
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
+        <ComparisonBar />
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

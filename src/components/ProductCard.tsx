@@ -2,6 +2,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { MessageCircle, Image, Info } from "lucide-react";
 import { useState } from "react";
 import ProductGalleryDialog from "./ProductGalleryDialog";
@@ -9,6 +10,8 @@ import ProductDetailsDialog from "./ProductDetailsDialog";
 import InstallmentSelector from "./InstallmentSelector";
 import { InstallmentOption, calculateCashPriceWithPassOn, getAllInstallmentOptions } from "@/lib/installmentHelper";
 import { couponsStore } from "@/lib/couponsStore";
+import { useComparison } from "@/contexts/ComparisonContext";
+import { toast } from "sonner";
 
 const sanitizeForWhatsApp = (text: string): string => {
   return text
@@ -22,6 +25,7 @@ interface ProductCardProps {
   images: string[];
   name: string;
   brand: string;
+  category: string;
   specs: string;
   description: string;
   price: number;
@@ -30,11 +34,13 @@ interface ProductCardProps {
   passOnCashDiscount?: boolean;
 }
 
-const ProductCard = ({ id, images, name, brand, specs, description, price, costPrice, discountPrice, passOnCashDiscount = false }: ProductCardProps) => {
+const ProductCard = ({ id, images, name, brand, category, specs, description, price, costPrice, discountPrice, passOnCashDiscount = false }: ProductCardProps) => {
   const [coupon, setCoupon] = useState("");
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<{ type: 'cash' | 'installment', data?: InstallmentOption, cashValue?: number } | null>(null);
+  
+  const { addProduct, removeProduct, isSelected, canAddMore, selectedProducts } = useComparison();
   
   const couponValidation = couponsStore.validateCoupon(coupon);
   const isDiscountActive = couponValidation.valid;
@@ -72,6 +78,28 @@ const ProductCard = ({ id, images, name, brand, specs, description, price, costP
       };
     }
   }
+
+  const handleComparisonToggle = (checked: boolean) => {
+    if (checked) {
+      // Verificar se pode adicionar
+      if (!canAddMore) {
+        toast.error("Você já selecionou o máximo de produtos para comparar");
+        return;
+      }
+      
+      // Verificar categoria
+      if (selectedProducts.length > 0 && selectedProducts[0].category !== category) {
+        toast.error("Só é possível comparar produtos da mesma categoria");
+        return;
+      }
+      
+      addProduct({ id, name, brand, category, price, images, specs, description });
+      toast.success("Produto adicionado para comparação");
+    } else {
+      removeProduct(id);
+      toast.success("Produto removido da comparação");
+    }
+  };
 
   const handleWhatsAppClick = () => {
     const imageLink = images[0] || "";
@@ -148,9 +176,22 @@ const ProductCard = ({ id, images, name, brand, specs, description, price, costP
   return (
     <>
       <Card 
-        className="overflow-hidden transition-all duration-200 hover:shadow-md cursor-pointer border-border/50"
+        className="overflow-hidden transition-all duration-200 hover:shadow-md cursor-pointer border-border/50 relative"
         onClick={() => setIsDetailsOpen(true)}
       >
+        {/* Checkbox de comparação */}
+        <div 
+          className="absolute top-2 left-2 z-10 bg-background/80 backdrop-blur-sm rounded-md p-1.5 shadow-sm"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <Checkbox
+            checked={isSelected(id)}
+            onCheckedChange={handleComparisonToggle}
+            disabled={!canAddMore && !isSelected(id)}
+            className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+          />
+        </div>
+
         <div className="aspect-square overflow-hidden bg-muted relative group">
           <img 
             src={mainImage} 
