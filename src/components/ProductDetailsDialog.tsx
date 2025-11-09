@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { MessageCircle, X, CreditCard, Tag } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from "@/components/ui/carousel";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -52,6 +52,7 @@ const ProductDetailsDialog = ({
   const [current, setCurrent] = useState(0);
   const [showCouponInput, setShowCouponInput] = useState(false);
   const [paymentPopoverOpen, setPaymentPopoverOpen] = useState(false);
+  const installmentRefs = useRef<{ [key: number]: HTMLButtonElement | null }>({});
   
   const couponValidation = couponsStore.validateCoupon(coupon);
   const isDiscountActive = couponValidation.valid;
@@ -96,6 +97,24 @@ const ProductDetailsDialog = ({
     }
   }
 
+
+  const handleInstallmentClick = (option: InstallmentOption) => {
+    // Rolar até o botão clicado
+    const buttonRef = installmentRefs.current[option.installments];
+    if (buttonRef) {
+      buttonRef.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'nearest',
+        inline: 'start' 
+      });
+    }
+    
+    // Aguardar um pouco para o usuário ver o scroll
+    setTimeout(() => {
+      setSelectedPayment({ type: 'installment', data: option });
+      setPaymentPopoverOpen(false);
+    }, 300);
+  };
 
   const handleWhatsAppClick = () => {
     const imageLink = images[0] || "";
@@ -356,11 +375,9 @@ const ProductDetailsDialog = ({
                       {getAllInstallmentOptions(isDiscountActive ? finalPrice : price).map((option) => (
                         <Button
                           key={option.installments}
+                          ref={(el) => (installmentRefs.current[option.installments] = el)}
                           variant="ghost"
-                          onClick={() => {
-                            setSelectedPayment({ type: 'installment', data: option });
-                            setPaymentPopoverOpen(false);
-                          }}
+                          onClick={() => handleInstallmentClick(option)}
                           className="w-full justify-start text-sm h-auto py-2 mb-1"
                         >
                           <div className="text-left">
