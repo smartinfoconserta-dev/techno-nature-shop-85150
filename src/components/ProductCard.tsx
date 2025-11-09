@@ -2,9 +2,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { MessageCircle, Image } from "lucide-react";
+import { MessageCircle, Image, Info } from "lucide-react";
 import { useState } from "react";
 import ProductGalleryDialog from "./ProductGalleryDialog";
+import ProductDetailsDialog from "./ProductDetailsDialog";
 import InstallmentSelector from "./InstallmentSelector";
 import { InstallmentOption, calculateCashPriceWithPassOn, getAllInstallmentOptions } from "@/lib/installmentHelper";
 import { couponsStore } from "@/lib/couponsStore";
@@ -29,9 +30,10 @@ interface ProductCardProps {
   passOnCashDiscount?: boolean;
 }
 
-const ProductCard = ({ images, name, brand, specs, description, price, costPrice, discountPrice, passOnCashDiscount = false }: ProductCardProps) => {
+const ProductCard = ({ id, images, name, brand, specs, description, price, costPrice, discountPrice, passOnCashDiscount = false }: ProductCardProps) => {
   const [coupon, setCoupon] = useState("");
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<{ type: 'cash' | 'installment', data?: InstallmentOption, cashValue?: number } | null>(null);
   
   const couponValidation = couponsStore.validateCoupon(coupon);
@@ -253,13 +255,24 @@ const ProductCard = ({ images, name, brand, specs, description, price, costPrice
           )}
         </div>
         
-        <Button 
-          onClick={handleWhatsAppClick}
-          className="w-full bg-[hsl(var(--whatsapp))] hover:bg-[hsl(var(--whatsapp))]/90 text-[hsl(var(--whatsapp-foreground))]"
-        >
-          <MessageCircle className="w-4 h-4 mr-2" />
-          Fale no WhatsApp
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            onClick={() => setIsDetailsOpen(true)}
+            variant="outline"
+            className="flex-1"
+          >
+            <Info className="w-4 h-4 mr-2" />
+            Ver Detalhes
+          </Button>
+          
+          <Button 
+            onClick={handleWhatsAppClick}
+            className="flex-1 bg-[hsl(var(--whatsapp))] hover:bg-[hsl(var(--whatsapp))]/90 text-[hsl(var(--whatsapp-foreground))]"
+          >
+            <MessageCircle className="w-4 h-4 mr-2" />
+            WhatsApp
+          </Button>
+        </div>
       </CardContent>
     </Card>
 
@@ -268,6 +281,21 @@ const ProductCard = ({ images, name, brand, specs, description, price, costPrice
       onOpenChange={setIsGalleryOpen}
       images={images}
       productName={name}
+    />
+    
+    <ProductDetailsDialog
+      open={isDetailsOpen}
+      onOpenChange={setIsDetailsOpen}
+      id={id}
+      images={images}
+      name={name}
+      brand={brand}
+      specs={specs}
+      description={description}
+      price={price}
+      costPrice={costPrice}
+      discountPrice={discountPrice}
+      passOnCashDiscount={passOnCashDiscount}
     />
     </>
   );
