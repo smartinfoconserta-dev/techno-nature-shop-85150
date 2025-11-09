@@ -50,6 +50,7 @@ const ProductDetailsDialog = ({
   const [api, setApi] = useState<CarouselApi>();
   const [current, setCurrent] = useState(0);
   const [showCouponInput, setShowCouponInput] = useState(false);
+  const [paymentPopoverOpen, setPaymentPopoverOpen] = useState(false);
   
   const couponValidation = couponsStore.validateCoupon(coupon);
   const isDiscountActive = couponValidation.valid;
@@ -300,7 +301,7 @@ const ProductDetailsDialog = ({
                 </div>
               )}
 
-              <Popover>
+              <Popover open={paymentPopoverOpen} onOpenChange={setPaymentPopoverOpen}>
                 <PopoverTrigger asChild>
                   <Button variant="outline" className="w-full justify-start" size="sm">
                     <CreditCard className="w-4 h-4 mr-2" />
@@ -314,6 +315,7 @@ const ProductDetailsDialog = ({
                     <button
                       onClick={() => {
                         setSelectedPayment(null);
+                        setPaymentPopoverOpen(false);
                       }}
                       className="w-full text-left p-2 rounded-md hover:bg-muted transition-colors text-sm"
                     >
@@ -328,6 +330,7 @@ const ProductDetailsDialog = ({
                         onClick={() => {
                           const cashValue = calculateCashPriceWithPassOn(price, passOnCashDiscount, price);
                           setSelectedPayment({ type: 'cash', cashValue });
+                          setPaymentPopoverOpen(false);
                         }}
                         className="w-full text-left p-2 rounded-md hover:bg-muted transition-colors text-sm border-l-2 border-accent"
                       >
@@ -343,7 +346,10 @@ const ProductDetailsDialog = ({
                       {getAllInstallmentOptions(isDiscountActive ? finalPrice : price).map((option) => (
                         <button
                           key={option.installments}
-                          onClick={() => setSelectedPayment({ type: 'installment', data: option })}
+                          onClick={() => {
+                            setSelectedPayment({ type: 'installment', data: option });
+                            setPaymentPopoverOpen(false);
+                          }}
                           className="w-full text-left p-2 rounded-md hover:bg-muted transition-colors text-sm"
                         >
                           <div className="font-medium">
