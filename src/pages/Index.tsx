@@ -5,7 +5,6 @@ import ProductCard from "@/components/ProductCard";
 import { brandsStore } from "@/lib/brandsStore";
 import { productsStore } from "@/lib/productsStore";
 import { categoriesStore } from "@/lib/categoriesStore";
-import { ComparisonProvider } from "@/contexts/ComparisonContext";
 
 const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState("Todos");
@@ -55,9 +54,8 @@ const Index = () => {
   }, [products, selectedCategory, selectedBrand, searchQuery]);
 
   return (
-    <ComparisonProvider>
-      <div className="min-h-screen bg-background">
-        <Header searchValue={searchQuery} onSearchChange={setSearchQuery} />
+    <div className="min-h-screen bg-background">
+      <Header searchValue={searchQuery} onSearchChange={setSearchQuery} />
       
       <main className="container mx-auto px-4 py-6">
         <div className="mb-6 flex items-center gap-3">
@@ -112,8 +110,7 @@ const Index = () => {
           </p>
         </div>
       </footer>
-      </div>
-    </ComparisonProvider>
+    </div>
   );
 };
 
