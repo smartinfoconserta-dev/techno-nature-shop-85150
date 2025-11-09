@@ -11,6 +11,7 @@ import {
   Ticket,
   Settings,
   Users,
+  LogOut,
 } from "lucide-react";
 import {
   Sidebar,
@@ -44,9 +45,10 @@ const navItems: NavItem[] = [
 interface AdminSidebarProps {
   activeTab: string;
   onTabChange: (value: string) => void;
+  onLogout: () => void;
 }
 
-export function AdminSidebar({ activeTab, onTabChange }: AdminSidebarProps) {
+export function AdminSidebar({ activeTab, onTabChange, onLogout }: AdminSidebarProps) {
   const { open } = useSidebar();
 
   return (
@@ -72,6 +74,24 @@ export function AdminSidebar({ activeTab, onTabChange }: AdminSidebarProps) {
                   </SidebarMenuItem>
                 );
               })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Botão Sair - Separado no final */}
+        <SidebarGroup className="mt-auto">
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={onLogout}
+                  tooltip="Sair do Admin"
+                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>Sair</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

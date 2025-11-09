@@ -31,7 +31,7 @@ const Admin = () => {
       <div className="min-h-screen flex w-full bg-background">
         {/* Sidebar - Apenas Desktop */}
         <div className="hidden md:block">
-          <AdminSidebar activeTab={activeTab} onTabChange={setActiveTab} />
+          <AdminSidebar activeTab={activeTab} onTabChange={setActiveTab} onLogout={handleLogout} />
         </div>
 
         {/* Conteúdo Principal */}
@@ -51,8 +51,8 @@ const Admin = () => {
                 </div>
               </div>
               <Button variant="outline" onClick={handleLogout} size="sm">
-                <LogOut className="h-4 w-4 md:mr-2" />
-                <span className="hidden md:inline">Sair</span>
+                <LogOut className="h-4 w-4 mr-2" />
+                <span>Sair</span>
               </Button>
             </div>
           </header>
