@@ -13,6 +13,7 @@ const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState("Todos");
   const [selectedBrand, setSelectedBrand] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [homeFilter, setHomeFilter] = useState("Todas");
   const [brands, setBrands] = useState<string[]>([]);
   const [products, setProducts] = useState(productsStore.getAvailableProducts());
   const [categories, setCategories] = useState<string[]>([]);
@@ -72,8 +73,17 @@ const Index = () => {
     setSelectedCategory("Todos");
     setSelectedBrand("all");
     setSearchQuery("");
+    setHomeFilter("Todas");
     setViewMode("home");
   };
+
+  const filteredCategories = useMemo(() => {
+    const allCategories = categoriesStore.getAllCategories();
+    if (homeFilter === "Todas") {
+      return allCategories;
+    }
+    return allCategories.filter(cat => cat.name === homeFilter);
+  }, [homeFilter]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -82,27 +92,53 @@ const Index = () => {
       <main className="container mx-auto px-4 py-6">
         {viewMode === "home" ? (
           // Modo Home: Categorias com 3 produtos cada
-          <div className="space-y-8 pb-20">
-            {categoriesStore.getAllCategories().map((category) => (
-              <CategorySection
-                key={category.id}
-                categoryName={category.name}
-                onViewAll={handleViewAll}
-              />
-            ))}
-            
-            {categoriesStore.getAllCategories().every(cat => 
-              productsStore.getProductsByCategory(cat.name).filter(p => !p.sold).length === 0
-            ) && (
-              <div className="text-center py-20">
-                <p className="text-muted-foreground text-lg">
-                  Catálogo em breve
-                </p>
-                <p className="text-sm text-muted-foreground mt-2">
-                  Novos produtos serão adicionados em breve
-                </p>
-              </div>
-            )}
+          <div className="space-y-6 pb-20">
+            {/* Filtro de Categorias */}
+            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+              <Button
+                variant={homeFilter === "Todas" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setHomeFilter("Todas")}
+                className="whitespace-nowrap"
+              >
+                Todas
+              </Button>
+              {categoriesStore.getAllCategories().map((category) => (
+                <Button
+                  key={category.id}
+                  variant={homeFilter === category.name ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setHomeFilter(category.name)}
+                  className="whitespace-nowrap"
+                >
+                  {category.name}
+                </Button>
+              ))}
+            </div>
+
+            {/* Categorias Filtradas */}
+            <div className="space-y-8">
+              {filteredCategories.map((category) => (
+                <CategorySection
+                  key={category.id}
+                  categoryName={category.name}
+                  onViewAll={handleViewAll}
+                />
+              ))}
+              
+              {filteredCategories.every(cat => 
+                productsStore.getProductsByCategory(cat.name).filter(p => !p.sold).length === 0
+              ) && (
+                <div className="text-center py-20">
+                  <p className="text-muted-foreground text-lg">
+                    Catálogo em breve
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Novos produtos serão adicionados em breve
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         ) : (
           // Modo Filtered: Grid com filtros
