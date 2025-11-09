@@ -16,6 +16,12 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { ComparisonRadarChart } from './ComparisonRadarChart';
 
 interface ProductScores {
   costBenefit: number;
@@ -112,6 +118,44 @@ export const ProductComparisonModal: React.FC<ProductComparisonModalProps> = ({
     return result?.scores[productId] || null;
   };
 
+  // Preparar dados para o gráfico radar
+  const prepareRadarData = () => {
+    if (!result) return [];
+    
+    return [
+      { 
+        metric: 'Custo-benefício',
+        ...Object.fromEntries(
+          selectedProducts.map(p => [p.id, result.scores[p.id]?.costBenefit || 0])
+        )
+      },
+      { 
+        metric: 'Performance',
+        ...Object.fromEntries(
+          selectedProducts.map(p => [p.id, result.scores[p.id]?.performance || 0])
+        )
+      },
+      { 
+        metric: 'Qualidade',
+        ...Object.fromEntries(
+          selectedProducts.map(p => [p.id, result.scores[p.id]?.quality || 0])
+        )
+      },
+      { 
+        metric: 'Recursos',
+        ...Object.fromEntries(
+          selectedProducts.map(p => [p.id, result.scores[p.id]?.features || 0])
+        )
+      },
+    ];
+  };
+
+  const productColors = [
+    'hsl(var(--primary))',
+    'hsl(var(--secondary))',
+    'hsl(var(--accent))'
+  ];
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-6xl max-h-[90vh] p-0">
@@ -120,9 +164,9 @@ export const ProductComparisonModal: React.FC<ProductComparisonModalProps> = ({
         </DialogHeader>
 
         <ScrollArea className="max-h-[calc(90vh-100px)]">
-          <div className="p-6 space-y-6">
+          <div className="p-6">
             {error && (
-              <Alert variant="destructive">
+              <Alert variant="destructive" className="mb-6">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription className="flex items-center justify-between">
                   <span>{error}</span>
@@ -138,121 +182,339 @@ export const ProductComparisonModal: React.FC<ProductComparisonModalProps> = ({
               </Alert>
             )}
 
-            {/* Grid de produtos */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {selectedProducts.map(product => {
-                const scores = getProductScores(product.id);
-                const isBest = result?.recommendation.best === product.id;
+            <Tabs defaultValue="overview" className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="overview">📊 Visão Geral</TabsTrigger>
+                <TabsTrigger value="scores">📈 Pontuações</TabsTrigger>
+                <TabsTrigger value="analysis">🤖 Análise IA</TabsTrigger>
+              </TabsList>
 
-                return (
-                  <div 
-                    key={product.id}
-                    className={`border rounded-lg p-4 space-y-4 ${isBest ? 'border-primary ring-2 ring-primary/20' : 'border-border'}`}
-                  >
-                    {isBest && (
-                      <div className="flex items-center gap-2 text-primary font-semibold text-sm">
-                        <Trophy className="w-4 h-4" />
-                        Melhor Escolha
+              {/* ABA 1: Visão Geral */}
+              <TabsContent value="overview" className="mt-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {selectedProducts.map(product => {
+                    const scores = getProductScores(product.id);
+                    const isBest = result?.recommendation.best === product.id;
+
+                    return (
+                      <Card 
+                        key={product.id}
+                        className={`relative hover:shadow-lg transition-shadow ${isBest ? 'border-primary ring-2 ring-primary/20' : ''}`}
+                      >
+                        {isBest && (
+                          <Badge className="absolute top-2 right-2 z-10">
+                            <Trophy className="w-3 h-3 mr-1" />
+                            Melhor
+                          </Badge>
+                        )}
+
+                        <img
+                          src={product.images[0]}
+                          alt={product.name}
+                          className="w-full h-48 object-cover rounded-t-lg"
+                        />
+
+                        <CardContent className="p-4">
+                          <h3 className="font-semibold text-lg">{product.name}</h3>
+                          <p className="text-sm text-muted-foreground">{product.brand}</p>
+                          <p className="text-2xl font-bold text-primary mt-2">
+                            R$ {product.price.toFixed(2)}
+                          </p>
+
+                          {loading ? (
+                            <div className="mt-4">
+                              <Skeleton className="h-16 w-16 rounded-full mx-auto" />
+                              <Skeleton className="h-4 w-20 mx-auto mt-2" />
+                            </div>
+                          ) : scores ? (
+                            <>
+                              <div className="mt-4 flex flex-col items-center">
+                                <div className="relative w-20 h-20">
+                                  <svg className="w-20 h-20 transform -rotate-90">
+                                    <circle
+                                      cx="40"
+                                      cy="40"
+                                      r="36"
+                                      stroke="hsl(var(--muted))"
+                                      strokeWidth="8"
+                                      fill="none"
+                                    />
+                                    <circle
+                                      cx="40"
+                                      cy="40"
+                                      r="36"
+                                      stroke="hsl(var(--primary))"
+                                      strokeWidth="8"
+                                      fill="none"
+                                      strokeDasharray={`${(scores.overall / 10) * 226} 226`}
+                                      className="transition-all duration-1000"
+                                    />
+                                  </svg>
+                                  <div className="absolute inset-0 flex items-center justify-center">
+                                    <span className="text-xl font-bold">{scores.overall.toFixed(1)}</span>
+                                  </div>
+                                </div>
+                                <p className="text-center text-sm font-medium mt-2">Score Geral</p>
+                              </div>
+
+                              <div className="flex flex-wrap gap-2 mt-4">
+                                {scores.costBenefit > 8 && (
+                                  <Badge variant="secondary" className="text-xs">
+                                    💰 Ótimo custo
+                                  </Badge>
+                                )}
+                                {scores.performance > 8 && (
+                                  <Badge variant="secondary" className="text-xs">
+                                    ⚡ Alta performance
+                                  </Badge>
+                                )}
+                                {scores.quality > 8 && (
+                                  <Badge variant="secondary" className="text-xs">
+                                    ✨ Premium
+                                  </Badge>
+                                )}
+                              </div>
+                            </>
+                          ) : null}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              </TabsContent>
+
+              {/* ABA 2: Pontuações */}
+              <TabsContent value="scores" className="mt-6 space-y-6">
+                {result && !loading && (
+                  <>
+                    {/* Gráfico Radar - Desktop */}
+                    <Card className="hidden md:block">
+                      <CardHeader>
+                        <CardTitle>Comparação Visual</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <ComparisonRadarChart
+                          data={prepareRadarData()}
+                          products={selectedProducts.map((p, i) => ({
+                            id: p.id,
+                            name: p.name,
+                            color: productColors[i] || productColors[0]
+                          }))}
+                        />
+                      </CardContent>
+                    </Card>
+
+                    {/* Accordion com detalhes por produto */}
+                    <Accordion type="single" collapsible className="space-y-4">
+                      {selectedProducts.map(product => {
+                        const scores = getProductScores(product.id);
+                        const isBest = result?.recommendation.best === product.id;
+
+                        return (
+                          <AccordionItem 
+                            key={product.id} 
+                            value={product.id}
+                            className="border rounded-lg px-4"
+                          >
+                            <AccordionTrigger className="hover:no-underline">
+                              <div className="flex items-center gap-3 w-full">
+                                <img 
+                                  src={product.images[0]} 
+                                  alt={product.name}
+                                  className="w-12 h-12 rounded object-cover"
+                                />
+                                <div className="flex-1 text-left">
+                                  <div className="flex items-center gap-2">
+                                    <p className="font-semibold">{product.name}</p>
+                                    {isBest && (
+                                      <Badge variant="default" className="text-xs">
+                                        <Trophy className="w-3 h-3 mr-1" />
+                                        Melhor
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <p className="text-sm text-muted-foreground">
+                                    Score: {scores?.overall.toFixed(1)}/10
+                                  </p>
+                                </div>
+                              </div>
+                            </AccordionTrigger>
+                            <AccordionContent>
+                              {scores && (
+                                <div className="space-y-3 pt-4">
+                                  <ScoreBar
+                                    score={scores.costBenefit}
+                                    label="Custo-benefício"
+                                    icon={<DollarSign className="w-4 h-4" />}
+                                    color="success"
+                                  />
+                                  <ScoreBar
+                                    score={scores.performance}
+                                    label="Performance"
+                                    icon={<Zap className="w-4 h-4" />}
+                                    color="primary"
+                                  />
+                                  <ScoreBar
+                                    score={scores.quality}
+                                    label="Qualidade"
+                                    icon={<Trophy className="w-4 h-4" />}
+                                    color="secondary"
+                                  />
+                                  <ScoreBar
+                                    score={scores.features}
+                                    label="Recursos"
+                                    icon={<Sparkles className="w-4 h-4" />}
+                                    color="warning"
+                                  />
+                                </div>
+                              )}
+                            </AccordionContent>
+                          </AccordionItem>
+                        );
+                      })}
+                    </Accordion>
+                  </>
+                )}
+
+                {loading && (
+                  <div className="space-y-4">
+                    {[1, 2, 3].map(i => (
+                      <Card key={i}>
+                        <CardContent className="p-4">
+                          <div className="flex items-center gap-3">
+                            <Skeleton className="w-12 h-12 rounded" />
+                            <div className="flex-1 space-y-2">
+                              <Skeleton className="h-4 w-32" />
+                              <Skeleton className="h-3 w-24" />
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+
+              {/* ABA 3: Análise IA */}
+              <TabsContent value="analysis" className="mt-6 space-y-6">
+                {result && !loading && (
+                  <>
+                    {/* Card de Recomendação */}
+                    <Card className="border-primary bg-gradient-to-br from-primary/5 to-primary/10">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Trophy className="w-5 h-5 text-primary" />
+                          Nossa Recomendação
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        {(() => {
+                          const bestProduct = selectedProducts.find(p => p.id === result.recommendation.best);
+                          if (!bestProduct) return null;
+
+                          return (
+                            <>
+                              <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
+                                <img 
+                                  src={bestProduct.images[0]} 
+                                  alt={bestProduct.name}
+                                  className="w-24 h-24 rounded-lg object-cover"
+                                />
+                                <div className="flex-1">
+                                  <h3 className="text-xl font-bold">{bestProduct.name}</h3>
+                                  <p className="text-sm text-muted-foreground">{bestProduct.brand}</p>
+                                  <p className="text-2xl font-bold text-primary mt-2">
+                                    R$ {bestProduct.price.toFixed(2)}
+                                  </p>
+                                </div>
+                              </div>
+                              
+                              {result.recommendation.reason && (
+                                <>
+                                  <Separator className="my-4" />
+                                  <div>
+                                    <p className="font-semibold mb-2">Por que escolher este?</p>
+                                    <p className="text-sm leading-relaxed">
+                                      {result.recommendation.reason}
+                                    </p>
+                                  </div>
+                                </>
+                              )}
+                            </>
+                          );
+                        })()}
+                      </CardContent>
+                    </Card>
+
+                    {/* Análise Detalhada */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Sparkles className="w-5 h-5" />
+                          Análise Detalhada
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="prose prose-sm max-w-none">
+                          {result.analysis.split('\n\n').map((paragraph, i) => (
+                            <p key={i} className="mb-3 text-foreground leading-relaxed">
+                              {paragraph}
+                            </p>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Alternativas */}
+                    {result.recommendation.alternatives && Object.keys(result.recommendation.alternatives).length > 0 && (
+                      <div>
+                        <h3 className="font-semibold mb-3 text-lg">Outras Opções</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {Object.entries(result.recommendation.alternatives).map(([id, reason]) => {
+                            const product = selectedProducts.find(p => p.id === id);
+                            return product ? (
+                              <Card key={id}>
+                                <CardContent className="p-4">
+                                  <div className="flex items-center gap-3 mb-2">
+                                    <img 
+                                      src={product.images[0]} 
+                                      alt={product.name}
+                                      className="w-12 h-12 rounded object-cover"
+                                    />
+                                    <div className="flex-1">
+                                      <p className="font-semibold text-sm">{product.name}</p>
+                                      <p className="text-xs text-muted-foreground">{product.brand}</p>
+                                    </div>
+                                  </div>
+                                  <p className="text-xs leading-relaxed text-muted-foreground">
+                                    {reason}
+                                  </p>
+                                </CardContent>
+                              </Card>
+                            ) : null;
+                          })}
+                        </div>
                       </div>
                     )}
+                  </>
+                )}
 
-                    <img
-                      src={product.images[0]}
-                      alt={product.name}
-                      className="w-full h-40 object-cover rounded-md"
-                    />
-
-                    <div>
-                      <h3 className="font-semibold text-lg">{product.name}</h3>
-                      <p className="text-sm text-muted-foreground">{product.brand}</p>
-                      <p className="text-xl font-bold text-primary mt-2">
-                        R$ {product.price.toFixed(2)}
-                      </p>
-                    </div>
-
-                    {loading ? (
-                      <div className="space-y-3">
-                        {[...Array(5)].map((_, i) => (
-                          <div key={i} className="space-y-1">
-                            <Skeleton className="h-4 w-full" />
-                            <Skeleton className="h-2 w-full" />
-                          </div>
-                        ))}
-                      </div>
-                    ) : scores ? (
-                      <div className="space-y-3">
-                        <ScoreBar
-                          score={scores.costBenefit}
-                          label="Custo-benefício"
-                          icon={<DollarSign className="w-4 h-4" />}
-                          color="success"
-                        />
-                        <ScoreBar
-                          score={scores.performance}
-                          label="Performance"
-                          icon={<Zap className="w-4 h-4" />}
-                          color="primary"
-                        />
-                        <ScoreBar
-                          score={scores.quality}
-                          label="Qualidade"
-                          icon={<Trophy className="w-4 h-4" />}
-                          color="secondary"
-                        />
-                        <ScoreBar
-                          score={scores.features}
-                          label="Recursos"
-                          icon={<Sparkles className="w-4 h-4" />}
-                          color="warning"
-                        />
-                        <ScoreBar
-                          score={scores.overall}
-                          label="Avaliação Geral"
-                          icon={<BarChart3 className="w-4 h-4" />}
-                          color="accent"
-                        />
-                      </div>
-                    ) : null}
+                {loading && (
+                  <div className="space-y-4">
+                    <Card>
+                      <CardContent className="p-6">
+                        <Skeleton className="h-32 w-full" />
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardContent className="p-6">
+                        <Skeleton className="h-64 w-full" />
+                      </CardContent>
+                    </Card>
                   </div>
-                );
-              })}
-            </div>
-
-            {/* Análise da IA */}
-            {result && !loading && (
-              <div className="border border-primary/20 rounded-lg p-6 bg-primary/5">
-                <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-primary" />
-                  Análise Inteligente
-                </h3>
-                
-                <div className="prose prose-sm max-w-none">
-                  <p className="whitespace-pre-line text-foreground">{result.analysis}</p>
-                  
-                  {result.recommendation.reason && (
-                    <div className="mt-4 p-4 bg-background rounded-md">
-                      <p className="font-semibold text-primary">Por que escolher o melhor?</p>
-                      <p className="text-foreground">{result.recommendation.reason}</p>
-                    </div>
-                  )}
-
-                  {result.recommendation.alternatives && Object.keys(result.recommendation.alternatives).length > 0 && (
-                    <div className="mt-4 space-y-2">
-                      <p className="font-semibold">Alternativas:</p>
-                      {Object.entries(result.recommendation.alternatives).map(([id, reason]) => {
-                        const product = selectedProducts.find(p => p.id === id);
-                        return product ? (
-                          <div key={id} className="p-3 bg-background rounded-md">
-                            <p className="font-medium">{product.name}</p>
-                            <p className="text-sm text-muted-foreground">{reason}</p>
-                          </div>
-                        ) : null;
-                      })}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
+                )}
+              </TabsContent>
+            </Tabs>
           </div>
         </ScrollArea>
       </DialogContent>
