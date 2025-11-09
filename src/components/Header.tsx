@@ -1,7 +1,5 @@
-import { useState } from "react";
-import { Settings, User } from "lucide-react";
+import { User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import AdminLoginDialog from "./AdminLoginDialog";
 import MobileMenu from "./MobileMenu";
 import SearchBar from "./SearchBar";
 
@@ -11,7 +9,6 @@ interface HeaderProps {
 }
 
 const Header = ({ searchValue, onSearchChange }: HeaderProps) => {
-  const [showLoginDialog, setShowLoginDialog] = useState(false);
   const navigate = useNavigate();
 
   return (
@@ -42,18 +39,9 @@ const Header = ({ searchValue, onSearchChange }: HeaderProps) => {
             >
               <User className="h-5 w-5 text-foreground" />
             </button>
-            
-            <button
-              onClick={() => setShowLoginDialog(true)}
-              className="h-10 w-10 flex items-center justify-center rounded-full hover:bg-muted transition-colors opacity-30 hover:opacity-100"
-            >
-              <Settings className="h-5 w-5 text-foreground" />
-            </button>
           </div>
         </div>
       </header>
-
-      <AdminLoginDialog open={showLoginDialog} onOpenChange={setShowLoginDialog} />
     </>
   );
 };
