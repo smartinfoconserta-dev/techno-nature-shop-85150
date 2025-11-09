@@ -2,13 +2,14 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/compone
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { MessageCircle, ChevronLeft, ChevronRight, X } from "lucide-react";
-import { useState } from "react";
+import { MessageCircle, X, ChevronDown, CreditCard, Tag } from "lucide-react";
+import { useState, useEffect } from "react";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from "@/components/ui/carousel";
-import InstallmentSelector from "./InstallmentSelector";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { InstallmentOption, calculateCashPriceWithPassOn, getAllInstallmentOptions } from "@/lib/installmentHelper";
 import { couponsStore } from "@/lib/couponsStore";
-import { useEffect } from "react";
 
 const sanitizeForWhatsApp = (text: string): string => {
   return text
@@ -48,6 +49,7 @@ const ProductDetailsDialog = ({
   const [selectedPayment, setSelectedPayment] = useState<{ type: 'cash' | 'installment', data?: InstallmentOption, cashValue?: number } | null>(null);
   const [api, setApi] = useState<CarouselApi>();
   const [current, setCurrent] = useState(0);
+  const [showCouponInput, setShowCouponInput] = useState(false);
   
   const couponValidation = couponsStore.validateCoupon(coupon);
   const isDiscountActive = couponValidation.valid;
@@ -164,20 +166,17 @@ const ProductDetailsDialog = ({
           Detalhes completos do produto {name} - {brand}
         </DialogDescription>
         
-        <div className="sticky top-0 z-10 flex justify-end p-4 bg-background/95 backdrop-blur-sm">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => onOpenChange(false)}
-            className="rounded-full"
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
+        <button
+          onClick={() => onOpenChange(false)}
+          className="absolute right-4 top-4 z-10 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none"
+        >
+          <X className="h-4 w-4" />
+          <span className="sr-only">Fechar</span>
+        </button>
 
-        <div className="grid md:grid-cols-2 gap-6 p-6 pt-0">
+        <div className="grid md:grid-cols-2 gap-4 p-4">
           {/* Galeria de Imagens */}
-          <div className="space-y-4">
+          <div className="space-y-2">
             <Carousel setApi={setApi} className="w-full">
               <CarouselContent>
                 {images.map((image, index) => (
@@ -194,8 +193,8 @@ const ProductDetailsDialog = ({
               </CarouselContent>
               {images.length > 1 && (
                 <>
-                  <CarouselPrevious className="left-2" />
-                  <CarouselNext className="right-2" />
+                  <CarouselPrevious className="left-2 h-8 w-8" />
+                  <CarouselNext className="right-2 h-8 w-8" />
                 </>
               )}
             </Carousel>
@@ -216,32 +215,36 @@ const ProductDetailsDialog = ({
                 ))}
               </div>
             )}
-            
-            <div className="text-center text-sm text-muted-foreground">
-              {current + 1} / {images.length}
-            </div>
           </div>
 
           {/* Informações do Produto */}
-          <div className="space-y-6">
+          <div className="space-y-4">
             <div>
-              <h2 className="text-3xl font-bold text-foreground mb-2">{name}</h2>
-              <p className="text-lg text-muted-foreground font-medium">{brand}</p>
+              <h2 className="text-2xl font-bold text-foreground mb-1">{name}</h2>
+              <p className="text-sm text-muted-foreground font-medium">{brand}</p>
             </div>
 
-            <div className="space-y-3">
-              <div>
-                <h3 className="text-sm font-semibold text-foreground mb-2">Especificações:</h3>
-                <p className="text-sm text-muted-foreground whitespace-pre-line">{specs}</p>
-              </div>
+            <Accordion type="single" collapsible className="w-full">
+              <AccordionItem value="specs" className="border-b">
+                <AccordionTrigger className="text-sm hover:no-underline py-3">
+                  Especificações
+                </AccordionTrigger>
+                <AccordionContent className="text-sm text-muted-foreground whitespace-pre-line pb-3">
+                  {specs}
+                </AccordionContent>
+              </AccordionItem>
               
-              <div>
-                <h3 className="text-sm font-semibold text-foreground mb-2">Descrição:</h3>
-                <p className="text-sm text-foreground/80 whitespace-pre-line">{description}</p>
-              </div>
-            </div>
+              <AccordionItem value="description" className="border-b">
+                <AccordionTrigger className="text-sm hover:no-underline py-3">
+                  Descrição
+                </AccordionTrigger>
+                <AccordionContent className="text-sm text-foreground/80 whitespace-pre-line pb-3">
+                  {description}
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
 
-            <div className="pt-4 border-t space-y-4">
+            <div className="pt-2 space-y-3">
               {displayMode === 'original' && (
                 <div>
                   <p className="text-3xl font-bold text-primary">
@@ -249,7 +252,7 @@ const ProductDetailsDialog = ({
                   </p>
                   {!isDiscountActive && (
                     <p className="text-sm text-muted-foreground mt-1">
-                      ou 5% à vista
+                      ou 12x de R$ {(getAllInstallmentOptions(price).find(o => o.installments === 12)?.installmentValue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                     </p>
                   )}
                 </div>
@@ -257,10 +260,10 @@ const ProductDetailsDialog = ({
               
               {displayMode === 'cash' && (
                 <div>
-                  <p className="text-3xl font-bold text-green-600 dark:text-green-400">
+                  <p className="text-3xl font-bold text-accent">
                     R$ {finalPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </p>
-                  <p className="text-sm text-green-600 dark:text-green-400 mt-1">
+                  <p className="text-sm text-accent mt-1">
                     💰 5% de desconto à vista
                   </p>
                   <p className="text-sm text-muted-foreground line-through">
@@ -277,10 +280,6 @@ const ProductDetailsDialog = ({
                   <p className="text-sm text-muted-foreground">
                     Total: R$ {paymentDetails.totalAmount?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </p>
-                  <div className="flex gap-1 mt-2">
-                    <Badge variant="secondary" className="text-xs">💳 Visa</Badge>
-                    <Badge variant="secondary" className="text-xs">💳 Mastercard</Badge>
-                  </div>
                 </div>
               )}
               
@@ -289,10 +288,10 @@ const ProductDetailsDialog = ({
                   <p className="text-3xl font-bold text-primary">
                     R$ {finalPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </p>
-                  <p className="text-sm text-green-600 dark:text-green-400 mt-1">
+                  <p className="text-sm text-accent mt-1">
                     {discountPrice && discountPrice < price 
-                      ? `🎟️ Preço especial para lojistas! Economia de R$ ${(price - finalPrice).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-                      : `🎟️ ${couponValidation.coupon?.discountPercent}% de desconto aplicado!`
+                      ? `🎟️ Preço especial! Economia de R$ ${(price - finalPrice).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                      : `🎟️ ${couponValidation.coupon?.discountPercent}% de desconto!`
                     }
                   </p>
                   <p className="text-sm text-muted-foreground line-through">
@@ -301,29 +300,91 @@ const ProductDetailsDialog = ({
                 </div>
               )}
 
-              <InstallmentSelector 
-                basePrice={isDiscountActive ? finalPrice : price}
-                hasCouponActive={isDiscountActive}
-                onSelect={setSelectedPayment}
-              />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full justify-start" size="sm">
+                    <CreditCard className="w-4 h-4 mr-2" />
+                    Ver formas de pagamento
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80">
+                  <div className="space-y-3">
+                    <h4 className="font-medium text-sm">Escolha a forma de pagamento</h4>
+                    
+                    <button
+                      onClick={() => {
+                        setSelectedPayment(null);
+                      }}
+                      className="w-full text-left p-2 rounded-md hover:bg-muted transition-colors text-sm"
+                    >
+                      <div className="font-medium">Ver preço original</div>
+                      <div className="text-xs text-muted-foreground">
+                        R$ {price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </div>
+                    </button>
+
+                    {!isDiscountActive && (
+                      <button
+                        onClick={() => {
+                          const cashValue = calculateCashPriceWithPassOn(price, passOnCashDiscount, price);
+                          setSelectedPayment({ type: 'cash', cashValue });
+                        }}
+                        className="w-full text-left p-2 rounded-md hover:bg-muted transition-colors text-sm border-l-2 border-accent"
+                      >
+                        <div className="font-medium text-accent">💰 À vista (5% desconto)</div>
+                        <div className="text-xs text-muted-foreground">
+                          R$ {calculateCashPriceWithPassOn(price, passOnCashDiscount, price).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </div>
+                      </button>
+                    )}
+
+                    <div className="border-t pt-2">
+                      <div className="text-xs text-muted-foreground mb-2">💳 Parcelamento (Visa/Mastercard)</div>
+                      {getAllInstallmentOptions(isDiscountActive ? finalPrice : price).map((option) => (
+                        <button
+                          key={option.installments}
+                          onClick={() => setSelectedPayment({ type: 'installment', data: option })}
+                          className="w-full text-left p-2 rounded-md hover:bg-muted transition-colors text-sm"
+                        >
+                          <div className="font-medium">
+                            {option.installments}x de R$ {option.installmentValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            Total: R$ {option.totalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            {option.rate > 0 && ` (${option.rate.toFixed(2)}% juros)`}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
               
-              <div className="space-y-2">
-                <Input
-                  placeholder="Insira o cupom de desconto"
-                  value={coupon}
-                  onChange={(e) => setCoupon(e.target.value)}
-                  className="transition-all duration-200"
-                />
-                {isDiscountActive && (
-                  <p className="text-xs text-green-600 dark:text-green-400">
-                    ✅ Cupom válido! Desconto aplicado.
-                  </p>
-                )}
-              </div>
+              <Collapsible open={showCouponInput} onOpenChange={setShowCouponInput}>
+                <CollapsibleTrigger asChild>
+                  <Button variant="link" className="w-full justify-start p-0 h-auto text-sm" size="sm">
+                    <Tag className="w-3 h-3 mr-2" />
+                    Tenho um cupom
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="space-y-2 pt-2">
+                  <Input
+                    placeholder="Insira o cupom de desconto"
+                    value={coupon}
+                    onChange={(e) => setCoupon(e.target.value)}
+                    className="transition-all duration-200"
+                  />
+                  {isDiscountActive && (
+                    <p className="text-xs text-accent">
+                      ✅ Cupom válido! Desconto aplicado.
+                    </p>
+                  )}
+                </CollapsibleContent>
+              </Collapsible>
               
               <Button 
                 onClick={handleWhatsAppClick}
-                className="w-full bg-[hsl(var(--whatsapp))] hover:bg-[hsl(var(--whatsapp))]/90 text-[hsl(var(--whatsapp-foreground))]"
+                className="w-full bg-[hsl(var(--whatsapp))] hover:bg-[hsl(var(--whatsapp))]/90 text-[hsl(var(--whatsapp-foreground))] transition-transform hover:scale-[1.02]"
                 size="lg"
               >
                 <MessageCircle className="w-5 h-5 mr-2" />
