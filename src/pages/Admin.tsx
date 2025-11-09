@@ -90,7 +90,7 @@ const Admin = () => {
 
           {/* Conteúdo das Tabs */}
           <main className="flex-1 container mx-auto px-4 py-6 md:py-8">
-            {activeTab === "dashboard" && <DashboardTab />}
+            {activeTab === "dashboard" && <DashboardTab onTabChange={setActiveTab} />}
             {activeTab === "products" && <ProductsMainTab />}
             {activeTab === "quick-sales" && <QuickSalesTab />}
             {activeTab === "receivables" && <ReceivablesTab />}

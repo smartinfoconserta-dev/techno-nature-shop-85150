@@ -3,9 +3,11 @@ import { productsStore, Product } from "@/lib/productsStore";
 import { monthlyReportsStore } from "@/lib/monthlyReportsStore";
 import { quickSalesStore } from "@/lib/quickSalesStore";
 import { receivablesStore } from "@/lib/receivablesStore";
+import { categoriesStore } from "@/lib/categoriesStore";
 import { MetricCard } from "./MetricCard";
 import { AlertsSection } from "./AlertsSection";
 import { SalesTrendChart } from "./SalesTrendChart";
+import CategoryProductsSection from "./CategoryProductsSection";
 import {
   DollarSign,
   TrendingUp,
@@ -22,7 +24,11 @@ import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
-const DashboardTab = () => {
+interface DashboardTabProps {
+  onTabChange: (tab: string) => void;
+}
+
+const DashboardTab = ({ onTabChange }: DashboardTabProps) => {
   const [totals, setTotals] = useState({
     totalGross: 0,
     totalCash: 0,
@@ -305,6 +311,22 @@ const DashboardTab = () => {
             )}
           </CardContent>
         </Card>
+      </div>
+
+      {/* Catálogo por Categoria */}
+      <div className="space-y-8 pt-6 border-t border-border">
+        <div className="flex items-center gap-3">
+          <h2 className="text-2xl font-bold text-foreground">📦 Catálogo em Destaque</h2>
+          <Badge variant="secondary">Produtos mais recentes</Badge>
+        </div>
+
+        {categoriesStore.getAllCategories().map((category) => (
+          <CategoryProductsSection
+            key={category.id}
+            categoryName={category.name}
+            onViewMore={() => onTabChange("products")}
+          />
+        ))}
       </div>
     </div>
   );
