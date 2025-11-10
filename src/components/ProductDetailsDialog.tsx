@@ -8,7 +8,6 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { InstallmentOption, calculateCashPriceWithPassOn, getAllInstallmentOptions } from "@/lib/installmentHelper";
 import { couponsStore } from "@/lib/couponsStore";
 
@@ -381,8 +380,13 @@ const ProductDetailsDialog = ({
                     <span className="text-[10px] text-muted-foreground/60">Role para ver mais</span>
                   </div>
                   <div className="relative">
-                    <ScrollArea className="h-[220px] w-full">
-                      <div className="pr-3">
+                    <div className="h-[220px] w-full overflow-y-auto pr-1 scroll-smooth
+                      [&::-webkit-scrollbar]:w-2
+                      [&::-webkit-scrollbar-track]:bg-transparent
+                      [&::-webkit-scrollbar-thumb]:bg-muted-foreground/30
+                      [&::-webkit-scrollbar-thumb]:rounded-full
+                      [&::-webkit-scrollbar-thumb]:hover:bg-muted-foreground/50">
+                      <div className="pr-2">
                         {getAllInstallmentOptions(isDiscountActive ? finalPrice : price).map((option) => (
                           <Button
                             key={option.installments}
@@ -403,7 +407,7 @@ const ProductDetailsDialog = ({
                           </Button>
                         ))}
                       </div>
-                    </ScrollArea>
+                    </div>
                     
                     {/* Gradiente indicando mais conteúdo abaixo */}
                     <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-background to-transparent pointer-events-none" />
