@@ -21,11 +21,14 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { quickSalesStore } from "@/lib/quickSalesStore";
 import { useToast } from "@/hooks/use-toast";
 import WarrantySelector from "./WarrantySelector";
+import { InstallmentOption, getAllInstallmentOptions } from "@/lib/installmentHelper";
 
 const formSchema = z.object({
   productName: z.string().min(1, "Nome do produto é obrigatório"),
@@ -33,17 +36,8 @@ const formSchema = z.object({
   customerCpf: z.string().optional(),
   costPrice: z.number().min(0, "Preço de custo deve ser maior ou igual a 0"),
   salePrice: z.number().min(0.01, "Preço de venda deve ser maior que 0"),
-  cash: z.number().min(0, "Valor deve ser maior ou igual a 0"),
-  pix: z.number().min(0, "Valor deve ser maior ou igual a 0"),
-  card: z.number().min(0, "Valor deve ser maior ou igual a 0"),
   warranty: z.number(),
   notes: z.string().optional(),
-}).refine((data) => (data.cash + data.pix + data.card) > 0, {
-  message: "Pelo menos uma forma de pagamento deve ter valor",
-  path: ["cash"],
-}).refine((data) => (data.cash + data.pix + data.card) <= data.salePrice, {
-  message: "Total dos pagamentos não pode exceder o preço de venda",
-  path: ["cash"],
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -61,6 +55,10 @@ export function AddQuickSaleDialog({
 }: AddQuickSaleDialogProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [cash, setCash] = useState("");
+  const [pix, setPix] = useState("");
+  const [card, setCard] = useState("");
+  const [selectedInstallment, setSelectedInstallment] = useState<InstallmentOption | null>(null);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -70,25 +68,27 @@ export function AddQuickSaleDialog({
       customerCpf: "",
       costPrice: 0,
       salePrice: 0,
-      cash: 0,
-      pix: 0,
-      card: 0,
       warranty: 0,
       notes: "",
     },
   });
 
-  const cash = form.watch("cash");
-  const pix = form.watch("pix");
-  const card = form.watch("card");
   const costPrice = form.watch("costPrice");
   const salePrice = form.watch("salePrice");
 
-  const totalPayment = cash + pix + card;
+  // Calcular valores de pagamento
+  const cashValue = parseFloat(cash) || 0;
+  const pixValue = parseFloat(pix) || 0;
+  const cardValue = parseFloat(card) || 0;
+  const totalPayment = cashValue + pixValue + cardValue;
+
+  // Calcular valor restante para o cartão
+  const remainingAmount = salePrice - cashValue - pixValue;
+  const installmentOptions = remainingAmount > 0 ? getAllInstallmentOptions(remainingAmount) : [];
   
   // Calcula taxa automaticamente (6% sobre pix + card)
   const getTaxAmount = () => {
-    return (pix + card) * 0.06;
+    return (pixValue + cardValue) * 0.06;
   };
 
   const getProfit = () => {
@@ -100,12 +100,22 @@ export function AddQuickSaleDialog({
     setIsLoading(true);
 
     try {
-      const totalPaid = data.cash + data.pix + data.card;
-      
-      if (totalPaid > data.salePrice) {
+      const totalPaid = cashValue + pixValue + cardValue;
+
+      if (totalPaid === 0) {
         toast({
           title: "Erro",
-          description: "Total dos pagamentos não pode exceder o preço de venda",
+          description: "Informe ao menos uma forma de pagamento",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      if (totalPaid < data.salePrice) {
+        toast({
+          title: "Pagamento incompleto",
+          description: `Faltam R$ ${(data.salePrice - totalPaid).toFixed(2)}`,
           variant: "destructive",
         });
         setIsLoading(false);
@@ -131,9 +141,9 @@ export function AddQuickSaleDialog({
         costPrice: data.costPrice,
         salePrice: data.salePrice,
         paymentBreakdown: {
-          cash: data.cash,
-          pix: data.pix,
-          card: data.card,
+          cash: cashValue,
+          pix: pixValue,
+          card: cardValue,
         },
         taxAmount,
         warranty: data.warranty,
@@ -148,6 +158,10 @@ export function AddQuickSaleDialog({
       });
 
       form.reset();
+      setCash("");
+      setPix("");
+      setCard("");
+      setSelectedInstallment(null);
       onSuccess();
       onOpenChange(false);
     } catch (error: any) {
@@ -267,83 +281,169 @@ export function AddQuickSaleDialog({
               />
             </div>
 
-            {/* Formas de Pagamento Misto */}
-            <div className="space-y-3">
+            {/* Formas de Pagamento */}
+            <div className="space-y-4">
               <FormLabel>💰 Formas de Pagamento *</FormLabel>
-              <div className="grid grid-cols-3 gap-3">
-                <FormField
-                  control={form.control}
-                  name="cash"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs">💵 Dinheiro</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          placeholder="0.00"
-                          {...field}
-                          onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="pix"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs">📱 PIX</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          placeholder="0.00"
-                          {...field}
-                          onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="card"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs">💳 Cartão</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          placeholder="0.00"
-                          {...field}
-                          onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Total Pago:</span>
-                <strong className="text-foreground">R$ {totalPayment.toFixed(2)}</strong>
-              </div>
-              {totalPayment > 0 && salePrice > 0 && totalPayment !== salePrice && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Preço de Venda:</span>
-                  <strong className="text-foreground">R$ {salePrice.toFixed(2)}</strong>
+              
+              <div className="space-y-3">
+                {/* Dinheiro */}
+                <div className="space-y-2">
+                  <FormLabel className="text-sm">💵 Dinheiro</FormLabel>
+                  <Input 
+                    type="number" 
+                    step="0.01" 
+                    min="0" 
+                    value={cash} 
+                    onChange={(e) => setCash(e.target.value)} 
+                    placeholder="0.00" 
+                  />
                 </div>
-              )}
-              {totalPayment > salePrice && (
-                <p className="text-xs text-destructive">
-                  ⚠️ Pagamento excede o preço de venda
-                </p>
-              )}
+                
+                {/* PIX */}
+                <div className="space-y-2">
+                  <FormLabel className="text-sm">📱 PIX</FormLabel>
+                  <Input 
+                    type="number" 
+                    step="0.01" 
+                    min="0" 
+                    value={pix} 
+                    onChange={(e) => setPix(e.target.value)} 
+                    placeholder="0.00" 
+                  />
+                </div>
+                
+                {/* Cartão de Crédito */}
+                <div className="space-y-2">
+                  <FormLabel className="text-sm">💳 Cartão de Crédito</FormLabel>
+                  
+                  {remainingAmount > 0 ? (
+                    <>
+                      <Select 
+                        value={selectedInstallment ? selectedInstallment.installments.toString() : ""} 
+                        onValueChange={(value) => {
+                          if (value === "none") {
+                            setSelectedInstallment(null);
+                            setCard("");
+                          } else {
+                            const installments = parseInt(value);
+                            const option = installmentOptions.find(opt => opt.installments === installments);
+                            if (option) {
+                              setSelectedInstallment(option);
+                              setCard(option.totalAmount.toString());
+                            }
+                          }
+                        }}
+                      >
+                        <SelectTrigger className={selectedInstallment ? "border-primary ring-2 ring-primary/20" : ""}>
+                          <SelectValue placeholder="Selecione o parcelamento" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Não usar cartão</SelectItem>
+                          {installmentOptions.map((option) => (
+                            <SelectItem key={option.installments} value={option.installments.toString()}>
+                              {option.installments}x de R$ {option.installmentValue.toFixed(2)}
+                              {option.rate > 0 && ` (taxa ${option.rate}%)`}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+
+                      {selectedInstallment && (
+                        <div className="p-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 rounded-lg">
+                          <div className="space-y-1 text-sm">
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Parcelas:</span>
+                              <span className="font-semibold">
+                                {selectedInstallment.installments}x de R$ {selectedInstallment.installmentValue.toFixed(2)}
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Total no cartão:</span>
+                              <span className="font-bold text-blue-600">
+                                R$ {selectedInstallment.totalAmount.toFixed(2)}
+                              </span>
+                            </div>
+                            {selectedInstallment.rate > 0 && (
+                              <div className="flex justify-between text-xs">
+                                <span className="text-muted-foreground">Taxa:</span>
+                                <span className="text-orange-600">
+                                  R$ {selectedInstallment.feeAmount.toFixed(2)} ({selectedInstallment.rate}%)
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="p-3 bg-muted/50 rounded-lg text-sm text-muted-foreground">
+                      {salePrice > 0 
+                        ? "Preencha Dinheiro ou PIX primeiro para calcular o restante" 
+                        : "Preencha o Preço de Venda primeiro"}
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              {/* Resumo do Pagamento */}
+              <div className="bg-primary/10 p-3 rounded-lg space-y-2">
+                <h4 className="font-semibold text-sm">💰 Resumo do Pagamento</h4>
+                
+                {cashValue > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">💵 Dinheiro:</span>
+                    <span className="font-medium">R$ {cashValue.toFixed(2)}</span>
+                  </div>
+                )}
+                
+                {pixValue > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">📱 PIX:</span>
+                    <span className="font-medium">R$ {pixValue.toFixed(2)}</span>
+                  </div>
+                )}
+                
+                {cardValue > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">💳 Cartão:</span>
+                    <span className="font-medium">
+                      R$ {cardValue.toFixed(2)}
+                      {selectedInstallment && selectedInstallment.installments > 1 && (
+                        <span className="text-xs ml-1">
+                          ({selectedInstallment.installments}x de R$ {selectedInstallment.installmentValue.toFixed(2)})
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                )}
+                
+                {(cashValue > 0 || pixValue > 0 || cardValue > 0) && <Separator className="my-2" />}
+                
+                <div className="flex justify-between">
+                  <span className="font-medium">Total Pago:</span>
+                  <span className="text-lg font-bold text-green-600">
+                    R$ {totalPayment.toFixed(2)}
+                  </span>
+                </div>
+                
+                {salePrice > 0 && totalPayment < salePrice && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Falta:</span>
+                    <span className="text-lg font-bold text-red-600">
+                      R$ {(salePrice - totalPayment).toFixed(2)}
+                    </span>
+                  </div>
+                )}
+                
+                {totalPayment > salePrice && salePrice > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Troco:</span>
+                    <span className="text-lg font-bold text-yellow-600">
+                      R$ {(totalPayment - salePrice).toFixed(2)}
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Lucro Calculado */}
