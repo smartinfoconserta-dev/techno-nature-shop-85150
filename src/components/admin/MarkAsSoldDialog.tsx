@@ -22,6 +22,8 @@ import { useToast } from "@/hooks/use-toast";
 import CustomerSelector from "./CustomerSelector";
 import NewCustomerDialog from "./NewCustomerDialog";
 import WarrantySelector from "./WarrantySelector";
+import InstallmentSelector from "../InstallmentSelector";
+import { InstallmentOption } from "@/lib/installmentHelper";
 
 interface MarkAsSoldDialogProps {
   product: Product;
@@ -42,9 +44,12 @@ const MarkAsSoldDialog = ({
   const [saleType, setSaleType] = useState<"immediate" | "receivable">("immediate");
   const [buyerName, setBuyerName] = useState("");
   const [buyerCpf, setBuyerCpf] = useState("");
-  const [cash, setCash] = useState("");
-  const [pix, setPix] = useState("");
-  const [card, setCard] = useState("");
+  
+  const [selectedPayment, setSelectedPayment] = useState<{
+    type: 'cash' | 'installment';
+    data?: InstallmentOption;
+    cashValue?: number;
+  } | null>(null);
   
   const [couponCode, setCouponCode] = useState("");
   const [couponValidated, setCouponValidated] = useState(false);
@@ -69,9 +74,7 @@ const MarkAsSoldDialog = ({
       setSaleType("immediate");
       setBuyerName("");
       setBuyerCpf("");
-      setCash("");
-      setPix("");
-      setCard("");
+      setSelectedPayment(null);
       setCouponCode("");
       setCouponValidated(false);
       setCouponDiscount(0);
@@ -127,14 +130,21 @@ const MarkAsSoldDialog = ({
   const { digitalTaxRate, includeCashInTax } = settings.taxSettings;
 
   const basePrice = product.price;
-  const finalPrice = couponValidated ? basePrice * (1 - couponDiscount / 100) : basePrice;
+  const finalPrice = couponValidated 
+    ? (product.discountPrice || basePrice) 
+    : basePrice;
 
-  const cashValue = parseFloat(cash) || 0;
-  const pixValue = parseFloat(pix) || 0;
-  const cardValue = parseFloat(card) || 0;
-  const totalSale = cashValue + pixValue + cardValue;
-  const digitalTotal = pixValue + cardValue;
+  const totalSale = selectedPayment
+    ? (selectedPayment.type === 'cash' 
+        ? selectedPayment.cashValue || 0 
+        : selectedPayment.data?.totalAmount || 0)
+    : 0;
   
+  const cashValue = selectedPayment?.type === 'cash' ? (selectedPayment.cashValue || 0) : 0;
+  const cardValue = selectedPayment?.type === 'installment' ? (selectedPayment.data?.totalAmount || 0) : 0;
+  const pixValue = 0;
+  
+  const digitalTotal = pixValue + cardValue;
   const taxableAmount = includeCashInTax ? totalSale : digitalTotal;
   const taxAmount = taxableAmount * (digitalTaxRate / 100);
 
@@ -156,8 +166,8 @@ const MarkAsSoldDialog = ({
         return;
       }
 
-      if (totalSale <= 0) {
-        toast({ title: "Erro", description: "Informe ao menos uma forma de pagamento", variant: "destructive" });
+      if (!selectedPayment) {
+        toast({ title: "Erro", description: "Selecione uma forma de pagamento", variant: "destructive" });
         return;
       }
 
@@ -279,8 +289,66 @@ const MarkAsSoldDialog = ({
             <>
               <div className="space-y-2"><Label>Nome *</Label><Input value={buyerName} onChange={(e) => setBuyerName(e.target.value)} placeholder="João Silva" /></div>
               <div className="space-y-2"><Label>CPF *</Label><Input value={buyerCpf} onChange={(e) => setBuyerCpf(formatCpf(e.target.value))} maxLength={14} placeholder="000.000.000-00" /></div>
-              <div><h4 className="font-semibold mb-3">Formas de Pagamento</h4><div className="space-y-3"><div className="space-y-2"><Label>💵 Dinheiro</Label><Input type="number" step="0.01" min="0" value={cash} onChange={(e) => setCash(e.target.value)} placeholder="0.00" /></div><div className="space-y-2"><Label>📱 PIX</Label><Input type="number" step="0.01" min="0" value={pix} onChange={(e) => setPix(e.target.value)} placeholder="0.00" /></div><div className="space-y-2"><Label>💳 Cartão</Label><Input type="number" step="0.01" min="0" value={card} onChange={(e) => setCard(e.target.value)} placeholder="0.00" /></div></div></div>
-              <div className="bg-muted p-4 rounded-lg space-y-2"><div className="flex justify-between"><span className="font-semibold">Total:</span><span className="text-xl font-bold text-green-600">R$ {totalSale.toFixed(2)}</span></div><div className="flex justify-between text-sm"><span className="text-muted-foreground">Imposto ({digitalTaxRate}%):</span><span className="font-semibold text-orange-600">R$ {taxAmount.toFixed(2)}</span></div></div>
+              
+              <div className="space-y-3">
+                <h4 className="font-semibold">Formas de Pagamento</h4>
+                <InstallmentSelector 
+                  basePrice={finalPrice}
+                  hasCouponActive={couponValidated}
+                  onSelect={setSelectedPayment}
+                />
+
+                {selectedPayment && (
+                  <div className="bg-muted/50 p-4 rounded-lg space-y-2">
+                    <h4 className="font-semibold text-sm">💰 Resumo do Pagamento</h4>
+                    {selectedPayment.type === 'cash' ? (
+                      <div className="space-y-1">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Forma:</span>
+                          <span className="font-semibold">💵 À vista (5% desconto)</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Valor:</span>
+                          <span className="text-xl font-bold text-green-600">
+                            R$ {selectedPayment.cashValue?.toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-1">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Forma:</span>
+                          <span className="font-semibold">💳 Cartão de Crédito</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Parcelas:</span>
+                          <span className="font-semibold">
+                            {selectedPayment.data?.installments}x de R$ {selectedPayment.data?.installmentValue.toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Total:</span>
+                          <span className="text-xl font-bold text-primary">
+                            R$ {selectedPayment.data?.totalAmount.toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div className="bg-muted p-4 rounded-lg space-y-2">
+                <div className="flex justify-between">
+                  <span className="font-semibold">Total da Venda:</span>
+                  <span className="text-xl font-bold text-green-600">R$ {totalSale.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Imposto ({digitalTaxRate}%):</span>
+                  <span className="font-semibold text-orange-600">R$ {taxAmount.toFixed(2)}</span>
+                </div>
+              </div>
+              
               <Separator />
               <WarrantySelector value={warrantyDays} onChange={setWarrantyDays} />
             </>
