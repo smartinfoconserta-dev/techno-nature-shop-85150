@@ -8,7 +8,7 @@ import { useState } from "react";
 import ProductGalleryDialog from "./ProductGalleryDialog";
 import ProductDetailsDialog from "./ProductDetailsDialog";
 import InstallmentSelector from "./InstallmentSelector";
-import { InstallmentOption, calculateCashPriceWithPassOn, getAllInstallmentOptions } from "@/lib/installmentHelper";
+import { InstallmentOption, calculateCashPriceWithPassOn, calculateDisplayPrice, getAllInstallmentOptions } from "@/lib/installmentHelper";
 import { couponsStore } from "@/lib/couponsStore";
 import { useComparison } from "@/contexts/ComparisonContext";
 import { toast } from "sonner";
@@ -47,8 +47,11 @@ const ProductCard = ({ id, images, name, brand, category, specs, description, pr
   const mainImage = images[0] || "/placeholder.svg";
   const hasMultipleImages = images.length > 1;
   
+  // Calcular o preço de vitrine baseado no passOnCashDiscount
+  const displayPrice = calculateDisplayPrice(price, passOnCashDiscount);
+  
   // Calcular preço a mostrar com prioridades: cupom > pagamento selecionado > original
-  let finalPrice = price;
+  let finalPrice = displayPrice;
   let displayMode: 'original' | 'coupon' | 'cash' | 'installment' = 'original';
   let paymentDetails: { installments?: number; installmentValue?: number; totalAmount?: number } = {};
 
@@ -56,17 +59,17 @@ const ProductCard = ({ id, images, name, brand, category, specs, description, pr
       typeof couponValidation.coupon.discountPercent === 'number' &&
       couponValidation.coupon.discountPercent > 0) {
     // Priorizar discountPrice (preço lojista) se configurado
-    if (discountPrice && discountPrice < price) {
+    if (discountPrice && discountPrice < displayPrice) {
       finalPrice = discountPrice;
     } else {
       // Fallback para desconto percentual
       const discount = couponValidation.coupon.discountPercent / 100;
-      finalPrice = price * (1 - discount);
+      finalPrice = displayPrice * (1 - discount);
     }
     displayMode = 'coupon';
   } else if (selectedPayment) {
     if (selectedPayment.type === 'cash') {
-      finalPrice = calculateCashPriceWithPassOn(price, passOnCashDiscount, price);
+      finalPrice = calculateCashPriceWithPassOn(displayPrice, passOnCashDiscount, price);
       displayMode = 'cash';
     } else if (selectedPayment.type === 'installment' && selectedPayment.data) {
       finalPrice = selectedPayment.data.totalAmount;
@@ -123,7 +126,7 @@ const ProductCard = ({ id, images, name, brand, category, specs, description, pr
       messageLines.push(`💰 *Pagamento à vista (5% desconto)*`);
       messageLines.push(`• Valor final: R$ ${finalPrice.toFixed(2)}`);
       if (passOnCashDiscount) {
-        messageLines.push(`• Preço de tabela: R$ ${price.toFixed(2)}`);
+        messageLines.push(`• Preço de tabela: R$ ${displayPrice.toFixed(2)}`);
       }
     } else if (displayMode === 'installment' && paymentDetails.installments) {
       messageLines.push(`• *Parcelado:* ${paymentDetails.installments}x de R$ ${paymentDetails.installmentValue?.toFixed(2)}`);
@@ -131,19 +134,19 @@ const ProductCard = ({ id, images, name, brand, category, specs, description, pr
       messageLines.push(`• 💳 Visa/Mastercard`);
     } else if (displayMode === 'coupon') {
       messageLines.push(`• *Com cupom:* R$ ${finalPrice.toFixed(2)}`);
-      messageLines.push(`• Valor original: R$ ${price.toFixed(2)}`);
+      messageLines.push(`• Valor original: R$ ${displayPrice.toFixed(2)}`);
     } else {
       // Cliente não selecionou forma de pagamento - mostrar todas as opções
       messageLines.push("");
       
       // 1. Opção à vista
-      const cashPrice = calculateCashPriceWithPassOn(price, passOnCashDiscount || false, price);
+      const cashPrice = calculateCashPriceWithPassOn(displayPrice, passOnCashDiscount || false, price);
       messageLines.push(`💵 *À Vista (5% desconto):*`);
       messageLines.push(`• R$ ${cashPrice.toFixed(2)}`);
       messageLines.push("");
       
       // 2. Opções de parcelamento
-      const installmentOptions = getAllInstallmentOptions(price);
+      const installmentOptions = getAllInstallmentOptions(displayPrice);
       messageLines.push(`💳 *Parcelado (Visa/Mastercard):*`);
       installmentOptions.forEach(option => {
         messageLines.push(
@@ -159,7 +162,7 @@ const ProductCard = ({ id, images, name, brand, category, specs, description, pr
       messageLines.push("");
       
       // 4. Preço de referência
-      messageLines.push(`📋 *Preço de tabela:* R$ ${price.toFixed(2)}`);
+      messageLines.push(`📋 *Preço de tabela:* R$ ${displayPrice.toFixed(2)}`);
     }
 
 
@@ -221,10 +224,10 @@ const ProductCard = ({ id, images, name, brand, category, specs, description, pr
           
           <div className="pt-2">
             <p className="text-xl font-bold text-primary">
-              R$ {price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              R$ {displayPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </p>
             <p className="text-xs text-muted-foreground mt-0.5">
-              em até 12x sem juros
+              em até 12x de R$ {(getAllInstallmentOptions(displayPrice).find(o => o.installments === 12)?.installmentValue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </p>
           </div>
         </CardContent>
