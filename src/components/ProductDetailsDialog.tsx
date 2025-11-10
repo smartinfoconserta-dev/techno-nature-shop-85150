@@ -8,7 +8,7 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { InstallmentOption, calculateCashPriceWithPassOn, getAllInstallmentOptions } from "@/lib/installmentHelper";
+import { InstallmentOption, calculateCashPriceWithPassOn, calculateDisplayPrice, getAllInstallmentOptions } from "@/lib/installmentHelper";
 import { couponsStore } from "@/lib/couponsStore";
 
 const sanitizeForWhatsApp = (text: string): string => {
@@ -55,6 +55,9 @@ const ProductDetailsDialog = ({
   
   const couponValidation = couponsStore.validateCoupon(coupon);
   const isDiscountActive = couponValidation.valid;
+
+  // Calcular o preço de vitrine baseado no passOnCashDiscount
+  const displayPrice = calculateDisplayPrice(price, passOnCashDiscount);
   
   useEffect(() => {
     if (!api) return;
@@ -67,23 +70,23 @@ const ProductDetailsDialog = ({
   }, [api]);
 
   // Calcular preço a mostrar com prioridades: cupom > pagamento selecionado > original
-  let finalPrice = price;
+  let finalPrice = displayPrice;
   let displayMode: 'original' | 'coupon' | 'cash' | 'installment' = 'original';
   let paymentDetails: { installments?: number; installmentValue?: number; totalAmount?: number } = {};
 
   if (isDiscountActive && couponValidation.coupon && 
       typeof couponValidation.coupon.discountPercent === 'number' &&
       couponValidation.coupon.discountPercent > 0) {
-    if (discountPrice && discountPrice < price) {
+    if (discountPrice && discountPrice < displayPrice) {
       finalPrice = discountPrice;
     } else {
       const discount = couponValidation.coupon.discountPercent / 100;
-      finalPrice = price * (1 - discount);
+      finalPrice = displayPrice * (1 - discount);
     }
     displayMode = 'coupon';
   } else if (selectedPayment) {
     if (selectedPayment.type === 'cash') {
-      finalPrice = calculateCashPriceWithPassOn(price, passOnCashDiscount, price);
+      finalPrice = calculateCashPriceWithPassOn(displayPrice, passOnCashDiscount, price);
       displayMode = 'cash';
     } else if (selectedPayment.type === 'installment' && selectedPayment.data) {
       finalPrice = selectedPayment.data.totalAmount;
@@ -148,12 +151,12 @@ const ProductDetailsDialog = ({
     } else {
       messageLines.push("");
       
-      const cashPrice = calculateCashPriceWithPassOn(price, passOnCashDiscount || false, price);
+      const cashPrice = calculateCashPriceWithPassOn(displayPrice, passOnCashDiscount || false, price);
       messageLines.push(`💵 *À Vista (5% desconto):*`);
       messageLines.push(`• R$ ${cashPrice.toFixed(2)}`);
       messageLines.push("");
       
-      const installmentOptions = getAllInstallmentOptions(price);
+      const installmentOptions = getAllInstallmentOptions(displayPrice);
       messageLines.push(`💳 *Parcelado (Visa/Mastercard):*`);
       installmentOptions.forEach(option => {
         messageLines.push(
@@ -269,11 +272,11 @@ const ProductDetailsDialog = ({
               {displayMode === 'original' && (
                 <div>
                   <p className="text-3xl font-bold text-primary">
-                    R$ {price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    R$ {displayPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </p>
                   {!isDiscountActive && (
                     <p className="text-sm text-muted-foreground mt-1">
-                      ou 12x de R$ {(getAllInstallmentOptions(price).find(o => o.installments === 12)?.installmentValue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      ou 12x de R$ {(getAllInstallmentOptions(displayPrice).find(o => o.installments === 12)?.installmentValue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                     </p>
                   )}
                 </div>
@@ -288,7 +291,7 @@ const ProductDetailsDialog = ({
                     💰 5% de desconto à vista
                   </p>
                   <p className="text-sm text-muted-foreground line-through">
-                    De: R$ {price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    De: R$ {displayPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </p>
                 </div>
               )}
@@ -310,13 +313,13 @@ const ProductDetailsDialog = ({
                     R$ {finalPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </p>
                   <p className="text-sm text-accent mt-1">
-                    {discountPrice && discountPrice < price 
-                      ? `🎟️ Preço especial! Economia de R$ ${(price - finalPrice).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                    {discountPrice && discountPrice < displayPrice 
+                      ? `🎟️ Preço especial! Economia de R$ ${(displayPrice - finalPrice).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
                       : `🎟️ ${couponValidation.coupon?.discountPercent}% de desconto!`
                     }
                   </p>
                   <p className="text-sm text-muted-foreground line-through">
-                    De: R$ {price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    De: R$ {displayPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </p>
                 </div>
               )}
@@ -360,31 +363,31 @@ const ProductDetailsDialog = ({
                           }}
                           className="w-full justify-start text-sm h-auto py-2"
                         >
-                          <div className="text-left">
-                            <div className="font-medium">Ver preço original</div>
-                            <div className="text-xs text-muted-foreground">
-                              R$ {price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                            </div>
-                          </div>
+                  <div className="text-left">
+                    <div className="font-medium">Ver preço original</div>
+                    <div className="text-xs text-muted-foreground">
+                      R$ {displayPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </div>
+                  </div>
                         </Button>
 
                         {/* À vista (sempre visível) */}
-                        <Button
-                          variant="ghost"
-                          onClick={() => {
-                            const cashValue = calculateCashPriceWithPassOn(price, passOnCashDiscount, price);
-                            setSelectedPayment({ type: 'cash', cashValue });
-                            setPaymentPopoverOpen(false);
-                          }}
-                          className="w-full justify-start text-sm h-auto py-2"
-                        >
-                          <div className="text-left">
-                            <div className="font-medium text-accent">💰 À vista (5% desconto)</div>
-                            <div className="text-xs text-muted-foreground">
-                              R$ {calculateCashPriceWithPassOn(price, passOnCashDiscount, price).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                            </div>
-                          </div>
-                        </Button>
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    const cashValue = calculateCashPriceWithPassOn(displayPrice, passOnCashDiscount, price);
+                    setSelectedPayment({ type: 'cash', cashValue });
+                    setPaymentPopoverOpen(false);
+                  }}
+                  className="w-full justify-start text-sm h-auto py-2"
+                >
+                  <div className="text-left">
+                    <div className="font-medium text-accent">💰 À vista (5% desconto)</div>
+                    <div className="text-xs text-muted-foreground">
+                      R$ {calculateCashPriceWithPassOn(displayPrice, passOnCashDiscount, price).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </div>
+                  </div>
+                </Button>
 
                         {/* Parcelamento */}
                         <div className="border-t pt-2">
@@ -393,7 +396,7 @@ const ProductDetailsDialog = ({
                             <span className="text-[10px] text-muted-foreground/60">Role para ver mais</span>
                           </div>
 
-                          {getAllInstallmentOptions(isDiscountActive ? finalPrice : price).map((option) => (
+                          {getAllInstallmentOptions(isDiscountActive ? finalPrice : displayPrice).map((option) => (
                             <Button
                               key={option.installments}
                               ref={(el) => (installmentRefs.current[option.installments] = el)}
