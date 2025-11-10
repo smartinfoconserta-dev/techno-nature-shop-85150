@@ -515,7 +515,7 @@ export const productsStore = {
     const totalExpenses = soldProducts.reduce((sum, p) => 
       sum + p.expenses.reduce((expSum, e) => expSum + e.value, 0), 0
     );
-    const netProfit = totalGross - totalExpenses;
+    const netProfit = totalGross - totalExpenses - totalTax;
     const averageMargin = totalGross > 0 ? ((netProfit / totalGross) * 100) : 0;
 
     return {
