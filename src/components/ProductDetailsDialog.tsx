@@ -69,21 +69,38 @@ const ProductDetailsDialog = ({
     });
   }, [api]);
 
-  // Calcular preço a mostrar com prioridades: cupom > pagamento selecionado > original
+  // Calcular preço a mostrar com prioridades: cupom + parcelamento > cupom > pagamento selecionado > original
   let finalPrice = displayPrice;
-  let displayMode: 'original' | 'coupon' | 'cash' | 'installment' = 'original';
+  let displayMode: 'original' | 'coupon' | 'cash' | 'installment' | 'coupon-installment' = 'original';
   let paymentDetails: { installments?: number; installmentValue?: number; totalAmount?: number } = {};
 
   if (isDiscountActive && couponValidation.coupon && 
       typeof couponValidation.coupon.discountPercent === 'number' &&
       couponValidation.coupon.discountPercent > 0) {
+    
+    // Calcular preço base com cupom
+    let discountedPrice = displayPrice;
     if (discountPrice && discountPrice < displayPrice) {
-      finalPrice = discountPrice;
+      discountedPrice = discountPrice;
     } else {
       const discount = couponValidation.coupon.discountPercent / 100;
-      finalPrice = displayPrice * (1 - discount);
+      discountedPrice = displayPrice * (1 - discount);
     }
-    displayMode = 'coupon';
+    
+    // Prioridade 1: Cupom + Parcelamento
+    if (selectedPayment?.type === 'installment' && selectedPayment.data) {
+      displayMode = 'coupon-installment';
+      finalPrice = selectedPayment.data.totalAmount;
+      paymentDetails = {
+        installments: selectedPayment.data.installments,
+        installmentValue: selectedPayment.data.installmentValue,
+        totalAmount: selectedPayment.data.totalAmount,
+      };
+    } else {
+      // Prioridade 2: Apenas cupom
+      displayMode = 'coupon';
+      finalPrice = discountedPrice;
+    }
   } else if (selectedPayment) {
     if (selectedPayment.type === 'cash') {
       finalPrice = calculateCashPriceWithPassOn(displayPrice, passOnCashDiscount, price);
@@ -141,6 +158,12 @@ const ProductDetailsDialog = ({
       if (passOnCashDiscount) {
         messageLines.push(`• Preço de tabela: R$ ${price.toFixed(2)}`);
       }
+    } else if (displayMode === 'coupon-installment' && paymentDetails.installments) {
+      messageLines.push(`🎟️ *Com cupom + Parcelado:*`);
+      messageLines.push(`• ${paymentDetails.installments}x de R$ ${paymentDetails.installmentValue?.toFixed(2)}`);
+      messageLines.push(`• Total: R$ ${paymentDetails.totalAmount?.toFixed(2)}`);
+      messageLines.push(`• 💳 Visa/Mastercard`);
+      messageLines.push(`• ✅ Cupom de desconto aplicado!`);
     } else if (displayMode === 'installment' && paymentDetails.installments) {
       messageLines.push(`• *Parcelado:* ${paymentDetails.installments}x de R$ ${paymentDetails.installmentValue?.toFixed(2)}`);
       messageLines.push(`• Total: R$ ${paymentDetails.totalAmount?.toFixed(2)}`);
@@ -320,6 +343,23 @@ const ProductDetailsDialog = ({
                   </p>
                   <p className="text-sm text-muted-foreground line-through">
                     De: R$ {displayPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </p>
+                </div>
+              )}
+              
+              {displayMode === 'coupon-installment' && paymentDetails.installments && (
+                <div>
+                  <p className="text-3xl font-bold text-primary">
+                    {paymentDetails.installments}x de R$ {paymentDetails.installmentValue?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </p>
+                  <p className="text-sm text-accent mt-1">
+                    🎟️ Com cupom de desconto aplicado!
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Total parcelado: R$ {paymentDetails.totalAmount?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </p>
+                  <p className="text-xs text-muted-foreground line-through">
+                    Sem cupom seria: R$ {displayPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </p>
                 </div>
               )}
