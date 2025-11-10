@@ -22,8 +22,6 @@ import { useToast } from "@/hooks/use-toast";
 import CustomerSelector from "./CustomerSelector";
 import NewCustomerDialog from "./NewCustomerDialog";
 import WarrantySelector from "./WarrantySelector";
-import InstallmentSelector from "../InstallmentSelector";
-import { InstallmentOption } from "@/lib/installmentHelper";
 
 interface MarkAsSoldDialogProps {
   product: Product;
@@ -44,12 +42,9 @@ const MarkAsSoldDialog = ({
   const [saleType, setSaleType] = useState<"immediate" | "receivable">("immediate");
   const [buyerName, setBuyerName] = useState("");
   const [buyerCpf, setBuyerCpf] = useState("");
-  
-  const [selectedPayment, setSelectedPayment] = useState<{
-    type: 'cash' | 'installment';
-    data?: InstallmentOption;
-    cashValue?: number;
-  } | null>(null);
+  const [cash, setCash] = useState("");
+  const [pix, setPix] = useState("");
+  const [card, setCard] = useState("");
   
   const [couponCode, setCouponCode] = useState("");
   const [couponValidated, setCouponValidated] = useState(false);
@@ -74,7 +69,9 @@ const MarkAsSoldDialog = ({
       setSaleType("immediate");
       setBuyerName("");
       setBuyerCpf("");
-      setSelectedPayment(null);
+      setCash("");
+      setPix("");
+      setCard("");
       setCouponCode("");
       setCouponValidated(false);
       setCouponDiscount(0);
@@ -134,15 +131,12 @@ const MarkAsSoldDialog = ({
     ? (product.discountPrice || basePrice) 
     : basePrice;
 
-  const totalSale = selectedPayment
-    ? (selectedPayment.type === 'cash' 
-        ? selectedPayment.cashValue || 0 
-        : selectedPayment.data?.totalAmount || 0)
-    : 0;
-  
-  const cashValue = selectedPayment?.type === 'cash' ? (selectedPayment.cashValue || 0) : 0;
-  const cardValue = selectedPayment?.type === 'installment' ? (selectedPayment.data?.totalAmount || 0) : 0;
-  const pixValue = 0;
+  // Calcular valores de pagamento imediato
+  const cashValue = parseFloat(cash) || 0;
+  const pixValue = parseFloat(pix) || 0;
+  const cardValue = parseFloat(card) || 0;
+  const totalPaid = cashValue + pixValue + cardValue;
+  const totalSale = totalPaid;
   
   const digitalTotal = pixValue + cardValue;
   const taxableAmount = includeCashInTax ? totalSale : digitalTotal;
@@ -166,8 +160,17 @@ const MarkAsSoldDialog = ({
         return;
       }
 
-      if (!selectedPayment) {
-        toast({ title: "Erro", description: "Selecione uma forma de pagamento", variant: "destructive" });
+      if (totalPaid === 0) {
+        toast({ title: "Erro", description: "Informe ao menos uma forma de pagamento", variant: "destructive" });
+        return;
+      }
+
+      if (totalPaid < finalPrice) {
+        toast({ 
+          title: "Pagamento incompleto", 
+          description: `Faltam R$ ${(finalPrice - totalPaid).toFixed(2)} para completar o valor`, 
+          variant: "destructive" 
+        });
         return;
       }
 
@@ -292,50 +295,72 @@ const MarkAsSoldDialog = ({
               
               <div className="space-y-3">
                 <h4 className="font-semibold">Formas de Pagamento</h4>
-                <InstallmentSelector 
-                  basePrice={finalPrice}
-                  hasCouponActive={couponValidated}
-                  onSelect={setSelectedPayment}
-                />
-
-                {selectedPayment && (
-                  <div className="bg-muted/50 p-4 rounded-lg space-y-2">
-                    <h4 className="font-semibold text-sm">💰 Resumo do Pagamento</h4>
-                    {selectedPayment.type === 'cash' ? (
-                      <div className="space-y-1">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Forma:</span>
-                          <span className="font-semibold">💵 À vista (5% desconto)</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Valor:</span>
-                          <span className="text-xl font-bold text-green-600">
-                            R$ {selectedPayment.cashValue?.toFixed(2)}
-                          </span>
-                        </div>
+                
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    <Label>💵 Dinheiro</Label>
+                    <Input 
+                      type="number" 
+                      step="0.01" 
+                      min="0" 
+                      value={cash} 
+                      onChange={(e) => setCash(e.target.value)} 
+                      placeholder="0.00" 
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label>📱 PIX</Label>
+                    <Input 
+                      type="number" 
+                      step="0.01" 
+                      min="0" 
+                      value={pix} 
+                      onChange={(e) => setPix(e.target.value)} 
+                      placeholder="0.00" 
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label>💳 Cartão</Label>
+                    <Input 
+                      type="number" 
+                      step="0.01" 
+                      min="0" 
+                      value={card} 
+                      onChange={(e) => setCard(e.target.value)} 
+                      placeholder="0.00" 
+                    />
+                  </div>
+                  
+                  {/* Resumo do pagamento */}
+                  <div className="bg-primary/10 p-3 rounded-lg space-y-2">
+                    <div className="flex justify-between">
+                      <span className="font-medium">Total Pago:</span>
+                      <span className="text-lg font-bold text-green-600">
+                        R$ {totalPaid.toFixed(2)}
+                      </span>
+                    </div>
+                    
+                    {totalPaid < finalPrice && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Falta:</span>
+                        <span className="text-lg font-bold text-red-600">
+                          R$ {(finalPrice - totalPaid).toFixed(2)}
+                        </span>
                       </div>
-                    ) : (
-                      <div className="space-y-1">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Forma:</span>
-                          <span className="font-semibold">💳 Cartão de Crédito</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Parcelas:</span>
-                          <span className="font-semibold">
-                            {selectedPayment.data?.installments}x de R$ {selectedPayment.data?.installmentValue.toFixed(2)}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Total:</span>
-                          <span className="text-xl font-bold text-primary">
-                            R$ {selectedPayment.data?.totalAmount.toFixed(2)}
-                          </span>
-                        </div>
+                    )}
+                    
+                    {totalPaid > finalPrice && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Troco:</span>
+                        <span className="text-lg font-bold text-yellow-600">
+                          R$ {(totalPaid - finalPrice).toFixed(2)}
+                        </span>
                       </div>
                     )}
                   </div>
-                )}
+                </div>
               </div>
 
               <div className="bg-muted p-4 rounded-lg space-y-2">
