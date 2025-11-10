@@ -336,83 +336,88 @@ const ProductDetailsDialog = ({
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-80">
-                  <div className="space-y-3">
-                    <h4 className="font-medium text-sm mb-2">Escolha a forma de pagamento</h4>
-                    
-                    <Button
-                      variant="ghost"
-                      onClick={() => {
-                        setSelectedPayment(null);
-                        setPaymentPopoverOpen(false);
-                      }}
-                      className="w-full justify-start text-sm h-auto py-2"
-                    >
-                      <div className="text-left">
-                        <div className="font-medium">Ver preço original</div>
-                        <div className="text-xs text-muted-foreground">
-                          R$ {price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                        </div>
-                      </div>
-                    </Button>
-
-                    {!isDiscountActive && (
-                      <Button
-                        variant="ghost"
-                        onClick={() => {
-                          const cashValue = calculateCashPriceWithPassOn(price, passOnCashDiscount, price);
-                          setSelectedPayment({ type: 'cash', cashValue });
-                          setPaymentPopoverOpen(false);
-                        }}
-                        className="w-full justify-start text-sm h-auto py-2"
-                      >
-                        <div className="text-left">
-                          <div className="font-medium text-accent">💰 À vista (5% desconto)</div>
-                          <div className="text-xs text-muted-foreground">
-                            R$ {calculateCashPriceWithPassOn(price, passOnCashDiscount, price).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                          </div>
-                        </div>
-                      </Button>
-                    )}
-
-                <div className="border-t pt-2">
-                  <div className="text-xs text-muted-foreground mb-2 flex items-center justify-between">
-                    <span>💳 Parcelamento (Visa/Mastercard)</span>
-                    <span className="text-[10px] text-muted-foreground/60">Role para ver mais</span>
-                  </div>
                   <div className="relative">
-                    <div className="h-[220px] w-full overflow-y-auto pr-1 scroll-smooth
-                      [&::-webkit-scrollbar]:w-2
-                      [&::-webkit-scrollbar-track]:bg-transparent
-                      [&::-webkit-scrollbar-thumb]:bg-muted-foreground/30
-                      [&::-webkit-scrollbar-thumb]:rounded-full
-                      [&::-webkit-scrollbar-thumb]:hover:bg-muted-foreground/50">
-                      <div className="pr-2">
-                        {getAllInstallmentOptions(isDiscountActive ? finalPrice : price).map((option) => (
-                          <Button
-                            key={option.installments}
-                            ref={(el) => (installmentRefs.current[option.installments] = el)}
-                            variant="ghost"
-                            onClick={() => handleInstallmentClick(option)}
-                            className="w-full justify-start text-sm h-auto py-2.5 mb-1 hover:bg-muted"
-                          >
-                            <div className="text-left">
-                              <div className="font-medium">
-                                {option.installments}x de R$ {option.installmentValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                              </div>
-                              <div className="text-xs text-muted-foreground">
-                                Total: R$ {option.totalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                {option.rate > 0 && ` (${option.rate.toFixed(2)}% juros)`}
-                              </div>
+                    <div 
+                      className="max-h-[360px] w-full overflow-y-auto pr-1 scroll-smooth overscroll-contain touch-pan-y
+                        [&::-webkit-scrollbar]:w-2
+                        [&::-webkit-scrollbar-track]:bg-transparent
+                        [&::-webkit-scrollbar-thumb]:bg-muted-foreground/30
+                        [&::-webkit-scrollbar-thumb]:rounded-full
+                        [&::-webkit-scrollbar-thumb]:hover:bg-muted-foreground/50"
+                      data-scroll-lock-scrollable
+                      onWheelCapture={(e) => e.stopPropagation()}
+                      onTouchMoveCapture={(e) => e.stopPropagation()}
+                    >
+                      <div className="space-y-3 pr-2">
+                        <h4 className="font-medium text-sm">Escolha a forma de pagamento</h4>
+
+                        {/* Ver preço original */}
+                        <Button
+                          variant="ghost"
+                          onClick={() => {
+                            setSelectedPayment(null);
+                            setPaymentPopoverOpen(false);
+                          }}
+                          className="w-full justify-start text-sm h-auto py-2"
+                        >
+                          <div className="text-left">
+                            <div className="font-medium">Ver preço original</div>
+                            <div className="text-xs text-muted-foreground">
+                              R$ {price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                             </div>
-                          </Button>
-                        ))}
+                          </div>
+                        </Button>
+
+                        {/* À vista (sempre visível) */}
+                        <Button
+                          variant="ghost"
+                          onClick={() => {
+                            const cashValue = calculateCashPriceWithPassOn(price, passOnCashDiscount, price);
+                            setSelectedPayment({ type: 'cash', cashValue });
+                            setPaymentPopoverOpen(false);
+                          }}
+                          className="w-full justify-start text-sm h-auto py-2"
+                        >
+                          <div className="text-left">
+                            <div className="font-medium text-accent">💰 À vista (5% desconto)</div>
+                            <div className="text-xs text-muted-foreground">
+                              R$ {calculateCashPriceWithPassOn(price, passOnCashDiscount, price).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            </div>
+                          </div>
+                        </Button>
+
+                        {/* Parcelamento */}
+                        <div className="border-t pt-2">
+                          <div className="text-xs text-muted-foreground mb-2 flex items-center justify-between">
+                            <span>💳 Parcelamento (Visa/Mastercard)</span>
+                            <span className="text-[10px] text-muted-foreground/60">Role para ver mais</span>
+                          </div>
+
+                          {getAllInstallmentOptions(isDiscountActive ? finalPrice : price).map((option) => (
+                            <Button
+                              key={option.installments}
+                              ref={(el) => (installmentRefs.current[option.installments] = el)}
+                              variant="ghost"
+                              onClick={() => handleInstallmentClick(option)}
+                              className="w-full justify-start text-sm h-auto py-2.5 mb-1 hover:bg-muted"
+                            >
+                              <div className="text-left">
+                                <div className="font-medium">
+                                  {option.installments}x de R$ {option.installmentValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  Total: R$ {option.totalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                  {option.rate > 0 && ` (${option.rate.toFixed(2)}% juros)`}
+                                </div>
+                              </div>
+                            </Button>
+                          ))}
+                        </div>
                       </div>
                     </div>
-                    
+
                     {/* Gradiente indicando mais conteúdo abaixo */}
                     <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-background to-transparent pointer-events-none" />
-                  </div>
-                </div>
                   </div>
                 </PopoverContent>
               </Popover>
