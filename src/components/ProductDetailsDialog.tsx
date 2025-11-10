@@ -2,7 +2,7 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/compone
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { MessageCircle, X, CreditCard, Tag } from "lucide-react";
+import { MessageCircle, X, CreditCard, Tag, ChevronDown } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from "@/components/ui/carousel";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -324,9 +324,16 @@ const ProductDetailsDialog = ({
 
               <Popover open={paymentPopoverOpen} onOpenChange={setPaymentPopoverOpen}>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full" size="sm">
-                    <CreditCard className="w-4 h-4 mr-2" />
-                    Ver formas de pagamento
+                  <Button 
+                    variant="ghost" 
+                    className="w-full justify-between border border-border hover:bg-muted/50" 
+                    size="sm"
+                  >
+                    <span className="flex items-center gap-2">
+                      <CreditCard className="w-4 h-4" />
+                      <span className="font-medium">Formas de Pagamento</span>
+                    </span>
+                    <ChevronDown className="w-4 h-4 text-muted-foreground" />
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-80">
@@ -369,30 +376,38 @@ const ProductDetailsDialog = ({
                     )}
 
                 <div className="border-t pt-2">
-                  <div className="text-xs text-muted-foreground mb-2">💳 Parcelamento (Visa/Mastercard)</div>
-                  <ScrollArea className="h-64 w-full">
-                    <div className="pr-2">
-                      {getAllInstallmentOptions(isDiscountActive ? finalPrice : price).map((option) => (
-                        <Button
-                          key={option.installments}
-                          ref={(el) => (installmentRefs.current[option.installments] = el)}
-                          variant="ghost"
-                          onClick={() => handleInstallmentClick(option)}
-                          className="w-full justify-start text-sm h-auto py-2 mb-1"
-                        >
-                          <div className="text-left">
-                            <div className="font-medium">
-                              {option.installments}x de R$ {option.installmentValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  <div className="text-xs text-muted-foreground mb-2 flex items-center justify-between">
+                    <span>💳 Parcelamento (Visa/Mastercard)</span>
+                    <span className="text-[10px] text-muted-foreground/60">Role para ver mais</span>
+                  </div>
+                  <div className="relative">
+                    <ScrollArea className="h-[220px] w-full">
+                      <div className="pr-3">
+                        {getAllInstallmentOptions(isDiscountActive ? finalPrice : price).map((option) => (
+                          <Button
+                            key={option.installments}
+                            ref={(el) => (installmentRefs.current[option.installments] = el)}
+                            variant="ghost"
+                            onClick={() => handleInstallmentClick(option)}
+                            className="w-full justify-start text-sm h-auto py-2.5 mb-1 hover:bg-muted"
+                          >
+                            <div className="text-left">
+                              <div className="font-medium">
+                                {option.installments}x de R$ {option.installmentValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                Total: R$ {option.totalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                {option.rate > 0 && ` (${option.rate.toFixed(2)}% juros)`}
+                              </div>
                             </div>
-                            <div className="text-xs text-muted-foreground">
-                              Total: R$ {option.totalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                              {option.rate > 0 && ` (${option.rate.toFixed(2)}% juros)`}
-                            </div>
-                          </div>
-                        </Button>
-                      ))}
-                    </div>
-                  </ScrollArea>
+                          </Button>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                    
+                    {/* Gradiente indicando mais conteúdo abaixo */}
+                    <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-background to-transparent pointer-events-none" />
+                  </div>
                 </div>
                   </div>
                 </PopoverContent>
