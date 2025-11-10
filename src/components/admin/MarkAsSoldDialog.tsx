@@ -17,7 +17,9 @@ import { receivablesStore } from "@/lib/receivablesStore";
 import { Customer, customersStore } from "@/lib/customersStore";
 import { Separator } from "@/components/ui/separator";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Check, X } from "lucide-react";
+import { InstallmentOption, getAllInstallmentOptions } from "@/lib/installmentHelper";
 import { useToast } from "@/hooks/use-toast";
 import CustomerSelector from "./CustomerSelector";
 import NewCustomerDialog from "./NewCustomerDialog";
@@ -45,6 +47,7 @@ const MarkAsSoldDialog = ({
   const [cash, setCash] = useState("");
   const [pix, setPix] = useState("");
   const [card, setCard] = useState("");
+  const [selectedInstallment, setSelectedInstallment] = useState<InstallmentOption | null>(null);
   
   const [couponCode, setCouponCode] = useState("");
   const [couponValidated, setCouponValidated] = useState(false);
@@ -72,6 +75,7 @@ const MarkAsSoldDialog = ({
       setCash("");
       setPix("");
       setCard("");
+      setSelectedInstallment(null);
       setCouponCode("");
       setCouponValidated(false);
       setCouponDiscount(0);
@@ -137,6 +141,10 @@ const MarkAsSoldDialog = ({
   const cardValue = parseFloat(card) || 0;
   const totalPaid = cashValue + pixValue + cardValue;
   const totalSale = totalPaid;
+  
+  // Calcular valor restante para o cartão
+  const remainingAmountForCard = finalPrice - cashValue - pixValue;
+  const installmentOptions = remainingAmountForCard > 0 ? getAllInstallmentOptions(remainingAmountForCard) : [];
   
   const digitalTotal = pixValue + cardValue;
   const taxableAmount = includeCashInTax ? totalSale : digitalTotal;
@@ -322,19 +330,108 @@ const MarkAsSoldDialog = ({
                   </div>
                   
                   <div className="space-y-2">
-                    <Label>💳 Cartão</Label>
-                    <Input 
-                      type="number" 
-                      step="0.01" 
-                      min="0" 
-                      value={card} 
-                      onChange={(e) => setCard(e.target.value)} 
-                      placeholder="0.00" 
-                    />
+                    <Label>💳 Cartão de Crédito</Label>
+                    
+                    {remainingAmountForCard > 0 ? (
+                      <>
+                        <Select 
+                          value={selectedInstallment ? selectedInstallment.installments.toString() : ""} 
+                          onValueChange={(value) => {
+                            if (value === "none") {
+                              setSelectedInstallment(null);
+                              setCard("");
+                            } else {
+                              const installments = parseInt(value);
+                              const option = installmentOptions.find(opt => opt.installments === installments);
+                              if (option) {
+                                setSelectedInstallment(option);
+                                setCard(option.totalAmount.toString());
+                              }
+                            }
+                          }}
+                        >
+                          <SelectTrigger className={selectedInstallment ? "border-primary ring-2 ring-primary/20" : ""}>
+                            <SelectValue placeholder="Selecione o parcelamento" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">Não usar cartão</SelectItem>
+                            {installmentOptions.map((option) => (
+                              <SelectItem key={option.installments} value={option.installments.toString()}>
+                                {option.installments}x de R$ {option.installmentValue.toFixed(2)}
+                                {option.rate > 0 && ` (taxa ${option.rate}%)`}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+
+                        {selectedInstallment && (
+                          <div className="p-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 rounded-lg">
+                            <div className="space-y-1 text-sm">
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Parcelas:</span>
+                                <span className="font-semibold">
+                                  {selectedInstallment.installments}x de R$ {selectedInstallment.installmentValue.toFixed(2)}
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Total no cartão:</span>
+                                <span className="font-bold text-blue-600">
+                                  R$ {selectedInstallment.totalAmount.toFixed(2)}
+                                </span>
+                              </div>
+                              {selectedInstallment.rate > 0 && (
+                                <div className="flex justify-between text-xs">
+                                  <span className="text-muted-foreground">Taxa:</span>
+                                  <span className="text-orange-600">
+                                    R$ {selectedInstallment.feeAmount.toFixed(2)} ({selectedInstallment.rate}%)
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <div className="p-3 bg-muted/50 rounded-lg text-sm text-muted-foreground">
+                        Preencha Dinheiro ou PIX primeiro para calcular o restante
+                      </div>
+                    )}
                   </div>
                   
                   {/* Resumo do pagamento */}
                   <div className="bg-primary/10 p-3 rounded-lg space-y-2">
+                    <h4 className="font-semibold text-sm">💰 Resumo do Pagamento</h4>
+                    
+                    {cashValue > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">💵 Dinheiro:</span>
+                        <span className="font-medium">R$ {cashValue.toFixed(2)}</span>
+                      </div>
+                    )}
+                    
+                    {pixValue > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">📱 PIX:</span>
+                        <span className="font-medium">R$ {pixValue.toFixed(2)}</span>
+                      </div>
+                    )}
+                    
+                    {cardValue > 0 && selectedInstallment && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">💳 Cartão:</span>
+                        <span className="font-medium">
+                          R$ {cardValue.toFixed(2)}
+                          {selectedInstallment.installments > 1 && (
+                            <span className="text-xs ml-1">
+                              ({selectedInstallment.installments}x de R$ {selectedInstallment.installmentValue.toFixed(2)})
+                            </span>
+                          )}
+                        </span>
+                      </div>
+                    )}
+                    
+                    <Separator className="my-2" />
+                    
                     <div className="flex justify-between">
                       <span className="font-medium">Total Pago:</span>
                       <span className="text-lg font-bold text-green-600">
