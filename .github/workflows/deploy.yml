@@ -145,7 +145,7 @@ jobs:
           port: 21
           local-dir: dist/
           server-dir: ${{ env.DEPLOY_PATH }}
-          dangerous-clean-slate: false
+          dangerous-clean-slate: true
           dry-run: false
           log-level: verbose
 
