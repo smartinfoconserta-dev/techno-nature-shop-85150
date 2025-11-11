@@ -1,4 +1,4 @@
-const APP_CACHE_VERSION = "3";
+const APP_CACHE_VERSION = "4";
 
 const CACHE_KEYS = [
   "products_data",
@@ -23,6 +23,13 @@ export function ensureFreshCache() {
       
       localStorage.setItem("app_cache_version", APP_CACHE_VERSION);
       console.log("Cache cleared and version updated to", APP_CACHE_VERSION);
+    }
+
+    // One-shot: force clear products_data for version 4
+    if (!localStorage.getItem("cleared_products_v4")) {
+      console.log("One-shot: Clearing products_data for v4...");
+      localStorage.removeItem("products_data");
+      localStorage.setItem("cleared_products_v4", "true");
     }
   } catch (error) {
     console.error("Error clearing cache:", error);

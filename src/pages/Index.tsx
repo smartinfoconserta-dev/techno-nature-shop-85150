@@ -25,8 +25,12 @@ const Index = () => {
   }, []);
 
   useEffect(() => {
+    const init = async () => {
+      await productsStore.refreshFromBackend();
+      loadProducts();
+    };
+    init();
     loadBrands();
-    loadProducts();
   }, [selectedCategory]);
 
   useEffect(() => {
