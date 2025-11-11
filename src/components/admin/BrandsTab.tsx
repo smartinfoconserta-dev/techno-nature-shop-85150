@@ -27,8 +27,9 @@ const BrandsTab = () => {
     loadBrands();
   }, []);
 
-  const loadBrands = () => {
-    setBrands(brandsStore.getAllBrands());
+  const loadBrands = async () => {
+    const brands = await brandsStore.getAllBrands();
+    setBrands(brands);
   };
 
   const handleSubmit = (name: string, category: "Notebooks" | "Celulares") => {

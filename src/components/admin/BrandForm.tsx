@@ -32,7 +32,11 @@ const BrandForm = ({ open, onOpenChange, onSubmit, editingBrand }: BrandFormProp
   const [categories, setCategories] = useState<string[]>([]);
 
   useEffect(() => {
-    setCategories(categoriesStore.getCategoryNames());
+    const loadCategories = async () => {
+      const cats = await categoriesStore.getCategoryNames();
+      setCategories(cats);
+    };
+    loadCategories();
   }, []);
 
   useEffect(() => {
@@ -41,8 +45,9 @@ const BrandForm = ({ open, onOpenChange, onSubmit, editingBrand }: BrandFormProp
       setCategory(editingBrand.category);
     } else {
       setName("");
-      const cats = categoriesStore.getCategoryNames();
-      setCategory(cats[0] || "Celulares");
+      categoriesStore.getCategoryNames().then(cats => {
+        setCategory(cats[0] || "Celulares");
+      });
     }
   }, [editingBrand, open]);
 

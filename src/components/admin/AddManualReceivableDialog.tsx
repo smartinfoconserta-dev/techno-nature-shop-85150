@@ -99,7 +99,7 @@ export function AddManualReceivableDialog({
     setIsLoading(true);
 
     try {
-      const customer = customersStore.getCustomerById(customerId);
+      const customer = await customersStore.getCustomerById(customerId);
       if (!customer) {
         throw new Error("Cliente não encontrado");
       }
@@ -203,7 +203,19 @@ export function AddManualReceivableDialog({
     }
   };
 
-  const customer = customerId ? customersStore.getCustomerById(customerId) : null;
+  const [customer, setCustomer] = useState<any>(null);
+  
+  useEffect(() => {
+    const loadCustomer = async () => {
+      if (customerId) {
+        const cust = await customersStore.getCustomerById(customerId);
+        setCustomer(cust);
+      } else {
+        setCustomer(null);
+      }
+    };
+    loadCustomer();
+  }, [customerId]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

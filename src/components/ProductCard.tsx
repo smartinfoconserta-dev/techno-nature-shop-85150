@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { MessageCircle, Image, Info } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import ProductGalleryDialog from "./ProductGalleryDialog";
 import ProductDetailsDialog from "./ProductDetailsDialog";
 import InstallmentSelector from "./InstallmentSelector";
@@ -42,7 +42,20 @@ const ProductCard = ({ id, images, name, brand, category, specs, description, pr
   
   const { addProduct, removeProduct, isSelected, canAddMore, selectedProducts } = useComparison();
   
-  const couponValidation = couponsStore.validateCoupon(coupon);
+  const [couponValidation, setCouponValidation] = useState<{ valid: boolean; coupon?: any }>({ valid: false });
+  
+  useEffect(() => {
+    const validateCoupon = async () => {
+      if (coupon) {
+        const result = await couponsStore.validateCoupon(coupon);
+        setCouponValidation(result);
+      } else {
+        setCouponValidation({ valid: false });
+      }
+    };
+    validateCoupon();
+  }, [coupon]);
+  
   const isDiscountActive = couponValidation.valid;
   const mainImage = images[0] || "/placeholder.svg";
   const hasMultipleImages = images.length > 1;

@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { productsStore } from "@/lib/productsStore";
 import { categoriesStore } from "@/lib/categoriesStore";
 import ProductQuickCard from "./ProductQuickCard";
@@ -21,7 +21,13 @@ const CategoryProductsSection = ({ categoryName, onViewMore }: CategoryProductsS
       .slice(0, 3); // Limitar a 3
   }, [categoryName]);
 
-  const categoryIcon = categoriesStore.getCategoryIcon(categoryName);
+  const [categoryIcon, setCategoryIcon] = useState<string>("Package");
+  
+  useEffect(() => {
+    categoriesStore.getCategoryIcon(categoryName).then(icon => {
+      setCategoryIcon(icon);
+    });
+  }, [categoryName]);
 
   // Mapeamento de ícones para emojis
   const iconMap: Record<string, string> = {

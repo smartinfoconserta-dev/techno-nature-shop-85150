@@ -53,7 +53,20 @@ const ProductDetailsDialog = ({
   const [paymentPopoverOpen, setPaymentPopoverOpen] = useState(false);
   const installmentRefs = useRef<{ [key: number]: HTMLButtonElement | null }>({});
   
-  const couponValidation = couponsStore.validateCoupon(coupon);
+  const [couponValidation, setCouponValidation] = useState<{ valid: boolean; coupon?: any }>({ valid: false });
+  
+  useEffect(() => {
+    const validateCoupon = async () => {
+      if (coupon) {
+        const result = await couponsStore.validateCoupon(coupon);
+        setCouponValidation(result);
+      } else {
+        setCouponValidation({ valid: false });
+      }
+    };
+    validateCoupon();
+  }, [coupon]);
+  
   const isDiscountActive = couponValidation.valid;
 
   // Calcular o preço de vitrine baseado no passOnCashDiscount

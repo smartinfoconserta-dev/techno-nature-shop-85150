@@ -8,6 +8,25 @@ import { DollarSign, TrendingUp, TrendingDown, ShoppingBag, Receipt } from "luci
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 
+const TaxRateDisplay = () => {
+  const [taxInfo, setTaxInfo] = useState<{ rate: number; includesCash: boolean }>({ rate: 3.9, includesCash: false });
+  
+  useEffect(() => {
+    settingsStore.getSettings().then(settings => {
+      setTaxInfo({
+        rate: settings.taxSettings.digitalTaxRate,
+        includesCash: settings.taxSettings.includeCashInTax
+      });
+    });
+  }, []);
+  
+  return (
+    <p className="text-xs text-muted-foreground">
+      {taxInfo.rate}% do {taxInfo.includesCash ? "total" : "digital"}
+    </p>
+  );
+};
+
 const CostsProfitsTab = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [totals, setTotals] = useState({
@@ -123,9 +142,7 @@ const CostsProfitsTab = () => {
             <div className="text-2xl font-bold text-orange-600">
               R$ {totals.totalTax.toFixed(2)}
             </div>
-            <p className="text-xs text-muted-foreground">
-              {settingsStore.getSettings().taxSettings.digitalTaxRate}% do {settingsStore.getSettings().taxSettings.includeCashInTax ? "total" : "digital"}
-            </p>
+            <TaxRateDisplay />
           </CardContent>
         </Card>
       </div>

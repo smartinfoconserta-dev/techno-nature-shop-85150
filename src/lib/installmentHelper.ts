@@ -12,11 +12,11 @@ export interface InstallmentOption {
  * Calcula o valor a cobrar considerando a taxa do cartão
  * Fórmula: valorCobrado = valorDesejado / (1 - taxa/100)
  */
-export function calculateInstallmentPrice(
+export async function calculateInstallmentPrice(
   desiredAmount: number,
   installments: number
-): InstallmentOption {
-  const settings = settingsStore.getSettings();
+): Promise<InstallmentOption> {
+  const settings = await settingsStore.getSettings();
   const rateObj = settings.installmentRates.find(r => r.installments === installments);
   const rate = rateObj?.rate || 0;
   
@@ -36,11 +36,14 @@ export function calculateInstallmentPrice(
 /**
  * Gera todas as opções de parcelamento
  */
-export function getAllInstallmentOptions(desiredAmount: number): InstallmentOption[] {
-  const settings = settingsStore.getSettings();
-  return settings.installmentRates
-    .sort((a, b) => a.installments - b.installments)
-    .map((rateObj) => calculateInstallmentPrice(desiredAmount, rateObj.installments));
+export async function getAllInstallmentOptions(desiredAmount: number): Promise<InstallmentOption[]> {
+  const settings = await settingsStore.getSettings();
+  const options = await Promise.all(
+    settings.installmentRates
+      .sort((a, b) => a.installments - b.installments)
+      .map((rateObj) => calculateInstallmentPrice(desiredAmount, rateObj.installments))
+  );
+  return options;
 }
 
 /**

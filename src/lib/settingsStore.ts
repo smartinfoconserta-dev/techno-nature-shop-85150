@@ -90,7 +90,7 @@ export const settingsStore = {
     if (existing) {
       const { error } = await supabase
         .from("settings")
-        .update({ installment_rates: sorted })
+        .update({ installment_rates: sorted as any })
         .eq("id", existing.id);
 
       if (error) {

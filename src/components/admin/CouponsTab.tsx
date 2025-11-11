@@ -30,8 +30,9 @@ const CouponsTab = () => {
     loadCoupons();
   }, []);
 
-  const loadCoupons = () => {
-    setCoupons(couponsStore.getAllCoupons());
+  const loadCoupons = async () => {
+    const coupons = await couponsStore.getAllCoupons();
+    setCoupons(coupons);
   };
 
   const handleAdd = () => {

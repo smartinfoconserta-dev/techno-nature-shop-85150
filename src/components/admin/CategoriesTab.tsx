@@ -28,8 +28,9 @@ const CategoriesTab = () => {
     loadCategories();
   }, []);
 
-  const loadCategories = () => {
-    setCategories(categoriesStore.getAllCategories());
+  const loadCategories = async () => {
+    const cats = await categoriesStore.getAllCategories();
+    setCategories(cats);
   };
 
   const handleSubmit = (name: string, icon: string) => {

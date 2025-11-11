@@ -27,7 +27,7 @@ const ForgotPassword = () => {
 
     try {
       // Buscar cliente pelo identificador
-      const customer = customersStore.getCustomerByIdentifier(identifier);
+      const customer = await customersStore.getCustomerByIdentifier(identifier);
       
       if (!customer) {
         toast({

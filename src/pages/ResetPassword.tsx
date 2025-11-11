@@ -89,7 +89,7 @@ const ResetPassword = () => {
       }
 
       // Buscar cliente
-      const customer = customersStore.getCustomerById(customerId);
+      const customer = await customersStore.getCustomerById(customerId);
       
       if (!customer || !customer.username) {
         toast({

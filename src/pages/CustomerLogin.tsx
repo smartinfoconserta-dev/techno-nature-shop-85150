@@ -48,7 +48,7 @@ const CustomerLogin = () => {
 
     try {
       console.log("[LOGIN] Iniciando autenticação...");
-      const customer = customersStore.authenticateCustomerByIdentifier(identifier, password);
+      const customer = await customersStore.authenticateCustomerByIdentifier(identifier, password);
       console.log("[LOGIN] Resultado da autenticação:", customer ? "Sucesso" : "Falhou");
       
       clearTimeout(timeoutId);

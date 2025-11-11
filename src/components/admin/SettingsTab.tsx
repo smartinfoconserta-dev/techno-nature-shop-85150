@@ -42,8 +42,8 @@ const SettingsTab = () => {
     loadSettings();
   }, []);
 
-  const loadSettings = () => {
-    const settings = settingsStore.getSettings();
+  const loadSettings = async () => {
+    const settings = await settingsStore.getSettings();
     setDigitalTaxRate(settings.taxSettings.digitalTaxRate);
     setIncludeCashInTax(settings.taxSettings.includeCashInTax);
     setInstallmentRates(settings.installmentRates);

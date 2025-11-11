@@ -19,7 +19,9 @@ const Index = () => {
   const [categories, setCategories] = useState<string[]>([]);
 
   useEffect(() => {
-    setCategories(["Todos", ...categoriesStore.getCategoryNames()]);
+    categoriesStore.getCategoryNames().then(names => {
+      setCategories(["Todos", ...names]);
+    });
   }, []);
 
   useEffect(() => {
@@ -33,13 +35,13 @@ const Index = () => {
     }
   }, [searchQuery]);
 
-  const loadBrands = () => {
+  const loadBrands = async () => {
     if (selectedCategory === "Todos") {
-      const allBrands = brandsStore.getAllBrands();
+      const allBrands = await brandsStore.getAllBrands();
       const uniqueBrands = Array.from(new Set(allBrands.map(b => b.name))).sort();
       setBrands(uniqueBrands);
     } else {
-      const categoryBrands = brandsStore.getBrandsByCategory(selectedCategory);
+      const categoryBrands = await brandsStore.getBrandsByCategory(selectedCategory);
       setBrands(categoryBrands.map(b => b.name));
     }
   };
@@ -78,11 +80,21 @@ const Index = () => {
   };
 
   const filteredCategories = useMemo(() => {
-    const allCategories = categoriesStore.getAllCategories();
-    if (homeFilter === "Todas") {
-      return allCategories;
-    }
-    return allCategories.filter(cat => cat.name === homeFilter);
+    return [];  // Será populado via state
+  }, []);
+
+  const [filteredCats, setFilteredCats] = useState<any[]>([]);
+
+  useEffect(() => {
+    const loadFilteredCategories = async () => {
+      const allCategories = await categoriesStore.getAllCategories();
+      if (homeFilter === "Todas") {
+        setFilteredCats(allCategories);
+      } else {
+        setFilteredCats(allCategories.filter(cat => cat.name === homeFilter));
+      }
+    };
+    loadFilteredCategories();
   }, [homeFilter]);
 
   return (
@@ -118,7 +130,7 @@ const Index = () => {
 
             {/* Categorias Filtradas */}
             <div className="space-y-8">
-              {filteredCategories.map((category) => (
+              {filteredCats.map((category) => (
                 <CategorySection
                   key={category.id}
                   categoryName={category.name}

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -149,7 +149,8 @@ export function AddCustomerPaymentDialog({
       }
 
       const paymentDate = format(data.paymentDate, "yyyy-MM-dd");
-      const customerName = customersStore.getCustomerById(customerId)?.name || "Cliente";
+      const customer = await customersStore.getCustomerById(customerId);
+      const customerName = customer?.name || "Cliente";
       
       // Processa cada método de pagamento separadamente
       const methods: Array<{ method: "cash" | "pix" | "card"; amount: number }> = [];
@@ -220,7 +221,19 @@ export function AddCustomerPaymentDialog({
     }
   };
 
-  const customer = customerId ? customersStore.getCustomerById(customerId) : null;
+  const [customer, setCustomer] = useState<any>(null);
+  
+  useEffect(() => {
+    const loadCustomer = async () => {
+      if (customerId) {
+        const cust = await customersStore.getCustomerById(customerId);
+        setCustomer(cust);
+      } else {
+        setCustomer(null);
+      }
+    };
+    loadCustomer();
+  }, [customerId]);
   const totalDue = customerId
     ? receivablesStore
         .getReceivablesByCustomer(customerId)
