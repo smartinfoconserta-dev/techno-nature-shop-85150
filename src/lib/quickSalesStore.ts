@@ -23,16 +23,44 @@ export interface QuickSale {
   updatedAt: string;
 }
 
+// Sync cache with background refresh
+const QUICK_SALES_STORAGE_KEY = "quick_sales_data";
+let quickSalesCache: QuickSale[] = [];
+let quickInitialized = false;
+
+const genIdQS = () => (typeof crypto !== "undefined" && (crypto as any).randomUUID ? (crypto as any).randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`);
+
+function loadQuickCache() {
+  if (quickInitialized) return;
+  try {
+    const raw = localStorage.getItem(QUICK_SALES_STORAGE_KEY);
+    quickSalesCache = raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    console.warn("Falha ao carregar cache de vendas rápidas:", e);
+    quickSalesCache = [];
+  }
+  quickInitialized = true;
+}
+
+function saveQuickCache() {
+  try {
+    localStorage.setItem(QUICK_SALES_STORAGE_KEY, JSON.stringify(quickSalesCache));
+  } catch (e) {
+    console.warn("Falha ao salvar cache de vendas rápidas:", e);
+  }
+}
+
 export const quickSalesStore = {
-  async getAllQuickSales(): Promise<QuickSale[]> {
+  async refreshFromBackend(): Promise<void> {
     const { data, error } = await supabase
       .from("quick_sales")
       .select("*")
       .order("created_at", { ascending: false });
-
-    if (error) throw error;
-
-    return (data || []).map(row => ({
+    if (error) {
+      console.error("Erro ao carregar vendas rápidas:", error);
+      return;
+    }
+    quickSalesCache = (data || []).map((row) => ({
       id: row.id,
       productName: row.product_name,
       costPrice: Number(row.cost_price),
@@ -50,116 +78,142 @@ export const quickSalesStore = {
       createdAt: row.created_at,
       updatedAt: row.updated_at || row.created_at,
     }));
+    saveQuickCache();
   },
 
-  async getQuickSalesByMonth(monthString: string): Promise<QuickSale[]> {
-    const sales = await this.getAllQuickSales();
-    return sales.filter(s => s.saleDate.startsWith(monthString));
+  getAllQuickSales(): QuickSale[] {
+    loadQuickCache();
+    if (!quickSalesCache.length) this.refreshFromBackend();
+    return [...quickSalesCache];
   },
 
-  async getQuickSaleById(id: string): Promise<QuickSale | undefined> {
-    const sales = await this.getAllQuickSales();
-    return sales.find(s => s.id === id);
+  getQuickSalesByMonth(monthString: string): QuickSale[] {
+    return this.getAllQuickSales().filter((s) => s.saleDate.startsWith(monthString));
   },
 
-  async addQuickSale(
-    data: Omit<QuickSale, "id" | "profit" | "createdAt" | "updatedAt">
-  ): Promise<QuickSale> {
+  getQuickSaleById(id: string): QuickSale | undefined {
+    return this.getAllQuickSales().find((s) => s.id === id);
+  },
+
+  addQuickSale(data: Omit<QuickSale, "id" | "profit" | "createdAt" | "updatedAt">): QuickSale {
     const taxAmount = data.taxAmount ?? 0;
     const profit = data.salePrice - data.costPrice - taxAmount;
 
-    const { data: newSale, error } = await supabase
-      .from("quick_sales")
-      .insert({
-        product_name: data.productName,
-        cost_price: data.costPrice,
-        sale_price: data.salePrice,
-        profit,
-        margin: data.salePrice > 0 ? (profit / data.salePrice) * 100 : 0,
-        customer_name: data.customerName || "",
-        payment_breakdown: data.paymentBreakdown || null,
-        payment_method: data.paymentMethod || "cash",
-        digital_tax: taxAmount,
-        warranty_months: data.warranty || 3,
-        notes: data.notes || null,
-      })
-      .select()
-      .single();
-
-    if (error) throw error;
-
-    return {
-      id: newSale.id,
-      productName: newSale.product_name,
-      costPrice: Number(newSale.cost_price),
-      salePrice: Number(newSale.sale_price),
-      profit: Number(newSale.profit),
-      customerName: newSale.customer_name || undefined,
-      paymentBreakdown: newSale.payment_breakdown as any,
-      paymentMethod: newSale.payment_method as any,
-      taxAmount: Number(newSale.digital_tax || 0),
-      warranty: newSale.warranty_months || undefined,
-      notes: newSale.notes || undefined,
-      saleDate: newSale.created_at,
-      createdAt: newSale.created_at,
-      updatedAt: newSale.updated_at || newSale.created_at,
+    const newSale: QuickSale = {
+      id: genIdQS(),
+      productName: data.productName,
+      costPrice: data.costPrice,
+      salePrice: data.salePrice,
+      profit,
+      customerName: data.customerName,
+      customerCpf: data.customerCpf,
+      paymentBreakdown: data.paymentBreakdown,
+      paymentMethod: data.paymentMethod,
+      taxAmount,
+      warranty: data.warranty,
+      warrantyExpiresAt: data.warrantyExpiresAt,
+      notes: data.notes,
+      saleDate: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
-  },
 
-  async updateQuickSale(
-    id: string,
-    data: Partial<Omit<QuickSale, "id" | "createdAt">>
-  ): Promise<QuickSale> {
-    const updateData: any = {};
+    quickSalesCache = [newSale, ...quickSalesCache];
+    saveQuickCache();
 
-    if (data.productName !== undefined) updateData.product_name = data.productName;
-    if (data.customerName !== undefined) updateData.customer_name = data.customerName;
-    if (data.notes !== undefined) updateData.notes = data.notes;
-    if (data.costPrice !== undefined) updateData.cost_price = data.costPrice;
-    if (data.salePrice !== undefined) updateData.sale_price = data.salePrice;
-    if (data.paymentBreakdown !== undefined) updateData.payment_breakdown = data.paymentBreakdown;
-    if (data.paymentMethod !== undefined) updateData.payment_method = data.paymentMethod;
-    if (data.taxAmount !== undefined) updateData.digital_tax = data.taxAmount;
-    if (data.warranty !== undefined) updateData.warranty_months = data.warranty;
-
-    if (data.costPrice !== undefined || data.salePrice !== undefined || data.taxAmount !== undefined) {
-      const sales = await this.getAllQuickSales();
-      const sale = sales.find(s => s.id === id);
-      if (sale) {
-        const costPrice = data.costPrice ?? sale.costPrice;
-        const salePrice = data.salePrice ?? sale.salePrice;
-        const taxAmount = data.taxAmount ?? sale.taxAmount;
-        updateData.profit = salePrice - costPrice - taxAmount;
-        updateData.margin = salePrice > 0 ? (updateData.profit / salePrice) * 100 : 0;
+    (async () => {
+      try {
+        await supabase
+          .from("quick_sales")
+          .upsert({
+            id: newSale.id,
+            product_name: newSale.productName,
+            cost_price: newSale.costPrice,
+            sale_price: newSale.salePrice,
+            profit: newSale.profit,
+            margin: newSale.salePrice > 0 ? (newSale.profit / newSale.salePrice) * 100 : 0,
+            customer_name: newSale.customerName || "",
+            payment_breakdown: newSale.paymentBreakdown || null,
+            payment_method: newSale.paymentMethod || "cash",
+            digital_tax: newSale.taxAmount || 0,
+            warranty_months: newSale.warranty || 3,
+            notes: newSale.notes || null,
+            created_at: newSale.createdAt,
+            updated_at: newSale.updatedAt,
+          } as any);
+        await this.refreshFromBackend();
+      } catch (e) {
+        console.error("Falha ao persistir venda rápida:", e);
       }
-    }
+    })();
 
-    const { error } = await supabase
-      .from("quick_sales")
-      .update(updateData)
-      .eq("id", id);
-
-    if (error) throw error;
-
-    const sales = await this.getAllQuickSales();
-    const sale = sales.find(s => s.id === id);
-    if (!sale) throw new Error("Venda rápida não encontrada");
-
-    return sale;
+    return newSale;
   },
 
-  async deleteQuickSale(id: string): Promise<void> {
-    const { error } = await supabase
-      .from("quick_sales")
-      .delete()
-      .eq("id", id);
+  updateQuickSale(id: string, data: Partial<Omit<QuickSale, "id" | "createdAt">>): QuickSale {
+    const list = this.getAllQuickSales();
+    const idx = list.findIndex((s) => s.id === id);
+    if (idx === -1) throw new Error("Venda rápida não encontrada");
 
-    if (error) throw error;
+    const base = list[idx];
+    const costPrice = data.costPrice ?? base.costPrice;
+    const salePrice = data.salePrice ?? base.salePrice;
+    const taxAmount = data.taxAmount ?? base.taxAmount;
+    const profit = salePrice - costPrice - (taxAmount || 0);
+
+    const updated: QuickSale = {
+      ...base,
+      ...data,
+      profit,
+      updatedAt: new Date().toISOString(),
+    } as QuickSale;
+
+    quickSalesCache = list.map((s) => (s.id === id ? updated : s));
+    saveQuickCache();
+
+    (async () => {
+      try {
+        const updateData: any = {};
+        if (data.productName !== undefined) updateData.product_name = data.productName;
+        if (data.customerName !== undefined) updateData.customer_name = data.customerName;
+        if (data.notes !== undefined) updateData.notes = data.notes;
+        if (data.costPrice !== undefined) updateData.cost_price = data.costPrice;
+        if (data.salePrice !== undefined) updateData.sale_price = data.salePrice;
+        if (data.paymentBreakdown !== undefined) updateData.payment_breakdown = data.paymentBreakdown;
+        if (data.paymentMethod !== undefined) updateData.payment_method = data.paymentMethod;
+        if (data.taxAmount !== undefined) updateData.digital_tax = data.taxAmount;
+        if (data.warranty !== undefined) updateData.warranty_months = data.warranty;
+        updateData.profit = profit;
+        updateData.margin = salePrice > 0 ? (profit / salePrice) * 100 : 0;
+
+        await supabase.from("quick_sales").update(updateData).eq("id", id);
+        await this.refreshFromBackend();
+      } catch (e) {
+        console.error("Falha ao atualizar venda rápida:", e);
+      }
+    })();
+
+    return updated;
   },
 
-  async getMonthlyTotals(monthString: string) {
-    const sales = await this.getQuickSalesByMonth(monthString);
-    
+  deleteQuickSale(id: string): void {
+    const list = this.getAllQuickSales();
+    quickSalesCache = list.filter((s) => s.id !== id);
+    saveQuickCache();
+
+    (async () => {
+      try {
+        await supabase.from("quick_sales").delete().eq("id", id);
+        await this.refreshFromBackend();
+      } catch (e) {
+        console.error("Falha ao deletar venda rápida:", e);
+      }
+    })();
+  },
+
+  getMonthlyTotals(monthString: string) {
+    const sales = this.getQuickSalesByMonth(monthString);
+
     let totalSales = 0;
     let totalCost = 0;
     let totalProfit = 0;
@@ -168,7 +222,7 @@ export const quickSalesStore = {
     let totalPix = 0;
     let totalCard = 0;
 
-    sales.forEach(sale => {
+    sales.forEach((sale) => {
       totalSales += sale.salePrice;
       totalCost += sale.costPrice;
       totalProfit += sale.profit;

@@ -126,7 +126,7 @@ export const useMigrateFromLocalStorage = () => {
               archived: receivable.archived || false,
               created_at: receivable.createdAt || new Date().toISOString(),
               updated_at: receivable.updatedAt || receivable.createdAt || new Date().toISOString(),
-            });
+            } as any);
 
             if (error) {
               console.error("Erro ao migrar recebível:", error);

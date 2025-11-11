@@ -45,70 +45,111 @@ export interface Product {
   createdAt: string;
 }
 
+// Lightweight sync cache with background refresh
+const PRODUCTS_STORAGE_KEY = "products_data";
+let productsCache: Product[] = [];
+let productsInitialized = false;
+
+const genId = () => (typeof crypto !== "undefined" && (crypto as any).randomUUID ? (crypto as any).randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`);
+
+function loadProductsCache() {
+  if (productsInitialized) return;
+  try {
+    const raw = localStorage.getItem(PRODUCTS_STORAGE_KEY);
+    productsCache = raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    console.warn("Falha ao carregar cache de produtos:", e);
+    productsCache = [];
+  }
+  productsInitialized = true;
+}
+
+function saveProductsCache() {
+  try {
+    localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(productsCache));
+  } catch (e) {
+    console.warn("Falha ao salvar cache de produtos:", e);
+  }
+}
+
+function mapRowToProduct(row: any): Product {
+  return {
+    id: row.id,
+    name: row.name,
+    brand: row.brand,
+    category: row.category,
+    images: row.images || [],
+    specs: row.specifications || "",
+    description: row.description || "",
+    price: Number(row.base_price),
+    costPrice: row.base_price ? Number(row.base_price) : undefined,
+    discountPrice: undefined,
+    passOnCashDiscount: false,
+    order: row.product_order || 0,
+    sold: row.sold || false,
+    salePrice: row.sale_price ? Number(row.sale_price) : undefined,
+    paymentBreakdown: row.payment_breakdown as PaymentBreakdown | undefined,
+    taxAmount: row.digital_tax ? Number(row.digital_tax) : undefined,
+    saleDate: row.sold_date || undefined,
+    buyerName: row.customer_name || undefined,
+    buyerCpf: undefined,
+    invoiceUrl: undefined,
+    soldOnCredit: false,
+    receivableId: undefined,
+    warranty: row.warranty_months || undefined,
+    warrantyExpiresAt: undefined,
+    expenses: ((row.expenses as any[]) || []).map((exp: any) => ({
+      id: exp.id || String(Date.now()),
+      label: exp.label || "",
+      value: Number(exp.value || 0),
+      description: exp.description,
+      paymentMethod: exp.paymentMethod,
+      sellerCpf: exp.sellerCpf,
+      createdAt: exp.createdAt || new Date().toISOString(),
+    })),
+    createdAt: row.created_at || new Date().toISOString(),
+  };
+}
+
 export const productsStore = {
-  async getAllProducts(): Promise<Product[]> {
+  async refreshFromBackend(): Promise<void> {
     const { data, error } = await supabase
       .from("products")
       .select("*")
       .order("product_order", { ascending: true });
-
-    if (error) throw error;
-    
-    return (data || []).map(row => ({
-      id: row.id,
-      name: row.name,
-      brand: row.brand,
-      category: row.category,
-      images: row.images || [],
-      specs: row.specifications || "",
-      description: row.description || "",
-      price: Number(row.base_price),
-      costPrice: row.base_price ? Number(row.base_price) : undefined,
-      discountPrice: undefined,
-      passOnCashDiscount: false,
-      order: row.product_order || 0,
-      sold: row.sold || false,
-      salePrice: row.sale_price ? Number(row.sale_price) : undefined,
-      paymentBreakdown: row.payment_breakdown as PaymentBreakdown | undefined,
-      taxAmount: row.digital_tax ? Number(row.digital_tax) : undefined,
-      saleDate: row.sold_date || undefined,
-      buyerName: row.customer_name || undefined,
-      buyerCpf: undefined,
-      invoiceUrl: undefined,
-      soldOnCredit: false,
-      receivableId: undefined,
-      warranty: row.warranty_months || undefined,
-      warrantyExpiresAt: undefined,
-      expenses: (row.expenses as any[] || []).map((exp: any) => ({
-        id: exp.id || String(Date.now()),
-        label: exp.label || "",
-        value: Number(exp.value || 0),
-        description: exp.description,
-        paymentMethod: exp.paymentMethod,
-        sellerCpf: exp.sellerCpf,
-        createdAt: exp.createdAt || new Date().toISOString(),
-      })),
-      createdAt: row.created_at || new Date().toISOString(),
-    }));
+    if (error) {
+      console.error("Erro ao carregar produtos do backend:", error);
+      return;
+    }
+    const mapped = (data || []).map(mapRowToProduct);
+    productsCache = mapped;
+    saveProductsCache();
   },
 
-  async getProductsByCategory(category: string): Promise<Product[]> {
-    const products = await this.getAllProducts();
-    return products
+  getAllProducts(): Product[] {
+    loadProductsCache();
+    if (!productsCache.length) {
+      // Atualiza em background sem bloquear UI
+      this.refreshFromBackend();
+    }
+    // retorna cópia ordenada
+    return [...productsCache].sort((a, b) => (a.order || 0) - (b.order || 0));
+  },
+
+  getProductsByCategory(category: string): Product[] {
+    return this.getAllProducts()
       .filter((p) => p.category === category && !p.sold)
-      .sort((a, b) => a.order - b.order);
+      .sort((a, b) => (a.order || 0) - (b.order || 0));
   },
 
-  async getAvailableProducts(): Promise<Product[]> {
-    const products = await this.getAllProducts();
-    return products
+  getAvailableProducts(): Product[] {
+    return this.getAllProducts()
       .filter((p) => !p.sold)
-      .sort((a, b) => a.order - b.order);
+      .sort((a, b) => (a.order || 0) - (b.order || 0));
   },
 
-  async getSoldProducts(): Promise<Product[]> {
-    const products = await this.getAllProducts();
-    return products
+  getSoldProducts(): Product[] {
+    return this.getAllProducts()
       .filter((p) => p.sold)
       .sort((a, b) => {
         if (!a.saleDate || !b.saleDate) return 0;
@@ -116,100 +157,143 @@ export const productsStore = {
       });
   },
 
-  async addProduct(data: Omit<Product, "id" | "order" | "sold" | "expenses" | "createdAt">): Promise<Product> {
-    const products = await this.getAllProducts();
-    const maxOrder = products.length > 0 ? Math.max(...products.map((p) => p.order)) : -1;
+  addProduct(data: Omit<Product, "id" | "order" | "sold" | "expenses" | "createdAt">): Product {
+    const list = this.getAllProducts();
+    const maxOrder = list.length > 0 ? Math.max(...list.map((p) => p.order)) : -1;
 
-    const { data: newProduct, error } = await supabase
-      .from("products")
-      .insert({
-        name: data.name,
-        brand: data.brand,
-        category: data.category,
-        images: data.images,
-        specifications: data.specs,
-        description: data.description,
-        base_price: data.price,
-        product_order: maxOrder + 1,
-        sold: false,
-        expenses: [],
-      })
-      .select()
-      .single();
-
-    if (error) throw error;
-
-    return {
-      id: newProduct.id,
-      name: newProduct.name,
-      brand: newProduct.brand,
-      category: newProduct.category,
-      images: newProduct.images || [],
-      specs: newProduct.specifications || "",
-      description: newProduct.description || "",
-      price: Number(newProduct.base_price),
-      order: newProduct.product_order || 0,
+    const product: Product = {
+      id: genId(),
+      name: data.name,
+      brand: data.brand,
+      category: data.category,
+      images: data.images || [],
+      specs: data.specs || "",
+      description: data.description || "",
+      price: data.price,
+      costPrice: data.price,
+      discountPrice: undefined,
+      passOnCashDiscount: false,
+      order: maxOrder + 1,
       sold: false,
+      salePrice: undefined,
+      paymentBreakdown: undefined,
+      taxAmount: undefined,
+      saleDate: undefined,
+      buyerName: undefined,
+      buyerCpf: undefined,
+      invoiceUrl: undefined,
+      soldOnCredit: false,
+      receivableId: undefined,
+      warranty: undefined,
+      warrantyExpiresAt: undefined,
       expenses: [],
-      createdAt: newProduct.created_at,
+      createdAt: new Date().toISOString(),
     };
-  },
 
-  async updateProduct(id: string, data: Partial<Product>): Promise<Product> {
-    const updateData: any = {};
-    
-    if (data.name !== undefined) updateData.name = data.name;
-    if (data.brand !== undefined) updateData.brand = data.brand;
-    if (data.category !== undefined) updateData.category = data.category;
-    if (data.images !== undefined) updateData.images = data.images;
-    if (data.specs !== undefined) updateData.specifications = data.specs;
-    if (data.description !== undefined) updateData.description = data.description;
-    if (data.price !== undefined) updateData.base_price = data.price;
-    if (data.order !== undefined) updateData.product_order = data.order;
-    if (data.sold !== undefined) updateData.sold = data.sold;
-    if (data.salePrice !== undefined) updateData.sale_price = data.salePrice;
-    if (data.paymentBreakdown !== undefined) updateData.payment_breakdown = data.paymentBreakdown;
-    if (data.taxAmount !== undefined) updateData.digital_tax = data.taxAmount;
-    if (data.saleDate !== undefined) updateData.sold_date = data.saleDate;
-    if (data.buyerName !== undefined) updateData.customer_name = data.buyerName;
-    if (data.warranty !== undefined) updateData.warranty_months = data.warranty;
-    if (data.expenses !== undefined) updateData.expenses = data.expenses;
+    productsCache = [...productsCache, product];
+    saveProductsCache();
 
-    const { data: updated, error } = await supabase
-      .from("products")
-      .update(updateData)
-      .eq("id", id)
-      .select()
-      .single();
+    // Persistir em background
+    (async () => {
+      try {
+        await supabase.from("products").upsert({
+          id: product.id,
+          name: product.name,
+          brand: product.brand,
+          category: product.category,
+          images: product.images,
+          specifications: product.specs,
+          description: product.description,
+          base_price: product.price,
+          product_order: product.order,
+          sold: false,
+          expenses: [],
+          created_at: product.createdAt,
+        } as any);
+        await this.refreshFromBackend();
+      } catch (e) {
+        console.error("Falha ao persistir produto:", e);
+      }
+    })();
 
-    if (error) throw error;
-
-    const products = await this.getAllProducts();
-    const product = products.find(p => p.id === id);
-    if (!product) throw new Error("Produto não encontrado");
-    
     return product;
   },
 
-  async deleteProduct(id: string): Promise<void> {
-    const { error } = await supabase
-      .from("products")
-      .delete()
-      .eq("id", id);
+  updateProduct(id: string, data: Partial<Product>): Product {
+    const list = this.getAllProducts();
+    const idx = list.findIndex((p) => p.id === id);
+    if (idx === -1) throw new Error("Produto não encontrado");
 
-    if (error) throw error;
+    const updated: Product = { ...list[idx], ...data };
+    productsCache = list.map((p) => (p.id === id ? updated : p));
+    saveProductsCache();
+
+    (async () => {
+      try {
+        const updateData: any = {};
+        if (data.name !== undefined) updateData.name = data.name;
+        if (data.brand !== undefined) updateData.brand = data.brand;
+        if (data.category !== undefined) updateData.category = data.category;
+        if (data.images !== undefined) updateData.images = data.images;
+        if (data.specs !== undefined) updateData.specifications = data.specs;
+        if (data.description !== undefined) updateData.description = data.description;
+        if (data.price !== undefined) updateData.base_price = data.price;
+        if (data.order !== undefined) updateData.product_order = data.order;
+        if (data.sold !== undefined) updateData.sold = data.sold;
+        if (data.salePrice !== undefined) updateData.sale_price = data.salePrice;
+        if (data.paymentBreakdown !== undefined) updateData.payment_breakdown = data.paymentBreakdown;
+        if (data.taxAmount !== undefined) updateData.digital_tax = data.taxAmount;
+        if (data.saleDate !== undefined) updateData.sold_date = data.saleDate;
+        if (data.buyerName !== undefined) updateData.customer_name = data.buyerName;
+        if (data.warranty !== undefined) updateData.warranty_months = data.warranty;
+        if (data.expenses !== undefined) updateData.expenses = data.expenses;
+
+        await supabase.from("products").update(updateData).eq("id", id);
+        await this.refreshFromBackend();
+      } catch (e) {
+        console.error("Falha ao atualizar produto:", e);
+      }
+    })();
+
+    return updated;
   },
 
-  async reorderProducts(reorderedList: Product[]): Promise<void> {
-    for (let i = 0; i < reorderedList.length; i++) {
-      await supabase
-        .from("products")
-        .update({ product_order: i })
-        .eq("id", reorderedList[i].id);
-    }
+  deleteProduct(id: string): void {
+    const list = this.getAllProducts();
+    productsCache = list.filter((p) => p.id !== id);
+    saveProductsCache();
+
+    (async () => {
+      try {
+        await supabase.from("products").delete().eq("id", id);
+        await this.refreshFromBackend();
+      } catch (e) {
+        console.error("Falha ao deletar produto:", e);
+      }
+    })();
   },
 
-  async markAsSold(
+  reorderProducts(reorderedList: Product[]): void {
+    // Atualiza ordem localmente
+    productsCache = reorderedList.map((p, i) => ({ ...p, order: i }));
+    saveProductsCache();
+
+    // Persistir em background
+    (async () => {
+      try {
+        await Promise.all(
+          productsCache.map((p, i) =>
+            supabase.from("products").update({ product_order: i }).eq("id", p.id)
+          )
+        );
+        await this.refreshFromBackend();
+      } catch (e) {
+        console.error("Falha ao reordenar produtos:", e);
+      }
+    })();
+  },
+
+  markAsSold(
     id: string,
     buyerName: string,
     buyerCpf: string,
@@ -218,51 +302,70 @@ export const productsStore = {
     card: number,
     warranty?: number,
     warrantyExpiresAt?: string
-  ): Promise<Product> {
-    const { data: settings } = await supabase
-      .from("settings")
-      .select("*")
-      .single();
+  ): Product {
+    const list = this.getAllProducts();
+    const idx = list.findIndex((p) => p.id === id);
+    if (idx === -1) throw new Error("Produto não encontrado");
 
     const salePrice = cash + pix + card;
-    const digitalAmount = pix + card;
+    const defaultTaxRate = 3.9; // fallback
+    const taxableAmount = pix + card; // fallback não inclui dinheiro
+    const taxAmount = taxableAmount * (defaultTaxRate / 100);
 
-    const taxableAmount = settings?.include_cash_in_tax ? salePrice : digitalAmount;
-    const taxAmount = taxableAmount * ((settings?.digital_tax_rate || 3.9) / 100);
+    const updated: Product = {
+      ...list[idx],
+      sold: true,
+      salePrice,
+      paymentBreakdown: { cash, pix, card },
+      taxAmount,
+      saleDate: new Date().toISOString(),
+      buyerName: buyerName.trim(),
+      warranty,
+    };
 
-    const { error } = await supabase
-      .from("products")
-      .update({
-        sold: true,
-        sale_price: salePrice,
-        payment_breakdown: { cash, pix, card },
-        digital_tax: taxAmount,
-        sold_date: new Date().toISOString(),
-        customer_name: buyerName.trim(),
-        warranty_months: warranty,
-      })
-      .eq("id", id);
+    productsCache = list.map((p) => (p.id === id ? updated : p));
+    saveProductsCache();
 
-    if (error) throw error;
+    (async () => {
+      try {
+        const { data: settings } = await supabase.from("settings").select("*").single();
+        const includeCash = settings?.include_cash_in_tax;
+        const rate = settings?.digital_tax_rate ?? defaultTaxRate;
+        const taxable = includeCash ? salePrice : pix + card;
+        const preciseTax = taxable * (Number(rate) / 100);
 
-    const products = await this.getAllProducts();
-    const product = products.find(p => p.id === id);
-    if (!product) throw new Error("Produto não encontrado");
-    
-    return product;
+        await supabase
+          .from("products")
+          .update({
+            sold: true,
+            sale_price: salePrice,
+            payment_breakdown: { cash, pix, card },
+            digital_tax: preciseTax,
+            sold_date: new Date().toISOString(),
+            customer_name: buyerName.trim(),
+            warranty_months: warranty,
+          })
+          .eq("id", id);
+
+        await this.refreshFromBackend();
+      } catch (e) {
+        console.error("Falha ao marcar como vendido:", e);
+      }
+    })();
+
+    return updated;
   },
 
-  async addExpense(
+  addExpense(
     productId: string,
     label: string,
     value: number,
     paymentMethod: "cash" | "pix" | "card",
     description?: string,
     sellerCpf?: string
-  ): Promise<Product> {
-    const products = await this.getAllProducts();
-    const product = products.find((p) => p.id === productId);
-
+  ): Product {
+    const list = this.getAllProducts();
+    const product = list.find((p) => p.id === productId);
     if (!product) throw new Error("Produto não encontrado");
 
     const newExpense: ProductExpense = {
@@ -275,109 +378,145 @@ export const productsStore = {
       createdAt: new Date().toISOString(),
     };
 
-    const updatedExpenses = [...product.expenses, newExpense];
+    const updated: Product = { ...product, expenses: [...product.expenses, newExpense] };
+    productsCache = list.map((p) => (p.id === productId ? updated : p));
+    saveProductsCache();
 
-    const { error } = await supabase
-      .from("products")
-      .update({ expenses: updatedExpenses })
-      .eq("id", productId);
+    (async () => {
+      try {
+        await supabase.from("products").update({ expenses: updated.expenses }).eq("id", productId);
+        await this.refreshFromBackend();
+      } catch (e) {
+        console.error("Falha ao adicionar gasto:", e);
+      }
+    })();
 
-    if (error) throw error;
-
-    return { ...product, expenses: updatedExpenses };
+    return updated;
   },
 
-  async updateExpense(
+  updateExpense(
     productId: string,
     expenseId: string,
     updates: Partial<Omit<ProductExpense, "id" | "createdAt">>
-  ): Promise<Product> {
-    const products = await this.getAllProducts();
-    const product = products.find((p) => p.id === productId);
-
+  ): Product {
+    const list = this.getAllProducts();
+    const product = list.find((p) => p.id === productId);
     if (!product) throw new Error("Produto não encontrado");
 
-    const expense = product.expenses.find((e) => e.id === expenseId);
-    if (!expense) throw new Error("Gasto não encontrado");
+    const updatedExpenses = product.expenses.map((e) =>
+      e.id === expenseId ? { ...e, ...updates } : e
+    );
 
-    Object.assign(expense, updates);
+    const updated: Product = { ...product, expenses: updatedExpenses };
+    productsCache = list.map((p) => (p.id === productId ? updated : p));
+    saveProductsCache();
 
-    const { error } = await supabase
-      .from("products")
-      .update({ expenses: product.expenses })
-      .eq("id", productId);
+    (async () => {
+      try {
+        await supabase.from("products").update({ expenses: updatedExpenses }).eq("id", productId);
+        await this.refreshFromBackend();
+      } catch (e) {
+        console.error("Falha ao atualizar gasto:", e);
+      }
+    })();
 
-    if (error) throw error;
-
-    return product;
+    return updated;
   },
 
-  async removeExpense(productId: string, expenseId: string): Promise<Product> {
-    const products = await this.getAllProducts();
-    const product = products.find((p) => p.id === productId);
-
+  removeExpense(productId: string, expenseId: string): Product {
+    const list = this.getAllProducts();
+    const product = list.find((p) => p.id === productId);
     if (!product) throw new Error("Produto não encontrado");
 
     const updatedExpenses = product.expenses.filter((e) => e.id !== expenseId);
+    const updated: Product = { ...product, expenses: updatedExpenses };
 
-    const { error } = await supabase
-      .from("products")
-      .update({ expenses: updatedExpenses })
-      .eq("id", productId);
+    productsCache = list.map((p) => (p.id === productId ? updated : p));
+    saveProductsCache();
 
-    if (error) throw error;
+    (async () => {
+      try {
+        await supabase.from("products").update({ expenses: updatedExpenses }).eq("id", productId);
+        await this.refreshFromBackend();
+      } catch (e) {
+        console.error("Falha ao remover gasto:", e);
+      }
+    })();
 
-    return { ...product, expenses: updatedExpenses };
+    return updated;
   },
 
-  async updateSale(
+  updateSale(
     productId: string,
     buyerName: string,
     salePrice: number,
     saleDate: string,
     invoiceUrl?: string
-  ): Promise<Product> {
-    const { error } = await supabase
-      .from("products")
-      .update({
-        customer_name: buyerName.trim(),
-        sale_price: salePrice,
-        sold_date: saleDate,
-      })
-      .eq("id", productId);
+  ): Product {
+    const list = this.getAllProducts();
+    const idx = list.findIndex((p) => p.id === productId);
+    if (idx === -1) throw new Error("Produto não encontrado");
 
-    if (error) throw error;
+    const updated: Product = { ...list[idx], buyerName: buyerName.trim(), salePrice, saleDate };
+    productsCache = list.map((p) => (p.id === productId ? updated : p));
+    saveProductsCache();
 
-    const products = await this.getAllProducts();
-    const product = products.find(p => p.id === productId);
-    if (!product) throw new Error("Produto não encontrado");
-    
-    return product;
+    (async () => {
+      try {
+        await supabase
+          .from("products")
+          .update({ customer_name: buyerName.trim(), sale_price: salePrice, sold_date: saleDate })
+          .eq("id", productId);
+        await this.refreshFromBackend();
+      } catch (e) {
+        console.error("Falha ao atualizar venda:", e);
+      }
+    })();
+
+    return updated;
   },
 
-  async cancelSale(id: string): Promise<Product> {
-    const { error } = await supabase
-      .from("products")
-      .update({
-        sold: false,
-        sale_price: null,
-        payment_breakdown: null,
-        digital_tax: 0,
-        sold_date: null,
-        customer_name: null,
-      })
-      .eq("id", id);
+  cancelSale(id: string): Product {
+    const list = this.getAllProducts();
+    const idx = list.findIndex((p) => p.id === id);
+    if (idx === -1) throw new Error("Produto não encontrado");
 
-    if (error) throw error;
+    const updated: Product = {
+      ...list[idx],
+      sold: false,
+      salePrice: undefined,
+      paymentBreakdown: undefined,
+      taxAmount: 0,
+      saleDate: undefined,
+      buyerName: undefined,
+    };
 
-    const products = await this.getAllProducts();
-    const product = products.find(p => p.id === id);
-    if (!product) throw new Error("Produto não encontrado");
-    
-    return product;
+    productsCache = list.map((p) => (p.id === id ? updated : p));
+    saveProductsCache();
+
+    (async () => {
+      try {
+        await supabase
+          .from("products")
+          .update({
+            sold: false,
+            sale_price: null,
+            payment_breakdown: null,
+            digital_tax: 0,
+            sold_date: null,
+            customer_name: null,
+          })
+          .eq("id", id);
+        await this.refreshFromBackend();
+      } catch (e) {
+        console.error("Falha ao cancelar venda:", e);
+      }
+    })();
+
+    return updated;
   },
 
-  async markAsSoldOnCredit(
+  markAsSoldOnCredit(
     id: string,
     buyerName: string,
     buyerCpf: string,
@@ -385,29 +524,47 @@ export const productsStore = {
     receivableId: string,
     warranty?: number,
     warrantyExpiresAt?: string
-  ): Promise<Product> {
-    const { error } = await supabase
-      .from("products")
-      .update({
-        sold: true,
-        customer_name: buyerName.trim(),
-        sale_price: totalAmount,
-        sold_date: new Date().toISOString(),
-        warranty_months: warranty,
-      })
-      .eq("id", id);
+  ): Product {
+    const list = this.getAllProducts();
+    const idx = list.findIndex((p) => p.id === id);
+    if (idx === -1) throw new Error("Produto não encontrado");
 
-    if (error) throw error;
+    const updated: Product = {
+      ...list[idx],
+      sold: true,
+      buyerName: buyerName.trim(),
+      salePrice: totalAmount,
+      saleDate: new Date().toISOString(),
+      warranty,
+      receivableId,
+    };
 
-    const products = await this.getAllProducts();
-    const product = products.find(p => p.id === id);
-    if (!product) throw new Error("Produto não encontrado");
-    
-    return product;
+    productsCache = list.map((p) => (p.id === id ? updated : p));
+    saveProductsCache();
+
+    (async () => {
+      try {
+        await supabase
+          .from("products")
+          .update({
+            sold: true,
+            customer_name: buyerName.trim(),
+            sale_price: totalAmount,
+            sold_date: new Date().toISOString(),
+            warranty_months: warranty,
+          })
+          .eq("id", id);
+        await this.refreshFromBackend();
+      } catch (e) {
+        console.error("Falha ao marcar como vendido (crédito):", e);
+      }
+    })();
+
+    return updated;
   },
 
-  async computeTotals() {
-    const soldProducts = await this.getSoldProducts();
+  computeTotals() {
+    const soldProducts = this.getSoldProducts();
 
     const totalGross = soldProducts.reduce((sum, p) => sum + (p.salePrice || 0), 0);
     const totalCash = soldProducts.reduce((sum, p) => sum + (p.paymentBreakdown?.cash || 0), 0);
@@ -436,12 +593,12 @@ export const productsStore = {
     };
   },
 
-  async computeCurrentMonthTotals() {
+  computeCurrentMonthTotals() {
     const now = new Date();
     const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const nextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1);
 
-    const soldProducts = await this.getSoldProducts();
+    const soldProducts = this.getSoldProducts();
     const monthProducts = soldProducts.filter((p) => {
       if (!p.saleDate) return false;
       const saleDate = new Date(p.saleDate);

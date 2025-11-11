@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { useMigrateFromLocalStorage } from "@/hooks/useMigrateFromLocalStorage";
@@ -16,12 +16,22 @@ import SettingsTab from "@/components/admin/SettingsTab";
 import ReceivablesTab from "@/components/admin/ReceivablesTab";
 import QuickSalesTab from "@/components/admin/QuickSalesTab";
 import CustomersTab from "@/components/admin/CustomersTab";
+import { productsStore } from "@/lib/productsStore";
+import { quickSalesStore } from "@/lib/quickSalesStore";
+import { receivablesStore } from "@/lib/receivablesStore";
 
 const Admin = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("dashboard");
   const { isMigrating, migrationComplete } = useMigrateFromLocalStorage();
+
+  // Refresh inicial dos dados em background quando a tela abre ou migração conclui
+  useEffect(() => {
+    productsStore.refreshFromBackend();
+    quickSalesStore.refreshFromBackend();
+    receivablesStore.refreshFromBackend();
+  }, [migrationComplete]);
 
   const handleLogout = async () => {
     await logout();

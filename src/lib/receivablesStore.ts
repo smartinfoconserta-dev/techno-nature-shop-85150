@@ -36,77 +36,112 @@ export interface Receivable {
   updatedAt: string;
 }
 
+// Sync cache with background refresh
+const RECEIVABLES_STORAGE_KEY = "receivables_data";
+let receivablesCache: Receivable[] = [];
+let receivablesInitialized = false;
+
+const genIdR = () => (typeof crypto !== "undefined" && (crypto as any).randomUUID ? (crypto as any).randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`);
+
+function loadReceivablesCache() {
+  if (receivablesInitialized) return;
+  try {
+    const raw = localStorage.getItem(RECEIVABLES_STORAGE_KEY);
+    receivablesCache = raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    console.warn("Falha ao carregar cache de recebíveis:", e);
+    receivablesCache = [];
+  }
+  receivablesInitialized = true;
+}
+
+function saveReceivablesCache() {
+  try {
+    localStorage.setItem(RECEIVABLES_STORAGE_KEY, JSON.stringify(receivablesCache));
+  } catch (e) {
+    console.warn("Falha ao salvar cache de recebíveis:", e);
+  }
+}
+
+function mapRowToReceivable(row: any): Receivable {
+  return {
+    id: row.id,
+    customerId: row.customer_id,
+    customerCode: "",
+    customerName: row.customer_name,
+    productId: row.id,
+    productName: row.product_name,
+    costPrice: row.cost_price ? Number(row.cost_price) : undefined,
+    salePrice: row.sale_price ? Number(row.sale_price) : undefined,
+    profit: row.profit ? Number(row.profit) : undefined,
+    totalAmount: Number(row.total_amount),
+    paidAmount: Number(row.paid_amount),
+    remainingAmount: Number(row.remaining_amount),
+    couponCode: undefined,
+    couponDiscount: undefined,
+    dueDate: row.due_date || undefined,
+    status: row.status as "pending" | "partial" | "paid",
+    payments: ((row.payments as any[]) || []).map((p: any) => ({
+      id: p.id || String(Date.now()),
+      amount: Number(p.amount || 0),
+      paymentDate: p.paymentDate || new Date().toISOString(),
+      paymentMethod: p.paymentMethod || "cash",
+      notes: p.notes,
+    })),
+    source: undefined,
+    warranty: undefined,
+    warrantyExpiresAt: undefined,
+    notes: row.notes || undefined,
+    archived: row.archived || false,
+    archivedAt: undefined,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at || row.created_at,
+  };
+}
+
 export const receivablesStore = {
-  async getAllReceivables(): Promise<Receivable[]> {
+  async refreshFromBackend(): Promise<void> {
     const { data, error } = await supabase
       .from("receivables")
       .select("*")
       .order("created_at", { ascending: false });
-
-    if (error) throw error;
-
-    return (data || []).map(row => ({
-      id: row.id,
-      customerId: row.customer_id,
-      customerCode: "",
-      customerName: row.customer_name,
-      productId: row.id,
-      productName: row.product_name,
-      costPrice: row.cost_price ? Number(row.cost_price) : undefined,
-      salePrice: row.sale_price ? Number(row.sale_price) : undefined,
-      profit: row.profit ? Number(row.profit) : undefined,
-      totalAmount: Number(row.total_amount),
-      paidAmount: Number(row.paid_amount),
-      remainingAmount: Number(row.remaining_amount),
-      couponCode: undefined,
-      couponDiscount: undefined,
-      dueDate: row.due_date || undefined,
-      status: row.status as "pending" | "partial" | "paid",
-      payments: (row.payments as any[] || []).map((p: any) => ({
-        id: p.id || String(Date.now()),
-        amount: Number(p.amount || 0),
-        paymentDate: p.paymentDate || new Date().toISOString(),
-        paymentMethod: p.paymentMethod || "cash",
-        notes: p.notes,
-      })),
-      source: undefined,
-      warranty: undefined,
-      warrantyExpiresAt: undefined,
-      notes: row.notes || undefined,
-      archived: row.archived || false,
-      archivedAt: undefined,
-      createdAt: row.created_at,
-      updatedAt: row.updated_at || row.created_at,
-    }));
+    if (error) {
+      console.error("Erro ao carregar recebíveis:", error);
+      return;
+    }
+    receivablesCache = (data || []).map(mapRowToReceivable);
+    saveReceivablesCache();
   },
 
-  async getReceivablesByCustomer(customerId: string): Promise<Receivable[]> {
-    const receivables = await this.getAllReceivables();
-    return receivables.filter(r => r.customerId === customerId);
+  getAllReceivables(): Receivable[] {
+    loadReceivablesCache();
+    if (!receivablesCache.length) this.refreshFromBackend();
+    return [...receivablesCache];
   },
 
-  async getReceivablesByStatus(status: "pending" | "partial" | "paid"): Promise<Receivable[]> {
-    const receivables = await this.getAllReceivables();
-    return receivables.filter(r => r.status === status);
+  getReceivablesByCustomer(customerId: string): Receivable[] {
+    return this.getAllReceivables().filter((r) => r.customerId === customerId);
   },
 
-  async getTotalReceivable(): Promise<number> {
-    const receivables = await this.getAllReceivables();
-    return receivables.reduce((sum, r) => sum + r.remainingAmount, 0);
+  getReceivablesByStatus(status: "pending" | "partial" | "paid"): Receivable[] {
+    return this.getAllReceivables().filter((r) => r.status === status);
   },
 
-  async getOverdueReceivables(): Promise<Receivable[]> {
+  getTotalReceivable(): number {
+    return this.getAllReceivables().reduce((sum, r) => sum + r.remainingAmount, 0);
+  },
+
+  getOverdueReceivables(): Receivable[] {
     const now = new Date();
-    const receivables = await this.getAllReceivables();
-    return receivables.filter(r => {
+    return this.getAllReceivables().filter((r) => {
       if (!r.dueDate || r.status === "paid") return false;
       return new Date(r.dueDate) < now;
     });
   },
 
-  async addReceivable(
+  addReceivable(
     data: Omit<Receivable, "id" | "status" | "remainingAmount" | "profit" | "createdAt" | "updatedAt">
-  ): Promise<Receivable> {
+  ): Receivable {
     if (!data.customerId) throw new Error("Cliente é obrigatório");
     if (!data.productId) throw new Error("Produto é obrigatório");
     if (data.totalAmount <= 0) throw new Error("Valor total deve ser maior que zero");
@@ -115,191 +150,245 @@ export const receivablesStore = {
 
     const profit = data.costPrice && data.salePrice ? data.salePrice - data.costPrice : undefined;
     const remainingAmount = data.totalAmount - data.paidAmount;
-    
+
     let status: "pending" | "partial" | "paid" = "pending";
-    if (data.paidAmount === 0) {
-      status = "pending";
-    } else if (data.paidAmount >= data.totalAmount) {
-      status = "paid";
-    } else {
-      status = "partial";
-    }
+    if (data.paidAmount === 0) status = "pending";
+    else if (data.paidAmount >= data.totalAmount) status = "paid";
+    else status = "partial";
 
-    const { data: newReceivable, error } = await supabase
-      .from("receivables")
-      .insert({
-        customer_id: data.customerId,
-        customer_name: data.customerName,
-        product_name: data.productName,
-        cost_price: data.costPrice,
-        sale_price: data.salePrice,
-        profit,
-        total_amount: data.totalAmount,
-        paid_amount: data.paidAmount,
-        remaining_amount: remainingAmount,
-        due_date: data.dueDate || null,
-        status,
-        payments: data.payments || [],
-        notes: data.notes || null,
-        archived: false,
-      })
-      .select()
-      .single();
+    const receivable: Receivable = {
+      id: genIdR(),
+      customerId: data.customerId,
+      customerCode: data.customerCode,
+      customerName: data.customerName,
+      productId: data.productId,
+      productName: data.productName,
+      costPrice: data.costPrice,
+      salePrice: data.salePrice,
+      profit,
+      totalAmount: data.totalAmount,
+      paidAmount: data.paidAmount,
+      remainingAmount,
+      couponCode: data.couponCode,
+      couponDiscount: data.couponDiscount,
+      dueDate: data.dueDate,
+      status,
+      payments: data.payments || [],
+      source: data.source,
+      warranty: data.warranty,
+      warrantyExpiresAt: data.warrantyExpiresAt,
+      notes: data.notes,
+      archived: false,
+      archivedAt: undefined,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
 
-    if (error) throw error;
+    receivablesCache = [receivable, ...receivablesCache];
+    saveReceivablesCache();
 
-    const receivables = await this.getAllReceivables();
-    const receivable = receivables.find(r => r.id === newReceivable.id);
-    if (!receivable) throw new Error("Recebível não encontrado");
+    (async () => {
+      try {
+        await supabase
+          .from("receivables")
+          .upsert({
+            id: receivable.id,
+            customer_id: receivable.customerId,
+            customer_name: receivable.customerName,
+            product_name: receivable.productName,
+            cost_price: receivable.costPrice || null,
+            sale_price: receivable.salePrice || null,
+            profit: receivable.profit || null,
+            total_amount: receivable.totalAmount,
+            paid_amount: receivable.paidAmount || 0,
+            remaining_amount: receivable.remainingAmount,
+            due_date: receivable.dueDate || null,
+            status: receivable.status,
+            payments: receivable.payments || [],
+            notes: receivable.notes || null,
+            archived: receivable.archived || false,
+            created_at: receivable.createdAt,
+            updated_at: receivable.updatedAt,
+          } as any);
+        await this.refreshFromBackend();
+      } catch (e) {
+        console.error("Falha ao persistir recebível:", e);
+      }
+    })();
 
     return receivable;
   },
 
-  async addPayment(receivableId: string, payment: Omit<ReceivablePayment, "id">): Promise<Receivable> {
-    const receivables = await this.getAllReceivables();
-    const receivable = receivables.find(r => r.id === receivableId);
+  addPayment(receivableId: string, payment: Omit<ReceivablePayment, "id">): Receivable {
+    const list = this.getAllReceivables();
+    const idx = list.findIndex((r) => r.id === receivableId);
+    if (idx === -1) throw new Error("Conta a receber não encontrada");
 
-    if (!receivable) throw new Error("Conta a receber não encontrada");
-
+    const receivable = list[idx];
     if (payment.amount <= 0) throw new Error("Valor do pagamento deve ser maior que zero");
-    if (payment.amount > receivable.remainingAmount) {
-      throw new Error("Valor do pagamento é maior que o saldo devedor");
-    }
+    if (payment.amount > receivable.remainingAmount) throw new Error("Valor do pagamento é maior que o saldo devedor");
 
-    const newPayment: ReceivablePayment = {
-      ...payment,
-      id: Date.now().toString(),
-    };
-
+    const newPayment: ReceivablePayment = { ...payment, id: Date.now().toString() };
     const updatedPayments = [...receivable.payments, newPayment];
     const newPaidAmount = receivable.paidAmount + payment.amount;
     const newRemainingAmount = receivable.totalAmount - newPaidAmount;
-    
+
     let newStatus: "pending" | "partial" | "paid" = "partial";
-    if (newRemainingAmount <= 0) {
-      newStatus = "paid";
-    }
+    if (newRemainingAmount <= 0) newStatus = "paid";
 
-    const { error } = await supabase
-      .from("receivables")
-      .update({
-        payments: updatedPayments,
-        paid_amount: newPaidAmount,
-        remaining_amount: Math.max(0, newRemainingAmount),
-        status: newStatus,
-      })
-      .eq("id", receivableId);
+    const updated: Receivable = {
+      ...receivable,
+      payments: updatedPayments,
+      paidAmount: newPaidAmount,
+      remainingAmount: Math.max(0, newRemainingAmount),
+      status: newStatus,
+      updatedAt: new Date().toISOString(),
+    };
 
-    if (error) throw error;
+    receivablesCache = list.map((r) => (r.id === receivableId ? updated : r));
+    saveReceivablesCache();
 
-    const updated = await this.getAllReceivables();
-    const result = updated.find(r => r.id === receivableId);
-    if (!result) throw new Error("Recebível não encontrado");
+    (async () => {
+      try {
+        await supabase
+          .from("receivables")
+          .update({
+            payments: updatedPayments,
+            paid_amount: newPaidAmount,
+            remaining_amount: Math.max(0, newRemainingAmount),
+            status: newStatus,
+          })
+          .eq("id", receivableId);
+        await this.refreshFromBackend();
+      } catch (e) {
+        console.error("Falha ao adicionar pagamento:", e);
+      }
+    })();
 
-    return result;
+    return updated;
   },
 
-  async updateReceivable(
+  updateReceivable(
     id: string,
     data: Partial<Omit<Receivable, "id" | "createdAt" | "profit">>
-  ): Promise<Receivable> {
-    const receivables = await this.getAllReceivables();
-    const receivable = receivables.find(r => r.id === id);
+  ): Receivable {
+    const list = this.getAllReceivables();
+    const idx = list.findIndex((r) => r.id === id);
+    if (idx === -1) throw new Error("Conta a receber não encontrada");
 
-    if (!receivable) throw new Error("Conta a receber não encontrada");
+    const base = list[idx];
+    const costPrice = data.costPrice ?? base.costPrice;
+    const salePrice = data.salePrice ?? base.salePrice;
+    const profit = costPrice && salePrice ? salePrice - costPrice : base.profit;
 
-    const updateData: any = {};
-
-    if (data.productName !== undefined) updateData.product_name = data.productName;
-    if (data.customerName !== undefined) updateData.customer_name = data.customerName;
-    if (data.costPrice !== undefined) updateData.cost_price = data.costPrice;
-    if (data.salePrice !== undefined) updateData.sale_price = data.salePrice;
-    if (data.totalAmount !== undefined) updateData.total_amount = data.totalAmount;
-    if (data.paidAmount !== undefined) updateData.paid_amount = data.paidAmount;
-    if (data.dueDate !== undefined) updateData.due_date = data.dueDate;
-    if (data.notes !== undefined) updateData.notes = data.notes;
-    if (data.archived !== undefined) updateData.archived = data.archived;
-
-    const costPrice = data.costPrice ?? receivable.costPrice;
-    const salePrice = data.salePrice ?? receivable.salePrice;
-    if (costPrice && salePrice) {
-      updateData.profit = salePrice - costPrice;
-    }
-
-    const totalAmount = data.totalAmount ?? receivable.totalAmount;
-    const paidAmount = data.paidAmount ?? receivable.paidAmount;
+    const totalAmount = data.totalAmount ?? base.totalAmount;
+    const paidAmount = data.paidAmount ?? base.paidAmount;
     const remainingAmount = totalAmount - paidAmount;
-    
-    updateData.remaining_amount = Math.max(0, remainingAmount);
 
-    if (remainingAmount <= 0) {
-      updateData.status = "paid";
-    } else if (paidAmount > 0) {
-      updateData.status = "partial";
-    } else {
-      updateData.status = "pending";
-    }
+    let status: "pending" | "partial" | "paid" = base.status;
+    if (remainingAmount <= 0) status = "paid";
+    else if (paidAmount > 0) status = "partial";
+    else status = "pending";
 
-    const { error } = await supabase
-      .from("receivables")
-      .update(updateData)
-      .eq("id", id);
+    const updated: Receivable = {
+      ...base,
+      ...data,
+      profit: profit ?? base.profit,
+      remainingAmount: Math.max(0, remainingAmount),
+      status,
+      updatedAt: new Date().toISOString(),
+    } as Receivable;
 
-    if (error) throw error;
+    receivablesCache = list.map((r) => (r.id === id ? updated : r));
+    saveReceivablesCache();
 
-    const updated = await this.getAllReceivables();
-    const result = updated.find(r => r.id === id);
-    if (!result) throw new Error("Recebível não encontrado");
+    (async () => {
+      try {
+        const updateData: any = {};
+        if (data.productName !== undefined) updateData.product_name = data.productName;
+        if (data.customerName !== undefined) updateData.customer_name = data.customerName;
+        if (data.costPrice !== undefined) updateData.cost_price = data.costPrice;
+        if (data.salePrice !== undefined) updateData.sale_price = data.salePrice;
+        if (data.totalAmount !== undefined) updateData.total_amount = data.totalAmount;
+        if (data.paidAmount !== undefined) updateData.paid_amount = data.paidAmount;
+        if (data.dueDate !== undefined) updateData.due_date = data.dueDate;
+        if (data.notes !== undefined) updateData.notes = data.notes;
+        if (data.archived !== undefined) updateData.archived = data.archived;
+        updateData.remaining_amount = Math.max(0, remainingAmount);
+        updateData.status = status;
 
-    return result;
+        await supabase.from("receivables").update(updateData).eq("id", id);
+        await this.refreshFromBackend();
+      } catch (e) {
+        console.error("Falha ao atualizar recebível:", e);
+      }
+    })();
+
+    return updated;
   },
 
-  async deleteReceivable(id: string): Promise<void> {
-    const { error } = await supabase
-      .from("receivables")
-      .delete()
-      .eq("id", id);
+  deleteReceivable(id: string): void {
+    const list = this.getAllReceivables();
+    receivablesCache = list.filter((r) => r.id !== id);
+    saveReceivablesCache();
 
-    if (error) throw error;
+    (async () => {
+      try {
+        await supabase.from("receivables").delete().eq("id", id);
+        await this.refreshFromBackend();
+      } catch (e) {
+        console.error("Falha ao deletar recebível:", e);
+      }
+    })();
   },
 
-  async archiveReceivable(id: string): Promise<Receivable> {
-    const { error } = await supabase
-      .from("receivables")
-      .update({ archived: true })
-      .eq("id", id);
+  archiveReceivable(id: string): Receivable {
+    const list = this.getAllReceivables();
+    const idx = list.findIndex((r) => r.id === id);
+    if (idx === -1) throw new Error("Recebível não encontrado");
 
-    if (error) throw error;
+    const updated: Receivable = { ...list[idx], archived: true, updatedAt: new Date().toISOString() };
+    receivablesCache = list.map((r) => (r.id === id ? updated : r));
+    saveReceivablesCache();
 
-    const receivables = await this.getAllReceivables();
-    const result = receivables.find(r => r.id === id);
-    if (!result) throw new Error("Recebível não encontrado");
+    (async () => {
+      try {
+        await supabase.from("receivables").update({ archived: true }).eq("id", id);
+        await this.refreshFromBackend();
+      } catch (e) {
+        console.error("Falha ao arquivar recebível:", e);
+      }
+    })();
 
-    return result;
+    return updated;
   },
 
-  async unarchiveReceivable(id: string): Promise<Receivable> {
-    const { error } = await supabase
-      .from("receivables")
-      .update({ archived: false })
-      .eq("id", id);
+  unarchiveReceivable(id: string): Receivable {
+    const list = this.getAllReceivables();
+    const idx = list.findIndex((r) => r.id === id);
+    if (idx === -1) throw new Error("Recebível não encontrado");
 
-    if (error) throw error;
+    const updated: Receivable = { ...list[idx], archived: false, updatedAt: new Date().toISOString() };
+    receivablesCache = list.map((r) => (r.id === id ? updated : r));
+    saveReceivablesCache();
 
-    const receivables = await this.getAllReceivables();
-    const result = receivables.find(r => r.id === id);
-    if (!result) throw new Error("Recebível não encontrado");
+    (async () => {
+      try {
+        await supabase.from("receivables").update({ archived: false }).eq("id", id);
+        await this.refreshFromBackend();
+      } catch (e) {
+        console.error("Falha ao desarquivar recebível:", e);
+      }
+    })();
 
-    return result;
+    return updated;
   },
 
-  async getActiveReceivables(): Promise<Receivable[]> {
-    const receivables = await this.getAllReceivables();
-    return receivables.filter(r => !r.archived);
+  getActiveReceivables(): Receivable[] {
+    return this.getAllReceivables().filter((r) => !r.archived);
   },
 
-  async getArchivedReceivables(): Promise<Receivable[]> {
-    const receivables = await this.getAllReceivables();
-    return receivables.filter(r => r.archived);
+  getArchivedReceivables(): Receivable[] {
+    return this.getAllReceivables().filter((r) => r.archived);
   },
 };

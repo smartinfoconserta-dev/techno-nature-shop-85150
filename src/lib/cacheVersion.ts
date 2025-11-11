@@ -1,4 +1,4 @@
-const APP_CACHE_VERSION = "2";
+const APP_CACHE_VERSION = "3";
 
 const CACHE_KEYS = [
   "products_data",
