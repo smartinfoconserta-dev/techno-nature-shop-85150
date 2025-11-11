@@ -82,11 +82,11 @@ jobs:
       - name: 🌐 Testar site online
         run: |
           echo "🌍 Verificando status HTTPS..."
-          curl -I https://ramontech.com.br
+          curl -I https://www.ramontech.com.br
 
       - name: 🧠 Validar HTML no ar
         run: |
-          HTML=$(curl -s https://ramontech.com.br/index.html || true)
+          HTML=$(curl -sL https://www.ramontech.com.br/index.html || true)
           echo "$HTML" | grep -q "<title>Ramon Tech" && echo "✅ Página carregada com sucesso" || { echo "❌ HTML inesperado"; exit 1; }
 
       # ------------------------
