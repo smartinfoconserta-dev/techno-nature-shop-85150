@@ -56,9 +56,12 @@ jobs:
 
       - name: 📂 Listar diretório remoto antes do deploy
         run: |
+          echo "📁 Listando conteúdo atual em ${{ env.DEPLOY_PATH }}"
           curl -v --ssl-reqd --ftp-ssl --user "${{ secrets.FTP_USER }}:${{ secrets.FTP_PASS }}" "ftp://${{ secrets.FTP_HOST }}${{ env.DEPLOY_PATH }}" || true
 
       - name: 🚀 Enviar site pra Hostinger via FTPS
+        id: deploy
+        continue-on-error: true
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
           server: ${{ secrets.FTP_HOST }}
@@ -85,3 +88,26 @@ jobs:
         run: |
           HTML=$(curl -s https://ramontech.com.br/index.html || true)
           echo "$HTML" | grep -q "<title>Ramon Tech" && echo "✅ Página carregada com sucesso" || { echo "❌ HTML inesperado"; exit 1; }
+
+      # ------------------------
+      # 🔎 Diagnóstico de erros detalhado
+      # ------------------------
+      - name: ❗ Diagnóstico de erros de deploy
+        if: failure()
+        run: |
+          echo "⚠️ Analisando logs de erro..."
+          LOGS=$(cat $GITHUB_WORKSPACE/* || true)
+
+          if echo "$LOGS" | grep -q "530"; then
+            echo "❌ ERRO 530: Falha de login no FTP (usuário ou senha incorretos)"
+          elif echo "$LOGS" | grep -q "550"; then
+            echo "❌ ERRO 550: Permissão negada ou diretório inexistente no servidor"
+          elif echo "$LOGS" | grep -q "425"; then
+            echo "❌ ERRO 425: Conexão não estabelecida com o servidor"
+          elif echo "$LOGS" | grep -q "Timed out"; then
+            echo "⏰ ERRO: Tempo de conexão excedido"
+          elif echo "$LOGS" | grep -q "ENOTFOUND"; then
+            echo "🌐 ERRO: Host FTP não encontrado — verifique o FTP_HOST"
+          else
+            echo "⚙️ Nenhum erro padrão detectado. Veja os logs acima para detalhes técnicos."
+          fi
