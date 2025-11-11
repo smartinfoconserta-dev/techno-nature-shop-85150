@@ -35,7 +35,7 @@ export const settingsStore = {
       .from("settings")
       .select("*")
       .limit(1)
-      .single();
+      .maybeSingle();
 
     if (error || !data) {
       return {
@@ -60,7 +60,7 @@ export const settingsStore = {
       .from("settings")
       .select("id")
       .limit(1)
-      .single();
+      .maybeSingle();
 
     if (existing) {
       const { error } = await supabase
@@ -85,7 +85,7 @@ export const settingsStore = {
       .from("settings")
       .select("id")
       .limit(1)
-      .single();
+      .maybeSingle();
 
     if (existing) {
       const { error } = await supabase

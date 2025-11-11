@@ -20,6 +20,19 @@ AddDefaultCharset UTF-8
 <IfModule mod_headers.c>
   Header always set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS, PATCH"
   Header always set Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With, Accept, apikey, x-client-info"
+  
+  # Anti-cache para HTML
+  <FilesMatch "\.(html)$">
+    Header always set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+    Header always set Pragma "no-cache"
+    Header always set Expires "0"
+  </FilesMatch>
+</IfModule>
+
+# Desabilitar cache do LiteSpeed
+<IfModule LiteSpeed>
+  CacheDisable public /
+  CacheDisable private /
 </IfModule>
 
 # HTTPS Redirect (descomente se tiver SSL ativo)
