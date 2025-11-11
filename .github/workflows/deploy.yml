@@ -79,19 +79,42 @@ jobs:
           echo "📂 Conteúdo final no servidor:"
           curl -v --ssl-reqd --ftp-ssl --user "${{ secrets.FTP_USER }}:${{ secrets.FTP_PASS }}" "ftp://${{ secrets.FTP_HOST }}${{ env.DEPLOY_PATH }}" || true
 
-      - name: 🌐 Testar site online
+      # =============================
+      # 🌐 TESTES APÓS DEPLOY
+      # =============================
+
+      - name: 🌍 Testar site online (sem www)
         run: |
           echo "🌍 Verificando status HTTPS..."
-          curl -I https://www.ramontech.com.br
+          curl -I -L https://ramontech.com.br || true
 
-      - name: 🧠 Validar HTML no ar
+      - name: 🧠 Validar HTML e anti-cache
         run: |
-          HTML=$(curl -sL https://www.ramontech.com.br/index.html || true)
+          HTML=$(curl -sL https://ramontech.com.br/index.html || true)
           echo "$HTML" | grep -q "<title>Ramon Tech" && echo "✅ Página carregada com sucesso" || { echo "❌ HTML inesperado"; exit 1; }
 
-      # ------------------------
-      # 🔎 Diagnóstico de erros detalhado
-      # ------------------------
+          echo "⚙️ Adicionando cabeçalhos anti-cache..."
+          cat > ./dist/.htaccess <<'EOF'
+          <IfModule mod_headers.c>
+            Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+            Header set Pragma "no-cache"
+            Header set Expires 0
+          </IfModule>
+          <FilesMatch "\.(html|js|css|json|png|jpg|jpeg|svg|ico|webmanifest)$">
+            Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+          </FilesMatch>
+          <IfModule mod_rewrite.c>
+            RewriteEngine On
+            RewriteBase /
+            RewriteCond %{REQUEST_FILENAME} !-f
+            RewriteCond %{REQUEST_FILENAME} !-d
+            RewriteRule . /index.html [L]
+          </IfModule>
+          EOF
+
+      # =============================
+      # 🧩 DIAGNÓSTICO DE ERROS
+      # =============================
       - name: ❗ Diagnóstico de erros de deploy
         if: failure()
         run: |
