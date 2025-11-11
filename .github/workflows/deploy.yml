@@ -48,10 +48,11 @@ jobs:
             echo "✅ FTP_PASS definido (oculto)"
           fi
           
-          # FTP_SERVER_DIR é opcional, usar padrão se não definido
+          # FTP_SERVER_DIR é opcional, usar / como padrão (raiz da conta FTP)
+          # Hostinger FTP já inicia na raiz onde existe public_html
           if [ -z "${{ secrets.FTP_SERVER_DIR }}" ]; then
-            echo "⚠️ FTP_SERVER_DIR não definido, usando /public_html/ como padrão"
-            echo "DEPLOY_PATH=/public_html/" >> $GITHUB_ENV
+            echo "⚠️ FTP_SERVER_DIR não definido, usando / como padrão (raiz FTP)"
+            echo "DEPLOY_PATH=/" >> $GITHUB_ENV
           else
             echo "✅ FTP_SERVER_DIR definido: ${{ secrets.FTP_SERVER_DIR }}"
             echo "DEPLOY_PATH=${{ secrets.FTP_SERVER_DIR }}" >> $GITHUB_ENV
