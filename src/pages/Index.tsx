@@ -4,6 +4,8 @@ import ProductFilters from "@/components/ProductFilters";
 import ProductCard from "@/components/ProductCard";
 import CategorySection from "@/components/CategorySection";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ArrowUp } from "lucide-react";
 import { brandsStore } from "@/lib/brandsStore";
 import { productsStore } from "@/lib/productsStore";
 import { categoriesStore } from "@/lib/categoriesStore";
@@ -18,6 +20,8 @@ const Index = () => {
   const [products, setProducts] = useState(productsStore.getAvailableProducts());
   const [categories, setCategories] = useState<string[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
   useEffect(() => {
     categoriesStore.getCategoryNames().then(names => {
@@ -27,12 +31,22 @@ const Index = () => {
 
   useEffect(() => {
     const init = async () => {
+      setIsLoading(true);
       await productsStore.refreshFromBackend();
       loadProducts();
+      setIsLoading(false);
     };
     init();
     loadBrands();
   }, [selectedCategory]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 400);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   useEffect(() => {
     if (searchQuery !== "") {
@@ -94,6 +108,10 @@ const Index = () => {
     setViewMode("home");
   };
 
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const filteredCategories = useMemo(() => {
     return [];  // Será populado via state
   }, []);
@@ -145,30 +163,52 @@ const Index = () => {
 
             {/* Categorias Filtradas */}
             <div className="space-y-8">
-              {filteredCats.map((category) => (
-                <CategorySection
-                  key={category.id}
-                  categoryName={category.name}
-                  onViewAll={handleViewAll}
-                />
-              ))}
-              
-              {products.length === 0 && (
-                <div className="text-center py-20">
-                  <p className="text-muted-foreground text-lg">
-                    Catálogo em breve
-                  </p>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Novos produtos serão adicionados em breve
-                  </p>
-                  <Button
-                    onClick={handleRefreshCatalog}
-                    disabled={isRefreshing}
-                    className="mt-4"
-                  >
-                    {isRefreshing ? "Atualizando..." : "Atualizar catálogo"}
-                  </Button>
+              {isLoading ? (
+                // Loading Skeleton
+                <div className="space-y-8">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="space-y-4">
+                      <Skeleton className="h-8 w-48" />
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        {[1, 2, 3].map((j) => (
+                          <div key={j} className="space-y-3">
+                            <Skeleton className="h-48 w-full" />
+                            <Skeleton className="h-4 w-3/4" />
+                            <Skeleton className="h-4 w-1/2" />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
                 </div>
+              ) : (
+                <>
+                  {filteredCats.map((category) => (
+                    <CategorySection
+                      key={category.id}
+                      categoryName={category.name}
+                      onViewAll={handleViewAll}
+                    />
+                  ))}
+                  
+                  {products.length === 0 && (
+                    <div className="text-center py-20">
+                      <p className="text-muted-foreground text-lg">
+                        Catálogo em breve
+                      </p>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        Novos produtos serão adicionados em breve
+                      </p>
+                      <Button
+                        onClick={handleRefreshCatalog}
+                        disabled={isRefreshing}
+                        className="mt-4"
+                      >
+                        {isRefreshing ? "Atualizando..." : "Atualizar catálogo"}
+                      </Button>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -239,6 +279,18 @@ const Index = () => {
           </p>
         </div>
       </footer>
+
+      {/* Botão Voltar ao Topo */}
+      {showScrollTop && (
+        <Button
+          onClick={scrollToTop}
+          size="icon"
+          className="fixed bottom-24 right-4 z-50 shadow-lg"
+          aria-label="Voltar ao topo"
+        >
+          <ArrowUp className="h-5 w-5" />
+        </Button>
+      )}
     </div>
   );
 };

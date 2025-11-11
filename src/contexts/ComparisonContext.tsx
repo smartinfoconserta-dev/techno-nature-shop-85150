@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
+import { toast } from '@/hooks/use-toast';
 
 interface Product {
   id: string;
@@ -46,18 +47,38 @@ export const ComparisonProvider: React.FC<ComparisonProviderProps> = ({
     setSelectedProducts(prev => {
       // Verificar se já está selecionado
       if (prev.some(p => p.id === product.id)) {
+        toast({
+          title: "Produto já adicionado",
+          description: "Este produto já está na comparação",
+        });
         return prev;
       }
 
       // Verificar limite
       if (prev.length >= maxProducts) {
+        toast({
+          title: "Limite atingido",
+          description: `Você pode comparar até ${maxProducts} produtos`,
+          variant: "destructive",
+        });
         return prev;
       }
 
       // Verificar se é da mesma categoria (se já houver produtos)
       if (prev.length > 0 && prev[0].category !== product.category) {
+        toast({
+          title: "Categoria diferente",
+          description: "Só é possível comparar produtos da mesma categoria",
+          variant: "destructive",
+        });
         return prev;
       }
+
+      // Sucesso!
+      toast({
+        title: "Produto adicionado",
+        description: `${product.name} foi adicionado à comparação`,
+      });
 
       return [...prev, product];
     });
