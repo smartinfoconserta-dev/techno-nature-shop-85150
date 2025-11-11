@@ -48,10 +48,12 @@ const CostsProfitsTab = () => {
     loadData();
   }, []);
 
-  const loadData = () => {
-    setProducts(productsStore.getAvailableProducts());
+  const loadData = async () => {
+    const availableProducts = await productsStore.getAvailableProducts();
+    setProducts(availableProducts);
     // Calcula totais APENAS do mês atual
-    setTotals(productsStore.computeCurrentMonthTotals());
+    const totals = await productsStore.computeCurrentMonthTotals();
+    setTotals(totals);
   };
 
   const getCurrentMonthName = () => {

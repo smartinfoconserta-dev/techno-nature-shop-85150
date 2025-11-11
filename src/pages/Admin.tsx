@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
+import { useMigrateFromLocalStorage } from "@/hooks/useMigrateFromLocalStorage";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { LogOut, Menu } from "lucide-react";
+import { LogOut, Menu, Loader2 } from "lucide-react";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import DashboardTab from "@/components/admin/DashboardTab";
 import ProductsMainTab from "@/components/admin/ProductsMainTab";
@@ -20,11 +21,24 @@ const Admin = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("dashboard");
+  const { isMigrating, migrationComplete } = useMigrateFromLocalStorage();
 
   const handleLogout = async () => {
     await logout();
     navigate("/");
   };
+
+  if (isMigrating) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center space-y-4">
+          <Loader2 className="h-12 w-12 animate-spin mx-auto text-primary" />
+          <h2 className="text-2xl font-bold">Migrando dados...</h2>
+          <p className="text-muted-foreground">Aguarde enquanto seus dados são transferidos para o backend.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <SidebarProvider>

@@ -1,3 +1,5 @@
+import { supabase } from "@/integrations/supabase/client";
+
 export interface ProductExpense {
   id: string;
   label: string;
@@ -23,9 +25,9 @@ export interface Product {
   specs: string;
   description: string;
   price: number;
-  costPrice?: number; // Preço de custo do produto
+  costPrice?: number;
   discountPrice?: number;
-  passOnCashDiscount?: boolean; // Se true, repassa desconto 5% no preço anunciado
+  passOnCashDiscount?: boolean;
   order: number;
   sold: boolean;
   salePrice?: number;
@@ -35,224 +37,78 @@ export interface Product {
   buyerName?: string;
   buyerCpf?: string;
   invoiceUrl?: string;
-  soldOnCredit?: boolean; // Indica se foi vendido a prazo
-  receivableId?: string; // ID da conta a receber
-  warranty?: number; // Garantia do produto vendido (quando sold = true)
+  soldOnCredit?: boolean;
+  receivableId?: string;
+  warranty?: number;
   warrantyExpiresAt?: string;
   expenses: ProductExpense[];
   createdAt: string;
 }
 
-const STORAGE_KEY = "products_data";
-
-// Seed inicial com os produtos existentes
-const initialProducts: Product[] = [
-  {
-    id: "1",
-    name: "Notebook Pro X1",
-    brand: "Dell",
-    category: "Notebooks",
-    images: ["/src/assets/product-notebook-1.jpg"],
-    specs: "Intel i7, 16GB RAM, 512GB SSD",
-    description: "Notebook profissional de alta performance",
-    price: 4500,
-    discountPrice: 4275,
-    order: 0,
-    sold: false,
-    expenses: [],
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "2",
-    name: "Smartphone Galaxy S21",
-    brand: "Samsung",
-    category: "Celulares",
-    images: ["/src/assets/product-phone-1.jpg"],
-    specs: "128GB, 5G, Câmera 64MP",
-    description: "Smartphone top de linha com 5G",
-    price: 3200,
-    discountPrice: 3040,
-    order: 1,
-    sold: false,
-    expenses: [],
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "3",
-    name: "MacBook Air M2",
-    brand: "Apple",
-    category: "Notebooks",
-    images: ["/placeholder.svg"],
-    specs: "Chip M2, 8GB RAM, 256GB SSD, Tela Retina 13.6\"",
-    description: "Notebook ultrafino com performance excepcional",
-    price: 8999,
-    discountPrice: 8549,
-    order: 2,
-    sold: false,
-    expenses: [],
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "4",
-    name: "Lenovo IdeaPad 3i",
-    brand: "Lenovo",
-    category: "Notebooks",
-    images: ["/placeholder.svg"],
-    specs: "Intel i5, 8GB RAM, 256GB SSD, Tela 15.6\" Full HD",
-    description: "Notebook ideal para uso diário e estudos",
-    price: 2799,
-    discountPrice: 2659,
-    order: 3,
-    sold: false,
-    expenses: [],
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "5",
-    name: "iPhone 14 Pro",
-    brand: "Apple",
-    category: "Celulares",
-    images: ["/placeholder.svg"],
-    specs: "128GB, 5G, Câmera 48MP, Dynamic Island",
-    description: "iPhone top de linha com tecnologia de ponta",
-    price: 7499,
-    discountPrice: 7124,
-    order: 4,
-    sold: false,
-    expenses: [],
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "6",
-    name: "Xiaomi Redmi Note 12",
-    brand: "Xiaomi",
-    category: "Celulares",
-    images: ["/placeholder.svg"],
-    specs: "128GB, 4G, Câmera 50MP, Bateria 5000mAh",
-    description: "Custo-benefício excepcional com ótima bateria",
-    price: 1399,
-    discountPrice: 1329,
-    order: 5,
-    sold: false,
-    expenses: [],
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "7",
-    name: "iPad 10ª Geração",
-    brand: "Apple",
-    category: "Tablets",
-    images: ["/placeholder.svg"],
-    specs: "64GB, Wi-Fi, Tela Liquid Retina 10.9\", Chip A14",
-    description: "iPad versátil para trabalho e entretenimento",
-    price: 3299,
-    discountPrice: 3134,
-    order: 6,
-    sold: false,
-    expenses: [],
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "8",
-    name: "Galaxy Tab S9",
-    brand: "Samsung",
-    category: "Tablets",
-    images: ["/placeholder.svg"],
-    specs: "128GB, Wi-Fi + 5G, Tela 11\", S Pen incluída",
-    description: "Tablet premium com S Pen para produtividade",
-    price: 4599,
-    discountPrice: 4369,
-    order: 7,
-    sold: false,
-    expenses: [],
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "9",
-    name: "Apple Watch Series 9",
-    brand: "Apple",
-    category: "Smartwatches",
-    images: ["/placeholder.svg"],
-    specs: "GPS, 41mm, Caixa de Alumínio, Pulseira Esportiva",
-    description: "Smartwatch com monitoramento avançado de saúde",
-    price: 3999,
-    discountPrice: 3799,
-    order: 8,
-    sold: false,
-    expenses: [],
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "10",
-    name: "Galaxy Watch 6",
-    brand: "Samsung",
-    category: "Smartwatches",
-    images: ["/placeholder.svg"],
-    specs: "Bluetooth, 40mm, Monitor de Sono, Resistente à Água",
-    description: "Relógio inteligente com design elegante",
-    price: 1899,
-    discountPrice: 1804,
-    order: 9,
-    sold: false,
-    expenses: [],
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "11",
-    name: "AirPods Pro 2ª Geração",
-    brand: "Apple",
-    category: "Fones de Ouvido",
-    images: ["/placeholder.svg"],
-    specs: "Cancelamento de Ruído, Áudio Espacial, Resistente à Água",
-    description: "Fones wireless premium com cancelamento ativo",
-    price: 2299,
-    discountPrice: 2184,
-    order: 10,
-    sold: false,
-    expenses: [],
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "12",
-    name: "JBL Tune 510BT",
-    brand: "JBL",
-    category: "Fones de Ouvido",
-    images: ["/placeholder.svg"],
-    specs: "Bluetooth, Bateria 40h, Dobrável, Som JBL Pure Bass",
-    description: "Headphone wireless com excelente autonomia",
-    price: 249,
-    discountPrice: 236,
-    order: 11,
-    sold: false,
-    expenses: [],
-    createdAt: new Date().toISOString(),
-  },
-];
-
 export const productsStore = {
-  getAllProducts(): Product[] {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (!stored) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(initialProducts));
-      return initialProducts;
-    }
-    return JSON.parse(stored);
+  async getAllProducts(): Promise<Product[]> {
+    const { data, error } = await supabase
+      .from("products")
+      .select("*")
+      .order("product_order", { ascending: true });
+
+    if (error) throw error;
+    
+    return (data || []).map(row => ({
+      id: row.id,
+      name: row.name,
+      brand: row.brand,
+      category: row.category,
+      images: row.images || [],
+      specs: row.specifications || "",
+      description: row.description || "",
+      price: Number(row.base_price),
+      costPrice: row.base_price ? Number(row.base_price) : undefined,
+      discountPrice: undefined,
+      passOnCashDiscount: false,
+      order: row.product_order || 0,
+      sold: row.sold || false,
+      salePrice: row.sale_price ? Number(row.sale_price) : undefined,
+      paymentBreakdown: row.payment_breakdown as PaymentBreakdown | undefined,
+      taxAmount: row.digital_tax ? Number(row.digital_tax) : undefined,
+      saleDate: row.sold_date || undefined,
+      buyerName: row.customer_name || undefined,
+      buyerCpf: undefined,
+      invoiceUrl: undefined,
+      soldOnCredit: false,
+      receivableId: undefined,
+      warranty: row.warranty_months || undefined,
+      warrantyExpiresAt: undefined,
+      expenses: (row.expenses as any[] || []).map((exp: any) => ({
+        id: exp.id || String(Date.now()),
+        label: exp.label || "",
+        value: Number(exp.value || 0),
+        description: exp.description,
+        paymentMethod: exp.paymentMethod,
+        sellerCpf: exp.sellerCpf,
+        createdAt: exp.createdAt || new Date().toISOString(),
+      })),
+      createdAt: row.created_at || new Date().toISOString(),
+    }));
   },
 
-  getProductsByCategory(category: string): Product[] {
-    return this.getAllProducts()
+  async getProductsByCategory(category: string): Promise<Product[]> {
+    const products = await this.getAllProducts();
+    return products
       .filter((p) => p.category === category && !p.sold)
       .sort((a, b) => a.order - b.order);
   },
 
-  getAvailableProducts(): Product[] {
-    return this.getAllProducts()
+  async getAvailableProducts(): Promise<Product[]> {
+    const products = await this.getAllProducts();
+    return products
       .filter((p) => !p.sold)
       .sort((a, b) => a.order - b.order);
   },
 
-  getSoldProducts(): Product[] {
-    return this.getAllProducts()
+  async getSoldProducts(): Promise<Product[]> {
+    const products = await this.getAllProducts();
+    return products
       .filter((p) => p.sold)
       .sort((a, b) => {
         if (!a.saleDate || !b.saleDate) return 0;
@@ -260,101 +116,155 @@ export const productsStore = {
       });
   },
 
-  addProduct(data: Omit<Product, "id" | "order" | "sold" | "expenses" | "createdAt">): Product {
-    const products = this.getAllProducts();
+  async addProduct(data: Omit<Product, "id" | "order" | "sold" | "expenses" | "createdAt">): Promise<Product> {
+    const products = await this.getAllProducts();
     const maxOrder = products.length > 0 ? Math.max(...products.map((p) => p.order)) : -1;
-    
-    const newProduct: Product = {
-      ...data,
-      id: Date.now().toString(),
-      order: maxOrder + 1,
+
+    const { data: newProduct, error } = await supabase
+      .from("products")
+      .insert({
+        name: data.name,
+        brand: data.brand,
+        category: data.category,
+        images: data.images,
+        specifications: data.specs,
+        description: data.description,
+        base_price: data.price,
+        product_order: maxOrder + 1,
+        sold: false,
+        expenses: [],
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return {
+      id: newProduct.id,
+      name: newProduct.name,
+      brand: newProduct.brand,
+      category: newProduct.category,
+      images: newProduct.images || [],
+      specs: newProduct.specifications || "",
+      description: newProduct.description || "",
+      price: Number(newProduct.base_price),
+      order: newProduct.product_order || 0,
       sold: false,
       expenses: [],
-      createdAt: new Date().toISOString(),
+      createdAt: newProduct.created_at,
     };
-    
-    products.push(newProduct);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
-    return newProduct;
   },
 
-  updateProduct(id: string, data: Partial<Product>): Product {
-    const products = this.getAllProducts();
-    const index = products.findIndex((p) => p.id === id);
+  async updateProduct(id: string, data: Partial<Product>): Promise<Product> {
+    const updateData: any = {};
     
-    if (index === -1) throw new Error("Produto não encontrado");
-    
-    products[index] = { ...products[index], ...data };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
-    return products[index];
-  },
+    if (data.name !== undefined) updateData.name = data.name;
+    if (data.brand !== undefined) updateData.brand = data.brand;
+    if (data.category !== undefined) updateData.category = data.category;
+    if (data.images !== undefined) updateData.images = data.images;
+    if (data.specs !== undefined) updateData.specifications = data.specs;
+    if (data.description !== undefined) updateData.description = data.description;
+    if (data.price !== undefined) updateData.base_price = data.price;
+    if (data.order !== undefined) updateData.product_order = data.order;
+    if (data.sold !== undefined) updateData.sold = data.sold;
+    if (data.salePrice !== undefined) updateData.sale_price = data.salePrice;
+    if (data.paymentBreakdown !== undefined) updateData.payment_breakdown = data.paymentBreakdown;
+    if (data.taxAmount !== undefined) updateData.digital_tax = data.taxAmount;
+    if (data.saleDate !== undefined) updateData.sold_date = data.saleDate;
+    if (data.buyerName !== undefined) updateData.customer_name = data.buyerName;
+    if (data.warranty !== undefined) updateData.warranty_months = data.warranty;
+    if (data.expenses !== undefined) updateData.expenses = data.expenses;
 
-  deleteProduct(id: string): void {
-    const products = this.getAllProducts();
-    const filtered = products.filter((p) => p.id !== id);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
-  },
+    const { data: updated, error } = await supabase
+      .from("products")
+      .update(updateData)
+      .eq("id", id)
+      .select()
+      .single();
 
-  reorderProducts(reorderedList: Product[]): void {
-    const products = this.getAllProducts();
-    
-    // Atualizar apenas a ordem dos produtos reordenados
-    reorderedList.forEach((item, index) => {
-      const product = products.find((p) => p.id === item.id);
-      if (product) {
-        product.order = index;
-      }
-    });
-    
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
-  },
+    if (error) throw error;
 
-  markAsSold(id: string, buyerName: string, buyerCpf: string, cash: number, pix: number, card: number, warranty?: number, warrantyExpiresAt?: string): Product {
-    const products = this.getAllProducts();
-    const product = products.find((p) => p.id === id);
-    
+    const products = await this.getAllProducts();
+    const product = products.find(p => p.id === id);
     if (!product) throw new Error("Produto não encontrado");
     
-    // Importar settings dinamicamente para evitar circular dependency
-    const settingsData = localStorage.getItem("app_settings");
-    const settings = settingsData ? JSON.parse(settingsData) : {
-      taxSettings: { digitalTaxRate: 6, includeCashInTax: false }
-    };
-    
-    const salePrice = cash + pix + card;
-    const digitalAmount = pix + card;
-    
-    // Calcular imposto baseado nas configurações
-    const taxableAmount = settings.taxSettings.includeCashInTax ? salePrice : digitalAmount;
-    const taxAmount = taxableAmount * (settings.taxSettings.digitalTaxRate / 100);
-    
-    product.sold = true;
-    product.salePrice = salePrice;
-    product.paymentBreakdown = { cash, pix, card };
-    product.taxAmount = taxAmount;
-    product.saleDate = new Date().toISOString();
-    product.buyerName = buyerName.trim();
-    product.buyerCpf = buyerCpf.trim();
-    product.warranty = warranty;
-    product.warrantyExpiresAt = warrantyExpiresAt;
-    
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
     return product;
   },
 
-  addExpense(
+  async deleteProduct(id: string): Promise<void> {
+    const { error } = await supabase
+      .from("products")
+      .delete()
+      .eq("id", id);
+
+    if (error) throw error;
+  },
+
+  async reorderProducts(reorderedList: Product[]): Promise<void> {
+    for (let i = 0; i < reorderedList.length; i++) {
+      await supabase
+        .from("products")
+        .update({ product_order: i })
+        .eq("id", reorderedList[i].id);
+    }
+  },
+
+  async markAsSold(
+    id: string,
+    buyerName: string,
+    buyerCpf: string,
+    cash: number,
+    pix: number,
+    card: number,
+    warranty?: number,
+    warrantyExpiresAt?: string
+  ): Promise<Product> {
+    const { data: settings } = await supabase
+      .from("settings")
+      .select("*")
+      .single();
+
+    const salePrice = cash + pix + card;
+    const digitalAmount = pix + card;
+
+    const taxableAmount = settings?.include_cash_in_tax ? salePrice : digitalAmount;
+    const taxAmount = taxableAmount * ((settings?.digital_tax_rate || 3.9) / 100);
+
+    const { error } = await supabase
+      .from("products")
+      .update({
+        sold: true,
+        sale_price: salePrice,
+        payment_breakdown: { cash, pix, card },
+        digital_tax: taxAmount,
+        sold_date: new Date().toISOString(),
+        customer_name: buyerName.trim(),
+        warranty_months: warranty,
+      })
+      .eq("id", id);
+
+    if (error) throw error;
+
+    const products = await this.getAllProducts();
+    const product = products.find(p => p.id === id);
+    if (!product) throw new Error("Produto não encontrado");
+    
+    return product;
+  },
+
+  async addExpense(
     productId: string,
     label: string,
     value: number,
     paymentMethod: "cash" | "pix" | "card",
     description?: string,
     sellerCpf?: string
-  ): Product {
-    const products = this.getAllProducts();
+  ): Promise<Product> {
+    const products = await this.getAllProducts();
     const product = products.find((p) => p.id === productId);
-    
+
     if (!product) throw new Error("Produto não encontrado");
-    
+
     const newExpense: ProductExpense = {
       id: Date.now().toString(),
       label,
@@ -364,123 +274,154 @@ export const productsStore = {
       sellerCpf: sellerCpf?.trim(),
       createdAt: new Date().toISOString(),
     };
-    
-    product.expenses.push(newExpense);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
-    return product;
+
+    const updatedExpenses = [...product.expenses, newExpense];
+
+    const { error } = await supabase
+      .from("products")
+      .update({ expenses: updatedExpenses })
+      .eq("id", productId);
+
+    if (error) throw error;
+
+    return { ...product, expenses: updatedExpenses };
   },
 
-  updateExpense(
+  async updateExpense(
     productId: string,
     expenseId: string,
     updates: Partial<Omit<ProductExpense, "id" | "createdAt">>
-  ): Product {
-    const products = this.getAllProducts();
+  ): Promise<Product> {
+    const products = await this.getAllProducts();
     const product = products.find((p) => p.id === productId);
-    
+
     if (!product) throw new Error("Produto não encontrado");
-    
+
     const expense = product.expenses.find((e) => e.id === expenseId);
     if (!expense) throw new Error("Gasto não encontrado");
-    
+
     Object.assign(expense, updates);
-    
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
+
+    const { error } = await supabase
+      .from("products")
+      .update({ expenses: product.expenses })
+      .eq("id", productId);
+
+    if (error) throw error;
+
     return product;
   },
 
-  removeExpense(productId: string, expenseId: string): Product {
-    const products = this.getAllProducts();
+  async removeExpense(productId: string, expenseId: string): Promise<Product> {
+    const products = await this.getAllProducts();
     const product = products.find((p) => p.id === productId);
-    
+
     if (!product) throw new Error("Produto não encontrado");
-    
-    product.expenses = product.expenses.filter((e) => e.id !== expenseId);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
-    return product;
+
+    const updatedExpenses = product.expenses.filter((e) => e.id !== expenseId);
+
+    const { error } = await supabase
+      .from("products")
+      .update({ expenses: updatedExpenses })
+      .eq("id", productId);
+
+    if (error) throw error;
+
+    return { ...product, expenses: updatedExpenses };
   },
 
-  updateSale(
+  async updateSale(
     productId: string,
     buyerName: string,
     salePrice: number,
     saleDate: string,
     invoiceUrl?: string
-  ): Product {
-    const products = this.getAllProducts();
-    const product = products.find((p) => p.id === productId);
+  ): Promise<Product> {
+    const { error } = await supabase
+      .from("products")
+      .update({
+        customer_name: buyerName.trim(),
+        sale_price: salePrice,
+        sold_date: saleDate,
+      })
+      .eq("id", productId);
 
+    if (error) throw error;
+
+    const products = await this.getAllProducts();
+    const product = products.find(p => p.id === productId);
     if (!product) throw new Error("Produto não encontrado");
-    if (!product.sold) throw new Error("Produto não está marcado como vendido");
-
-    product.buyerName = buyerName.trim();
-    product.salePrice = salePrice;
-    product.saleDate = saleDate;
-    product.invoiceUrl = invoiceUrl?.trim();
-
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
+    
     return product;
   },
 
-  cancelSale(id: string): Product {
-    const products = this.getAllProducts();
-    const product = products.find((p) => p.id === id);
-    
+  async cancelSale(id: string): Promise<Product> {
+    const { error } = await supabase
+      .from("products")
+      .update({
+        sold: false,
+        sale_price: null,
+        payment_breakdown: null,
+        digital_tax: 0,
+        sold_date: null,
+        customer_name: null,
+      })
+      .eq("id", id);
+
+    if (error) throw error;
+
+    const products = await this.getAllProducts();
+    const product = products.find(p => p.id === id);
     if (!product) throw new Error("Produto não encontrado");
-    if (!product.sold) throw new Error("Produto não está marcado como vendido");
     
-    // Restaurar produto para estado disponível
-    product.sold = false;
-    product.salePrice = undefined;
-    product.paymentBreakdown = undefined;
-    product.taxAmount = undefined;
-    product.saleDate = undefined;
-    product.buyerName = undefined;
-    product.buyerCpf = undefined;
-    product.invoiceUrl = undefined;
-    product.soldOnCredit = undefined;
-    product.receivableId = undefined;
-    
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
     return product;
   },
 
-  markAsSoldOnCredit(id: string, buyerName: string, buyerCpf: string, totalAmount: number, receivableId: string, warranty?: number, warrantyExpiresAt?: string): Product {
-    const products = this.getAllProducts();
-    const product = products.find((p) => p.id === id);
-    
+  async markAsSoldOnCredit(
+    id: string,
+    buyerName: string,
+    buyerCpf: string,
+    totalAmount: number,
+    receivableId: string,
+    warranty?: number,
+    warrantyExpiresAt?: string
+  ): Promise<Product> {
+    const { error } = await supabase
+      .from("products")
+      .update({
+        sold: true,
+        customer_name: buyerName.trim(),
+        sale_price: totalAmount,
+        sold_date: new Date().toISOString(),
+        warranty_months: warranty,
+      })
+      .eq("id", id);
+
+    if (error) throw error;
+
+    const products = await this.getAllProducts();
+    const product = products.find(p => p.id === id);
     if (!product) throw new Error("Produto não encontrado");
-    if (product.sold) throw new Error("Produto já vendido");
     
-    product.sold = true;
-    product.soldOnCredit = true;
-    product.receivableId = receivableId;
-    product.buyerName = buyerName.trim();
-    product.buyerCpf = buyerCpf.trim();
-    product.salePrice = totalAmount;
-    product.saleDate = new Date().toISOString();
-    product.warranty = warranty;
-    product.warrantyExpiresAt = warrantyExpiresAt;
-    
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
     return product;
   },
 
-  computeTotals() {
-    const soldProducts = this.getSoldProducts();
-    
+  async computeTotals() {
+    const soldProducts = await this.getSoldProducts();
+
     const totalGross = soldProducts.reduce((sum, p) => sum + (p.salePrice || 0), 0);
     const totalCash = soldProducts.reduce((sum, p) => sum + (p.paymentBreakdown?.cash || 0), 0);
     const totalPix = soldProducts.reduce((sum, p) => sum + (p.paymentBreakdown?.pix || 0), 0);
     const totalCard = soldProducts.reduce((sum, p) => sum + (p.paymentBreakdown?.card || 0), 0);
     const totalDigital = totalPix + totalCard;
     const totalTax = soldProducts.reduce((sum, p) => sum + (p.taxAmount || 0), 0);
-    const totalExpenses = soldProducts.reduce((sum, p) => 
-      sum + p.expenses.reduce((expSum, e) => expSum + e.value, 0), 0
+    const totalExpenses = soldProducts.reduce(
+      (sum, p) => sum + p.expenses.reduce((expSum, e) => expSum + e.value, 0),
+      0
     );
     const netProfit = totalGross - totalExpenses;
-    const averageMargin = totalGross > 0 ? ((netProfit / totalGross) * 100) : 0;
-    
+    const averageMargin = totalGross > 0 ? (netProfit / totalGross) * 100 : 0;
+
     return {
       totalGross,
       totalCash,
@@ -495,28 +436,30 @@ export const productsStore = {
     };
   },
 
-  computeCurrentMonthTotals() {
+  async computeCurrentMonthTotals() {
     const now = new Date();
     const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const nextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1);
 
-    // Filtra apenas vendas do mês atual
-    const soldProducts = this.getSoldProducts().filter(p => {
+    const soldProducts = await this.getSoldProducts();
+    const monthProducts = soldProducts.filter((p) => {
       if (!p.saleDate) return false;
       const saleDate = new Date(p.saleDate);
-      return saleDate >= currentMonthStart;
+      return saleDate >= currentMonthStart && saleDate < nextMonthStart;
     });
 
-    const totalGross = soldProducts.reduce((sum, p) => sum + (p.salePrice || 0), 0);
-    const totalCash = soldProducts.reduce((sum, p) => sum + (p.paymentBreakdown?.cash || 0), 0);
-    const totalPix = soldProducts.reduce((sum, p) => sum + (p.paymentBreakdown?.pix || 0), 0);
-    const totalCard = soldProducts.reduce((sum, p) => sum + (p.paymentBreakdown?.card || 0), 0);
+    const totalGross = monthProducts.reduce((sum, p) => sum + (p.salePrice || 0), 0);
+    const totalCash = monthProducts.reduce((sum, p) => sum + (p.paymentBreakdown?.cash || 0), 0);
+    const totalPix = monthProducts.reduce((sum, p) => sum + (p.paymentBreakdown?.pix || 0), 0);
+    const totalCard = monthProducts.reduce((sum, p) => sum + (p.paymentBreakdown?.card || 0), 0);
     const totalDigital = totalPix + totalCard;
-    const totalTax = soldProducts.reduce((sum, p) => sum + (p.taxAmount || 0), 0);
-    const totalExpenses = soldProducts.reduce((sum, p) => 
-      sum + p.expenses.reduce((expSum, e) => expSum + e.value, 0), 0
+    const totalTax = monthProducts.reduce((sum, p) => sum + (p.taxAmount || 0), 0);
+    const totalExpenses = monthProducts.reduce(
+      (sum, p) => sum + p.expenses.reduce((expSum, e) => expSum + e.value, 0),
+      0
     );
-    const netProfit = totalGross - totalExpenses - totalTax;
-    const averageMargin = totalGross > 0 ? ((netProfit / totalGross) * 100) : 0;
+    const netProfit = totalGross - totalExpenses;
+    const averageMargin = totalGross > 0 ? (netProfit / totalGross) * 100 : 0;
 
     return {
       totalGross,
@@ -528,7 +471,7 @@ export const productsStore = {
       totalExpenses,
       netProfit,
       averageMargin,
-      soldCount: soldProducts.length,
+      soldCount: monthProducts.length,
     };
   },
 };

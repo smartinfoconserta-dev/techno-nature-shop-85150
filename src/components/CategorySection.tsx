@@ -28,13 +28,17 @@ const CategorySection = ({ categoryName, onViewAll }: CategorySectionProps) => {
   const [canScrollRight, setCanScrollRight] = useState(false);
 
   useEffect(() => {
-    const categoryProducts = productsStore
-      .getProductsByCategory(categoryName)
-      .filter(p => !p.sold)
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-      .slice(0, 3);
+    const loadProducts = async () => {
+      const categoryProducts = await productsStore.getProductsByCategory(categoryName);
+      const filtered = categoryProducts
+        .filter(p => !p.sold)
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .slice(0, 3);
+      
+      setProducts(filtered);
+    };
     
-    setProducts(categoryProducts);
+    loadProducts();
   }, [categoryName]);
 
   useEffect(() => {

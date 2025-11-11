@@ -54,14 +54,14 @@ const DashboardTab = ({ onTabChange }: DashboardTabProps) => {
     loadData();
   }, []);
 
-  const loadData = () => {
+  const loadData = async () => {
     // Dados do mês atual
-    const currentTotals = productsStore.computeCurrentMonthTotals();
+    const currentTotals = await productsStore.computeCurrentMonthTotals();
     
     // Busca vendas rápidas do mês atual
     const currentMonth = format(new Date(), "yyyy-MM");
-    const quickSales = quickSalesStore.getQuickSalesByMonth(currentMonth);
-    const quickSalesTotals = quickSalesStore.getMonthlyTotals(currentMonth);
+    const quickSales = await quickSalesStore.getQuickSalesByMonth(currentMonth);
+    const quickSalesTotals = await quickSalesStore.getMonthlyTotals(currentMonth);
     
     setQuickSalesCount(quickSales.length);
     
