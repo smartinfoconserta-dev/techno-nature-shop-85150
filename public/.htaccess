@@ -42,12 +42,12 @@ AddDefaultCharset UTF-8
   CacheDisable private /
 </IfModule>
 
-# HTTPS Redirect (descomente se tiver SSL ativo)
-# <IfModule mod_rewrite.c>
-#   RewriteEngine On
-#   RewriteCond %{HTTPS} off
-#   RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
-# </IfModule>
+# HTTPS Redirect (ativo)
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteCond %{HTTPS} off
+  RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+</IfModule>
 
 # Headers de Segurança
 <IfModule mod_headers.c>
