@@ -384,7 +384,7 @@ export const productsStore = {
 
     (async () => {
       try {
-        await supabase.from("products").update({ expenses: updated.expenses }).eq("id", productId);
+        await supabase.from("products").update({ expenses: updated.expenses as any }).eq("id", productId);
         await this.refreshFromBackend();
       } catch (e) {
         console.error("Falha ao adicionar gasto:", e);
@@ -413,7 +413,7 @@ export const productsStore = {
 
     (async () => {
       try {
-        await supabase.from("products").update({ expenses: updatedExpenses }).eq("id", productId);
+        await supabase.from("products").update({ expenses: updatedExpenses as any }).eq("id", productId);
         await this.refreshFromBackend();
       } catch (e) {
         console.error("Falha ao atualizar gasto:", e);
@@ -436,7 +436,7 @@ export const productsStore = {
 
     (async () => {
       try {
-        await supabase.from("products").update({ expenses: updatedExpenses }).eq("id", productId);
+        await supabase.from("products").update({ expenses: updatedExpenses as any }).eq("id", productId);
         await this.refreshFromBackend();
       } catch (e) {
         console.error("Falha ao remover gasto:", e);
