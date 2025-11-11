@@ -67,8 +67,9 @@ jobs:
       - name: Definir caminho de deploy
         run: |
           if [ -z "${{ secrets.FTP_SERVER_DIR }}" ]; then
-            echo "⚙️ Usando padrão DEPLOY_PATH=/public_html/"
-            echo "DEPLOY_PATH=/public_html/" >> $GITHUB_ENV
+            # A raiz do FTP já é o public_html do Hostinger
+            echo "⚙️ Usando padrão DEPLOY_PATH=/ (raiz do FTP)"
+            echo "DEPLOY_PATH=/" >> $GITHUB_ENV
           else
             RAW="${{ secrets.FTP_SERVER_DIR }}"
             # Normaliza: garante barra inicial e final, remove repetições
@@ -78,11 +79,21 @@ jobs:
               *) NORM="$NORM/";;
             esac
             NORM="${NORM//\/\//\/}"
+
+            # Proteção: se o usuário informar /public_html/, forçamos raiz
+            if [ "$NORM" = "/public_html/" ]; then
+              echo "⚠️ FTP_SERVER_DIR=/public_html/ detectado. Seu FTP já inicia em public_html."
+              echo "⚙️ Ajustando automaticamente para DEPLOY_PATH=/"
+              echo "DEPLOY_PATH=/" >> $GITHUB_ENV
+              exit 0
+            fi
+
+            # Bloquear caminhos claramente inválidos
             if echo "$NORM" | grep -q "public_html/public_html"; then
-              echo "❌ Caminho inválido: $NORM"
-              echo "Use apenas /public_html/"
+              echo "❌ Caminho inválido: $NORM (geraria duplicação)"
               exit 1
             fi
+
             echo "✅ FTP_SERVER_DIR normalizado: $NORM"
             echo "DEPLOY_PATH=$NORM" >> $GITHUB_ENV
           fi
