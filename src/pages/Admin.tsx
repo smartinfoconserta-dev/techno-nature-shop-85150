@@ -3,9 +3,10 @@ import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { useMigrateFromLocalStorage } from "@/hooks/useMigrateFromLocalStorage";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { LogOut, Menu, Loader2 } from "lucide-react";
+import { LogOut, Menu, Loader2, Database } from "lucide-react";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import DashboardTab from "@/components/admin/DashboardTab";
 import ProductsMainTab from "@/components/admin/ProductsMainTab";
@@ -24,13 +25,18 @@ const Admin = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [productCount, setProductCount] = useState<number>(0);
   const { isMigrating, migrationComplete } = useMigrateFromLocalStorage();
 
   // Refresh inicial dos dados em background quando a tela abre ou migração conclui
   useEffect(() => {
-    productsStore.refreshFromBackend();
-    quickSalesStore.refreshFromBackend();
-    receivablesStore.refreshFromBackend();
+    const loadData = async () => {
+      await productsStore.refreshFromBackend();
+      await quickSalesStore.refreshFromBackend();
+      await receivablesStore.refreshFromBackend();
+      setProductCount(productsStore.getAllProducts().length);
+    };
+    loadData();
   }, [migrationComplete]);
 
   const handleLogout = async () => {
@@ -63,18 +69,24 @@ const Admin = () => {
           {/* Header */}
           <header className="border-b border-border bg-card sticky top-0 z-10">
             <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 flex-1 min-w-0">
                 <SidebarTrigger className="md:flex hidden" />
-                <div>
-                  <h1 className="text-xl md:text-2xl font-bold text-foreground">
-                    Painel Administrativo
-                  </h1>
-                  <p className="text-xs md:text-sm text-muted-foreground">
-                    {user?.email}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h1 className="text-xl md:text-2xl font-bold text-foreground">
+                      Painel Administrativo
+                    </h1>
+                    <Badge variant="secondary" className="gap-1 text-xs">
+                      <Database className="h-3 w-3" />
+                      Backend conectado ({productCount} produtos)
+                    </Badge>
+                  </div>
+                  <p className="text-xs md:text-sm text-muted-foreground truncate">
+                    {user?.email} • {window.location.host}
                   </p>
                 </div>
               </div>
-              <Button variant="outline" onClick={handleLogout} size="sm">
+              <Button variant="outline" onClick={handleLogout} size="sm" className="flex-shrink-0">
                 <LogOut className="h-4 w-4 mr-2" />
                 <span>Sair</span>
               </Button>
