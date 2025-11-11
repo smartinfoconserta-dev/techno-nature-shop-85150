@@ -320,7 +320,7 @@ const DashboardTab = ({ onTabChange }: DashboardTabProps) => {
           <Badge variant="secondary">Produtos mais recentes</Badge>
         </div>
 
-        {categoriesStore.getAllCategories().map((category) => (
+        {categories.map((category) => (
           <CategoryProductsSection
             key={category.id}
             categoryName={category.name}

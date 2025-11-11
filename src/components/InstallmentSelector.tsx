@@ -21,6 +21,7 @@ const InstallmentSelector = ({ basePrice, hasCouponActive, onSelect }: Installme
       onSelect?.(null);
     }
   }, [hasCouponActive, selectedValue, onSelect]);
+  
   const installmentOptions = getAllInstallmentOptions(basePrice);
   const cashValue = calculateCashDiscount(basePrice);
 
@@ -116,7 +117,7 @@ const InstallmentSelector = ({ basePrice, hasCouponActive, onSelect }: Installme
               💵 À vista (5% desconto)
             </SelectItem>
           )}
-          {installmentOptions.map((option) => (
+          {installmentOptions.length > 0 && installmentOptions.map((option) => (
             <SelectItem 
               key={option.installments} 
               value={option.installments.toString()}

@@ -339,13 +339,12 @@ const CustomerReceivablesDialog = ({
                           <p className="text-xs font-semibold text-green-700 dark:text-green-400">
                             📋 Histórico de Movimentações
                           </p>
-                          {creditHistoryStore.getTransactionsByCustomer(customer.id).length === 0 ? (
+                          {creditHistory.length === 0 ? (
                             <p className="text-xs text-muted-foreground text-center py-2">
                               Nenhuma movimentação registrada
                             </p>
                           ) : (
-                            creditHistoryStore
-                              .getTransactionsByCustomer(customer.id)
+                            creditHistory
                               .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
                               .map(transaction => (
                                 <div key={transaction.id} className="text-xs p-2 bg-white dark:bg-gray-900 rounded border">

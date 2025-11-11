@@ -81,9 +81,9 @@ const QuickSalesTab = () => {
     return months;
   };
 
-  const getCustomerName = (customerId?: string) => {
+  const getCustomerName = async (customerId?: string) => {
     if (!customerId) return "-";
-    const customer = customersStore.getCustomerById(customerId);
+    const customer = await customersStore.getCustomerById(customerId);
     return customer ? customer.name : "Cliente não encontrado";
   };
 

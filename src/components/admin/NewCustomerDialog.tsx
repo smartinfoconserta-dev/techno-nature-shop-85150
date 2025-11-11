@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,7 +25,7 @@ const NewCustomerDialog = ({ open, onOpenChange, onCustomerCreated }: NewCustome
   const [creditLimit, setCreditLimit] = useState("");
   const [notes, setNotes] = useState("");
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     try {
       if (!name.trim()) {
         toast({
@@ -45,7 +45,7 @@ const NewCustomerDialog = ({ open, onOpenChange, onCustomerCreated }: NewCustome
         return;
       }
 
-      const customer = customersStore.addCustomer({
+      const customer = await customersStore.addCustomer({
         type,
         name,
         cpfCnpj,
@@ -84,7 +84,15 @@ const NewCustomerDialog = ({ open, onOpenChange, onCustomerCreated }: NewCustome
     onOpenChange(false);
   };
 
-  const nextCode = customersStore.generateNextCode(type);
+  const [nextCode, setNextCode] = useState("");
+
+  useEffect(() => {
+    const loadNextCode = async () => {
+      const code = await customersStore.generateNextCode(type);
+      setNextCode(code);
+    };
+    loadNextCode();
+  }, [type]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

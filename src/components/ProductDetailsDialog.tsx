@@ -192,9 +192,9 @@ const ProductDetailsDialog = ({
       messageLines.push(`• R$ ${cashPrice.toFixed(2)}`);
       messageLines.push("");
       
-      const installmentOptions = getAllInstallmentOptions(displayPrice);
+      const options = getAllInstallmentOptions(displayPrice);
       messageLines.push(`💳 *Parcelado (Visa/Mastercard):*`);
-      installmentOptions.forEach(option => {
+      options.forEach(option => {
         messageLines.push(
           `• ${option.installments}x de R$ ${option.installmentValue.toFixed(2)} ` +
           `(Total: R$ ${option.totalAmount.toFixed(2)})`

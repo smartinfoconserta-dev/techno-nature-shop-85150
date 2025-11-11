@@ -190,11 +190,13 @@ const ReceivablesTab = () => {
   };
 
   const groupByCustomer = (): CustomerGroup[] => {
-    const grouped = filteredReceivables.reduce((acc, receivable) => {
+    const grouped = filteredReceivables.reduce(async (accPromise, receivable) => {
+      const acc = await accPromise;
       const customerId = receivable.customerId;
       if (!acc[customerId]) {
+        const customer = await customersStore.getCustomerById(customerId);
         acc[customerId] = {
-          customer: customersStore.getCustomerById(customerId),
+          customer,
           receivables: [],
           totalAmount: 0,
           paidAmount: 0,
@@ -318,7 +320,7 @@ const ReceivablesTab = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos</SelectItem>
-                  {customers.map(customer => (
+                  {allCustomers.map(customer => (
                     <SelectItem key={customer.id} value={customer.id}>
                       {customer.code} - {customer.name}
                     </SelectItem>
