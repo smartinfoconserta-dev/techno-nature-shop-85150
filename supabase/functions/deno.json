@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "checkJs": false,
+    "noImplicitAny": false
+  },
+  "imports": {
+    "@supabase/functions-js/edge-runtime": "jsr:@supabase/functions-js@2/edge-runtime"
+  }
+}

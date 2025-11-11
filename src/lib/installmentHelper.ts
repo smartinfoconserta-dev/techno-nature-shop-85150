@@ -1,4 +1,4 @@
-import { settingsStore } from "./settingsStore";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface InstallmentOption {
   installments: number;
@@ -6,6 +6,48 @@ export interface InstallmentOption {
   totalAmount: number;        // valor total a cobrar (com taxa)
   installmentValue: number;   // valor de cada parcela
   feeAmount: number;          // quanto de taxa (em R$)
+}
+
+interface InstallmentRate {
+  installments: number;
+  rate: number;
+}
+
+let cachedRates: InstallmentRate[] | null = null;
+
+/**
+ * Busca as taxas de parcelamento do edge function
+ */
+async function getInstallmentRates(): Promise<InstallmentRate[]> {
+  if (cachedRates) {
+    return cachedRates;
+  }
+
+  try {
+    const { data, error } = await supabase.functions.invoke('get-installment-rates');
+    
+    if (error) throw error;
+    
+    cachedRates = data.installment_rates;
+    return cachedRates;
+  } catch (error) {
+    console.error('Error fetching installment rates:', error);
+    // Fallback para taxas padrão em caso de erro
+    return [
+      { installments: 1, rate: 0 },
+      { installments: 2, rate: 2.99 },
+      { installments: 3, rate: 3.99 },
+      { installments: 4, rate: 4.99 },
+      { installments: 5, rate: 5.99 },
+      { installments: 6, rate: 6.99 },
+      { installments: 7, rate: 7.99 },
+      { installments: 8, rate: 8.99 },
+      { installments: 9, rate: 9.99 },
+      { installments: 10, rate: 10.99 },
+      { installments: 11, rate: 11.99 },
+      { installments: 12, rate: 12.99 },
+    ];
+  }
 }
 
 /**
@@ -16,8 +58,8 @@ export async function calculateInstallmentPrice(
   desiredAmount: number,
   installments: number
 ): Promise<InstallmentOption> {
-  const settings = await settingsStore.getSettings();
-  const rateObj = settings.installmentRates.find(r => r.installments === installments);
+  const rates = await getInstallmentRates();
+  const rateObj = rates.find(r => r.installments === installments);
   const rate = rateObj?.rate || 0;
   
   const totalAmount = desiredAmount / (1 - rate / 100);
@@ -37,9 +79,9 @@ export async function calculateInstallmentPrice(
  * Gera todas as opções de parcelamento
  */
 export async function getAllInstallmentOptions(desiredAmount: number): Promise<InstallmentOption[]> {
-  const settings = await settingsStore.getSettings();
+  const rates = await getInstallmentRates();
   const options = await Promise.all(
-    settings.installmentRates
+    rates
       .sort((a, b) => a.installments - b.installments)
       .map((rateObj) => calculateInstallmentPrice(desiredAmount, rateObj.installments))
   );

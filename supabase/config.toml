@@ -2,3 +2,6 @@ project_id = "rqngbtkdjrgoevnmgfys"
 
 [functions.compare-products]
 verify_jwt = false
+
+[functions.get-installment-rates]
+verify_jwt = false
