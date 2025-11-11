@@ -53,23 +53,14 @@ let productsInitialized = false;
 const genId = () => (typeof crypto !== "undefined" && (crypto as any).randomUUID ? (crypto as any).randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`);
 
 function loadProductsCache() {
+  // Cache apenas em memória - não lê localStorage
   if (productsInitialized) return;
-  try {
-    const raw = localStorage.getItem(PRODUCTS_STORAGE_KEY);
-    productsCache = raw ? JSON.parse(raw) : [];
-  } catch (e) {
-    console.warn("Falha ao carregar cache de produtos:", e);
-    productsCache = [];
-  }
+  productsCache = [];
   productsInitialized = true;
 }
 
 function saveProductsCache() {
-  try {
-    localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(productsCache));
-  } catch (e) {
-    console.warn("Falha ao salvar cache de produtos:", e);
-  }
+  // No-op: cache apenas em memória - não salva em localStorage
 }
 
 function mapRowToProduct(row: any): Product {

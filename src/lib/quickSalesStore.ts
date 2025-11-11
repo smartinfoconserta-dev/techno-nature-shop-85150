@@ -31,23 +31,14 @@ let quickInitialized = false;
 const genIdQS = () => (typeof crypto !== "undefined" && (crypto as any).randomUUID ? (crypto as any).randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`);
 
 function loadQuickCache() {
+  // Cache apenas em memória - não lê localStorage
   if (quickInitialized) return;
-  try {
-    const raw = localStorage.getItem(QUICK_SALES_STORAGE_KEY);
-    quickSalesCache = raw ? JSON.parse(raw) : [];
-  } catch (e) {
-    console.warn("Falha ao carregar cache de vendas rápidas:", e);
-    quickSalesCache = [];
-  }
+  quickSalesCache = [];
   quickInitialized = true;
 }
 
 function saveQuickCache() {
-  try {
-    localStorage.setItem(QUICK_SALES_STORAGE_KEY, JSON.stringify(quickSalesCache));
-  } catch (e) {
-    console.warn("Falha ao salvar cache de vendas rápidas:", e);
-  }
+  // No-op: cache apenas em memória - não salva em localStorage
 }
 
 export const quickSalesStore = {

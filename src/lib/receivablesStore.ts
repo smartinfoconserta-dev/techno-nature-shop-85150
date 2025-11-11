@@ -44,23 +44,14 @@ let receivablesInitialized = false;
 const genIdR = () => (typeof crypto !== "undefined" && (crypto as any).randomUUID ? (crypto as any).randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`);
 
 function loadReceivablesCache() {
+  // Cache apenas em memória - não lê localStorage
   if (receivablesInitialized) return;
-  try {
-    const raw = localStorage.getItem(RECEIVABLES_STORAGE_KEY);
-    receivablesCache = raw ? JSON.parse(raw) : [];
-  } catch (e) {
-    console.warn("Falha ao carregar cache de recebíveis:", e);
-    receivablesCache = [];
-  }
+  receivablesCache = [];
   receivablesInitialized = true;
 }
 
 function saveReceivablesCache() {
-  try {
-    localStorage.setItem(RECEIVABLES_STORAGE_KEY, JSON.stringify(receivablesCache));
-  } catch (e) {
-    console.warn("Falha ao salvar cache de recebíveis:", e);
-  }
+  // No-op: cache apenas em memória - não salva em localStorage
 }
 
 function mapRowToReceivable(row: any): Receivable {
