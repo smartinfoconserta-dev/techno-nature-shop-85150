@@ -35,16 +35,20 @@ jobs:
       - name: 🗂️ Definir caminho de deploy
         run: |
           if [ -z "${{ secrets.FTP_SERVER_DIR }}" ]; then
-            echo "⚙️ Usando DEPLOY_PATH=./ (raiz do FTP)"
-            echo "DEPLOY_PATH=./" >> $GITHUB_ENV
+            echo "⚙️ Usando DEPLOY_PATH=/ (raiz do FTP)"
+            echo "DEPLOY_PATH=/" >> $GITHUB_ENV
           else
             RAW="${{ secrets.FTP_SERVER_DIR }}"
-            NORM="./${RAW#./}"
+            # Remove "./" e garante formato "/path/"
+            NORM="/${RAW#./}"
+            NORM="/${NORM#/}"
             case "$NORM" in */) ;; *) NORM="$NORM/";; esac
+            
             if echo "$NORM" | grep -q "public_html/public_html"; then
               echo "❌ Caminho inválido: $NORM"
               exit 1
             fi
+            
             echo "✅ Caminho de deploy definido: $NORM"
             echo "DEPLOY_PATH=$NORM" >> $GITHUB_ENV
           fi

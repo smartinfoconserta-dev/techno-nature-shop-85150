@@ -42,11 +42,12 @@ AddDefaultCharset UTF-8
   CacheDisable private /
 </IfModule>
 
-# HTTPS Redirect (ativo)
+# 🔒 Forçar HTTPS e redirecionar www → não-www
 <IfModule mod_rewrite.c>
   RewriteEngine On
-  RewriteCond %{HTTPS} off
-  RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+  RewriteCond %{HTTPS} off [OR]
+  RewriteCond %{HTTP_HOST} ^www\.ramontech\.com\.br$ [NC]
+  RewriteRule ^(.*)$ https://ramontech.com.br/$1 [L,R=301]
 </IfModule>
 
 # Headers de Segurança
@@ -81,9 +82,7 @@ AddDefaultCharset UTF-8
   RewriteEngine On
   RewriteBase /
 
-  # Canonical redirect to www
-  RewriteCond %{HTTP_HOST} !^www\.ramontech\.com\.br$ [NC]
-  RewriteRule ^(.*)$ https://www.ramontech.com.br/$1 [L,R=301]
+  # Rota reset-cache tem prioridade antes dos outros rewrites
 
   # Serve reset-cache static HTML (bypass SPA rewrite)
   RewriteRule ^reset-cache$ /reset-cache.html [L]
