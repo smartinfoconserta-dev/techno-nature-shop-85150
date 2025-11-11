@@ -21,8 +21,15 @@ AddDefaultCharset UTF-8
   Header always set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS, PATCH"
   Header always set Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With, Accept, apikey, x-client-info"
   
-  # Anti-cache para HTML
+  # Anti-cache AGRESSIVO para HTML e Service Workers
   <FilesMatch "\.(html)$">
+    Header always set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+    Header always set Pragma "no-cache"
+    Header always set Expires "0"
+  </FilesMatch>
+  
+  # Bloquear cache de qualquer arquivo de service worker
+  <FilesMatch "(service-worker|sw|workbox.*)\.(js|json)$">
     Header always set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
     Header always set Pragma "no-cache"
     Header always set Expires "0"

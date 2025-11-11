@@ -9,6 +9,47 @@
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
     
+    <!-- CRITICAL: Mata Service Worker ANTES de qualquer outro script -->
+    <script>
+      (function() {
+        'use strict';
+        var FLAG_KEY = 'sw_killed_v2';
+        var alreadyKilled = localStorage.getItem(FLAG_KEY);
+        
+        if ('serviceWorker' in navigator && !alreadyKilled) {
+          navigator.serviceWorker.getRegistrations().then(function(registrations) {
+            var hasActive = false;
+            registrations.forEach(function(reg) {
+              if (reg.active || reg.waiting || reg.installing) {
+                hasActive = true;
+              }
+              reg.unregister();
+            });
+            
+            if ('caches' in window) {
+              caches.keys().then(function(names) {
+                return Promise.all(names.map(function(name) {
+                  return caches.delete(name);
+                }));
+              }).then(function() {
+                console.log('✅ Service Workers e caches removidos (inline)');
+                localStorage.setItem(FLAG_KEY, 'true');
+                if (hasActive && navigator.serviceWorker.controller) {
+                  console.log('🔄 Recarregando para aplicar mudanças...');
+                  location.reload();
+                }
+              });
+            } else {
+              localStorage.setItem(FLAG_KEY, 'true');
+              if (hasActive && navigator.serviceWorker.controller) {
+                location.reload();
+              }
+            }
+          });
+        }
+      })();
+    </script>
+    
     <!-- Favicons -->
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
