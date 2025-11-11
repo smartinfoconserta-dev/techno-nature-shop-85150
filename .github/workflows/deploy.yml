@@ -1,4 +1,4 @@
-name: Deploy Hostinger via FTPS
+name: Deploy do site na Hostinger (com verificação de login)
 
 on:
   push:
@@ -8,147 +8,87 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+
     steps:
       - name: Clonar o repositório
         uses: actions/checkout@v3
 
-      - name: Instalar o Node
+      - name: Instalar Node.js 18
         uses: actions/setup-node@v3
         with:
           node-version: '18'
 
-      - name: Validar secrets obrigatórios
-        run: |
-          echo "🔍 Verificando secrets..."
-          MISSING=false
-          
-          if [ -z "${{ secrets.VITE_SUPABASE_URL }}" ]; then
-            echo "❌ VITE_SUPABASE_URL não definido"
-            MISSING=true
-          else
-            echo "✅ VITE_SUPABASE_URL encontrado"
-          fi
-          
-          if [ -z "${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}" ]; then
-            echo "❌ VITE_SUPABASE_PUBLISHABLE_KEY não definido"
-            MISSING=true
-          else
-            echo "✅ VITE_SUPABASE_PUBLISHABLE_KEY encontrado"
-          fi
-          
-          if [ -z "${{ secrets.VITE_SUPABASE_PROJECT_ID }}" ]; then
-            echo "❌ VITE_SUPABASE_PROJECT_ID não definido"
-            MISSING=true
-          else
-            echo "✅ VITE_SUPABASE_PROJECT_ID encontrado"
-          fi
-          
-          if [ -z "${{ secrets.FTP_HOST }}" ]; then
-            echo "❌ FTP_HOST não definido"
-            MISSING=true
-          else
-            echo "✅ FTP_HOST: ${{ secrets.FTP_HOST }}"
-          fi
-          
-          if [ -z "${{ secrets.FTP_USER }}" ]; then
-            echo "❌ FTP_USER não definido"
-            MISSING=true
-          else
-            echo "✅ FTP_USER: ${{ secrets.FTP_USER }}"
-          fi
-          
-          if [ -z "${{ secrets.FTP_PASS }}" ]; then
-            echo "❌ FTP_PASS não definido"
-            MISSING=true
-          else
-            echo "✅ FTP_PASS definido (senha oculta)"
-          fi
-          
-          if [ -z "${{ secrets.FTP_SERVER_DIR }}" ]; then
-            echo "⚠️ FTP_SERVER_DIR não definido, usando /public_html/"
-            echo "DEPLOY_PATH=/public_html/" >> $GITHUB_ENV
-          else
-            echo "✅ FTP_SERVER_DIR: ${{ secrets.FTP_SERVER_DIR }}"
-            echo "DEPLOY_PATH=${{ secrets.FTP_SERVER_DIR }}" >> $GITHUB_ENV
-          fi
-          
-          if [ "$MISSING" = true ]; then
-            echo ""
-            echo "❌ Faltam secrets! Configure em: Settings > Secrets and variables > Actions"
-            exit 1
-          fi
-          
-          echo ""
-          echo "✅ Todos os secrets obrigatórios estão configurados!"
-
-      - name: Testar conexão FTP
-        run: |
-          echo "🔌 Testando conexão FTP..."
-          echo "Host: ${{ secrets.FTP_HOST }}"
-          echo "User: ${{ secrets.FTP_USER }}"
-          echo "Path: ${{ env.DEPLOY_PATH }}"
-          echo ""
-          
-          curl -v --ssl --ftp-ssl-reqd \
-            --user "${{ secrets.FTP_USER }}:${{ secrets.FTP_PASS }}" \
-            "ftp://${{ secrets.FTP_HOST }}${{ env.DEPLOY_PATH }}" \
-            2>&1 | tee ftp-test.log
-          
-          if grep -q "230 User" ftp-test.log; then
-            echo ""
-            echo "✅ Login FTP bem-sucedido!"
-          else
-            echo ""
-            echo "❌ Falha no login FTP. Verifique as credenciais:"
-            echo "   FTP_HOST deve ser: 147.93.64.216 (sem ftp://)"
-            echo "   FTP_USER deve ser: u728860321"
-            echo "   FTP_PASS deve estar correto"
-            exit 1
-          fi
-
-      - name: Instalar pacotes do projeto
+      - name: Instalar dependências
         run: npm install
 
-      - name: Criar o arquivo .env com suas chaves
+      - name: Criar arquivo .env com variáveis do Supabase
         run: |
           echo "VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }}" > .env
           echo "VITE_SUPABASE_PUBLISHABLE_KEY=${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}" >> .env
           echo "VITE_SUPABASE_PROJECT_ID=${{ secrets.VITE_SUPABASE_PROJECT_ID }}" >> .env
 
-      - name: Fazer o build (empacotar o site)
+      - name: Verificar se todos os Secrets foram definidos
+        run: |
+          echo "🔍 Verificando variáveis de ambiente..."
+          missing=0
+          for secret in FTP_HOST FTP_USER FTP_PASS FTP_SERVER_DIR; do
+            if [ -z "${!secret}" ]; then
+              echo "❌ ERRO: O secret $secret não foi definido!"
+              missing=1
+            else
+              echo "✅ $secret encontrado."
+            fi
+          done
+          if [ "$missing" -eq 1 ]; then
+            echo "⚠️ Corrija os secrets faltantes no GitHub antes de continuar."
+            exit 1
+          fi
+        env:
+          FTP_HOST: ${{ secrets.FTP_HOST }}
+          FTP_USER: ${{ secrets.FTP_USER }}
+          FTP_PASS: ${{ secrets.FTP_PASS }}
+          FTP_SERVER_DIR: ${{ secrets.FTP_SERVER_DIR }}
+
+      - name: Testar login FTP antes do deploy
+        run: |
+          echo "🔐 Testando login FTP..."
+          curl -v --ssl -k --user "${{ secrets.FTP_USER }}:${{ secrets.FTP_PASS }}" "ftp://${{ secrets.FTP_HOST }}" || exit 1
+          echo "✅ Login FTP bem-sucedido!"
+        continue-on-error: false
+
+      - name: Listar diretório remoto (public_html)
+        run: |
+          echo "📂 Listando o conteúdo do diretório remoto..."
+          curl -v --ssl -k --user "${{ secrets.FTP_USER }}:${{ secrets.FTP_PASS }}" "ftp://${{ secrets.FTP_HOST }}${{ secrets.FTP_SERVER_DIR }}" || echo "⚠️ Não foi possível listar o diretório. Verifique o caminho."
+        continue-on-error: true
+
+      - name: Fazer o build do projeto (compilar site)
         run: npm run build
 
-      - name: Verificar arquivos do build
-        run: |
-          echo "📦 Arquivos gerados no build:"
-          ls -lh dist/
-          echo ""
-          echo "📊 Tamanho total:"
-          du -sh dist/
+      - name: Mostrar arquivos gerados
+        run: ls -al dist/
 
-      - name: Enviar o site pra Hostinger via FTPS
+      - name: Enviar o site para Hostinger via FTPS
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
           server: ${{ secrets.FTP_HOST }}
-          port: 21
           username: ${{ secrets.FTP_USER }}
           password: ${{ secrets.FTP_PASS }}
           protocol: ftps
+          port: 21
           local-dir: dist/
-          server-dir: ${{ env.DEPLOY_PATH }}
+          server-dir: ${{ secrets.FTP_SERVER_DIR }}
           dangerous-clean-slate: false
           dry-run: false
           log-level: verbose
 
-      - name: Verificar site online
+      - name: Testar se o site está acessível
         run: |
-          echo "🌐 Verificando https://ramontech.com.br ..."
-          sleep 5
-          STATUS=$(curl -I -s -o /dev/null -w "%{http_code}" https://ramontech.com.br 2>/dev/null || echo "000")
-          echo "Status HTTP: $STATUS"
-          
-          if [ "$STATUS" = "200" ] || [ "$STATUS" = "301" ] || [ "$STATUS" = "302" ]; then
-            echo "✅ Site está acessível!"
+          echo "🌐 Testando site online..."
+          STATUS=$(curl -I -s -o /dev/null -w "%{http_code}" https://ramontech.com.br || echo "000")
+          echo "🔎 Código de status: $STATUS"
+          if [ "$STATUS" != "200" ] && [ "$STATUS" != "301" ] && [ "$STATUS" != "302" ]; then
+            echo "⚠️ O site ainda não respondeu corretamente. Verifique se os arquivos foram enviados para a pasta certa."
           else
-            echo "⚠️ Site retornou status $STATUS. Pode precisar aguardar propagação."
+            echo "✅ Site acessível com sucesso!"
           fi
