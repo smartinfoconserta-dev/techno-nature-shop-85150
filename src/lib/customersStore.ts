@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import bcrypt from "bcryptjs";
 
 export interface Customer {
   id: string;
@@ -167,6 +168,9 @@ export const customersStore = {
 
     const code = await this.generateNextCode(data.type);
 
+    // Hash password if provided
+    const hashedPassword = data.password ? await bcrypt.hash(data.password, 10) : null;
+
     const { data: inserted, error } = await supabase
       .from("customers")
       .insert([
@@ -185,7 +189,7 @@ export const customersStore = {
           credit_balance: data.creditBalance || 0,
           notes: data.notes?.trim() || null,
           portal_username: data.username?.trim() || null,
-          portal_password: data.password || null,
+          portal_password: hashedPassword,
         },
       ])
       .select()
@@ -247,7 +251,10 @@ export const customersStore = {
     if (data.creditBalance !== undefined) updateData.credit_balance = data.creditBalance;
     if (data.notes !== undefined) updateData.notes = data.notes?.trim() || null;
     if (data.username !== undefined) updateData.portal_username = data.username?.trim() || null;
-    if (data.password !== undefined) updateData.portal_password = data.password || null;
+    if (data.password !== undefined) {
+      // Hash password if being updated
+      updateData.portal_password = data.password ? await bcrypt.hash(data.password, 10) : null;
+    }
     if (data.active !== undefined) updateData.active = data.active;
 
     const { data: updated, error } = await supabase
@@ -316,11 +323,14 @@ export const customersStore = {
     const available = await this.isUsernameAvailable(username, id);
     if (!available) throw new Error("Username já está em uso");
 
+    // Hash the password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
     const { data: updated, error } = await supabase
       .from("customers")
       .update({
         portal_username: normalizedUsername,
-        portal_password: password,
+        portal_password: hashedPassword,
       })
       .eq("id", id)
       .select()
@@ -357,11 +367,15 @@ export const customersStore = {
       .from("customers")
       .select("*")
       .eq("cpf_cnpj", cpfCnpj)
-      .eq("portal_password", password)
       .not("portal_username", "is", null)
+      .not("portal_password", "is", null)
       .single();
 
-    if (!data) return null;
+    if (!data || !data.portal_password) return null;
+
+    // Verify password using bcrypt
+    const isValid = await bcrypt.compare(password, data.portal_password);
+    if (!isValid) return null;
 
     return {
       id: data.id,
@@ -396,12 +410,16 @@ export const customersStore = {
     const { data } = await supabase
       .from("customers")
       .select("*")
-      .eq("portal_password", password)
       .not("portal_username", "is", null)
+      .not("portal_password", "is", null)
       .or(`code.ilike.${normalized},cpf_cnpj.eq.${normalized},portal_username.ilike.${normalized}`)
       .single();
 
-    if (!data) return null;
+    if (!data || !data.portal_password) return null;
+
+    // Verify password using bcrypt
+    const isValid = await bcrypt.compare(password, data.portal_password);
+    if (!isValid) return null;
 
     return {
       id: data.id,
