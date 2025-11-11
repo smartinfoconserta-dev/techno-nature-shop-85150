@@ -319,14 +319,6 @@ const DashboardTab = ({ onTabChange }: DashboardTabProps) => {
           <h2 className="text-2xl font-bold text-foreground">📦 Catálogo em Destaque</h2>
           <Badge variant="secondary">Produtos mais recentes</Badge>
         </div>
-
-        {categories.map((category) => (
-          <CategoryProductsSection
-            key={category.id}
-            categoryName={category.name}
-            onViewMore={() => onTabChange("products")}
-          />
-        ))}
       </div>
     </div>
   );

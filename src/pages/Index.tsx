@@ -115,15 +115,15 @@ const Index = () => {
               >
                 Todas
               </Button>
-              {categoriesStore.getAllCategories().map((category) => (
+              {categories.filter(c => c !== "Todos").map((categoryName) => (
                 <Button
-                  key={category.id}
-                  variant={homeFilter === category.name ? "default" : "outline"}
+                  key={categoryName}
+                  variant={homeFilter === categoryName ? "default" : "outline"}
                   size="sm"
-                  onClick={() => setHomeFilter(category.name)}
+                  onClick={() => setHomeFilter(categoryName)}
                   className="whitespace-nowrap"
                 >
-                  {category.name}
+                  {categoryName}
                 </Button>
               ))}
             </div>

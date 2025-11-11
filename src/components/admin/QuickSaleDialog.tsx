@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -22,9 +22,15 @@ const QuickSaleDialog = ({
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>("");
   const [showSaleForm, setShowSaleForm] = useState(false);
   const [showNewCustomerDialog, setShowNewCustomerDialog] = useState(false);
+  const [customers, setCustomers] = useState<Customer[]>([]);
   
   const { toast } = useToast();
-  const customers = customersStore.getActiveCustomers();
+  
+  useEffect(() => {
+    if (open) {
+      customersStore.getActiveCustomers().then(setCustomers);
+    }
+  }, [open]);
 
   const handleNext = () => {
     if (!selectedCustomerId) return;

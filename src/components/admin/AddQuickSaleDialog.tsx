@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -59,6 +59,7 @@ export function AddQuickSaleDialog({
   const [pix, setPix] = useState("");
   const [card, setCard] = useState("");
   const [selectedInstallment, setSelectedInstallment] = useState<InstallmentOption | null>(null);
+  const [installmentOptions, setInstallmentOptions] = useState<InstallmentOption[]>([]);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -84,7 +85,18 @@ export function AddQuickSaleDialog({
 
   // Calcular valor restante para o cartão
   const remainingAmount = salePrice - cashValue - pixValue;
-  const installmentOptions = remainingAmount > 0 ? getAllInstallmentOptions(remainingAmount) : [];
+  
+  useEffect(() => {
+    const loadOptions = async () => {
+      if (remainingAmount > 0) {
+        const options = await getAllInstallmentOptions(remainingAmount);
+        setInstallmentOptions(options);
+      } else {
+        setInstallmentOptions([]);
+      }
+    };
+    loadOptions();
+  }, [remainingAmount]);
   
   // Calcula taxa automaticamente (6% sobre pix + card)
   const getTaxAmount = () => {

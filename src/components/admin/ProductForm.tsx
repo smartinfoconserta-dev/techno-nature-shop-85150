@@ -42,8 +42,9 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
-    import("@/lib/categoriesStore").then(({ categoriesStore }) => {
-      setCategories(categoriesStore.getCategoryNames());
+    import("@/lib/categoriesStore").then(async ({ categoriesStore }) => {
+      const names = await categoriesStore.getCategoryNames();
+      setCategories(names);
     });
   }, []);
 
@@ -57,8 +58,8 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
     }
   }, [product]);
 
-  const loadBrands = () => {
-    const brands = brandsStore.getBrandsByCategory(category);
+  const loadBrands = async () => {
+    const brands = await brandsStore.getBrandsByCategory(category);
     setAvailableBrands(brands.map((b) => b.name));
   };
 

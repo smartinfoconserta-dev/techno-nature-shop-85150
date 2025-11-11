@@ -189,36 +189,44 @@ const ReceivablesTab = () => {
     return new Date(receivable.dueDate) < new Date();
   };
 
-  const groupByCustomer = (): CustomerGroup[] => {
-    const grouped = filteredReceivables.reduce(async (accPromise, receivable) => {
-      const acc = await accPromise;
-      const customerId = receivable.customerId;
-      if (!acc[customerId]) {
-        const customer = await customersStore.getCustomerById(customerId);
-        acc[customerId] = {
-          customer,
-          receivables: [],
-          totalAmount: 0,
-          paidAmount: 0,
-          remainingAmount: 0,
-          activeCount: 0,
-          hasOverdue: false,
-        };
+  const [customerGroups, setCustomerGroups] = useState<CustomerGroup[]>([]);
+
+  useEffect(() => {
+    const groupByCustomer = async () => {
+      const grouped: Record<string, CustomerGroup> = {};
+      
+      for (const receivable of filteredReceivables) {
+        const customerId = receivable.customerId;
+        if (!grouped[customerId]) {
+          const customer = await customersStore.getCustomerById(customerId);
+          grouped[customerId] = {
+            customer,
+            receivables: [],
+            totalAmount: 0,
+            paidAmount: 0,
+            remainingAmount: 0,
+            activeCount: 0,
+            hasOverdue: false,
+          };
+        }
+        grouped[customerId].receivables.push(receivable);
+        grouped[customerId].totalAmount += receivable.totalAmount;
+        grouped[customerId].paidAmount += receivable.paidAmount;
+        grouped[customerId].remainingAmount += receivable.remainingAmount;
+        if (receivable.status !== "paid") grouped[customerId].activeCount++;
+        if (isOverdue(receivable)) grouped[customerId].hasOverdue = true;
       }
-      acc[customerId].receivables.push(receivable);
-      acc[customerId].totalAmount += receivable.totalAmount;
-      acc[customerId].paidAmount += receivable.paidAmount;
-      acc[customerId].remainingAmount += receivable.remainingAmount;
-      if (receivable.status !== "paid") acc[customerId].activeCount++;
-      if (isOverdue(receivable)) acc[customerId].hasOverdue = true;
-      return acc;
-    }, {} as Record<string, CustomerGroup>);
+      
+      const sorted = Object.values(grouped).sort((a, b) => {
+        if (!a.customer || !b.customer) return 0;
+        return a.customer.code.localeCompare(b.customer.code);
+      });
+      
+      setCustomerGroups(sorted);
+    };
     
-    return Object.values(grouped).sort((a, b) => {
-      if (!a.customer || !b.customer) return 0;
-      return a.customer.code.localeCompare(b.customer.code);
-    });
-  };
+    groupByCustomer();
+  }, [filteredReceivables]);
 
   const handleEditCustomer = (customer: Customer) => {
     setCustomerToEdit(customer);
@@ -234,8 +242,11 @@ const ReceivablesTab = () => {
   };
 
   const totals = getTotals();
-  const customers = customersStore.getActiveCustomers();
-  const customerGroups = groupByCustomer();
+  const [customers, setCustomers] = useState<Customer[]>([]);
+
+  useEffect(() => {
+    customersStore.getActiveCustomers().then(setCustomers);
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -320,7 +331,7 @@ const ReceivablesTab = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos</SelectItem>
-                  {allCustomers.map(customer => (
+                  {customers.map(customer => (
                     <SelectItem key={customer.id} value={customer.id}>
                       {customer.code} - {customer.name}
                     </SelectItem>

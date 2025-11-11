@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { receivablesStore, Receivable } from "@/lib/receivablesStore";
-import { customersStore } from "@/lib/customersStore";
+import { customersStore, Customer } from "@/lib/customersStore";
 import { productsStore } from "@/lib/productsStore";
 import {
   Dialog,
@@ -65,12 +65,27 @@ const CustomerReceivablesDialog = ({
   const [showCreditHistory, setShowCreditHistory] = useState(false);
   const [showRemoveCreditDialog, setShowRemoveCreditDialog] = useState(false);
   const [showAddCreditDialog, setShowAddCreditDialog] = useState(false);
+  const [customer, setCustomer] = useState<Customer | null>(null);
+  const [creditHistory, setCreditHistory] = useState<any[]>([]);
 
   useEffect(() => {
     if (open && customerId) {
+      loadCustomerData();
       loadCustomerReceivables();
     }
   }, [open, customerId, activeTab]);
+
+  const loadCustomerData = async () => {
+    if (!customerId) return;
+    
+    const customerData = await customersStore.getCustomerById(customerId);
+    setCustomer(customerData);
+    
+    if (customerData) {
+      const history = await creditHistoryStore.getTransactionsByCustomer(customerId);
+      setCreditHistory(history);
+    }
+  };
 
   const loadCustomerReceivables = () => {
     if (!customerId) return;
@@ -83,8 +98,6 @@ const CustomerReceivablesDialog = ({
     
     setReceivables(filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
   };
-
-  const customer = customerId ? customersStore.getCustomerById(customerId) : null;
 
   const getTotals = () => {
     const total = receivables.reduce((sum, r) => sum + r.totalAmount, 0);

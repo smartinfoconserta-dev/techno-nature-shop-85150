@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -37,16 +37,27 @@ const CustomersTab = () => {
   const [newPassword, setNewPassword] = useState("");
   const [showReceivablesDialog, setShowReceivablesDialog] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [filteredCustomers, setFilteredCustomers] = useState<Customer[]>([]);
 
-  const customers = customersStore.getAllCustomers();
+  useEffect(() => {
+    const loadCustomers = async () => {
+      const allCustomers = await customersStore.getAllCustomers();
+      setCustomers(allCustomers);
+    };
+    loadCustomers();
+  }, [refreshKey]);
 
-  const filteredCustomers = customers.filter(c => {
-    const matchesSearch = c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         c.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         c.cpfCnpj.includes(searchTerm);
-    const matchesType = filterType === "all" || c.type === filterType;
-    return matchesSearch && matchesType;
-  });
+  useEffect(() => {
+    const filtered = customers.filter(c => {
+      const matchesSearch = c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           c.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           c.cpfCnpj.includes(searchTerm);
+      const matchesType = filterType === "all" || c.type === filterType;
+      return matchesSearch && matchesType;
+    });
+    setFilteredCustomers(filtered);
+  }, [customers, searchTerm, filterType]);
 
   const getCustomerDebt = (customerId: string) => {
     const receivables = receivablesStore.getReceivablesByCustomer(customerId);

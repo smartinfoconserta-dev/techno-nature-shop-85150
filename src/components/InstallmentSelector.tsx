@@ -13,6 +13,7 @@ interface InstallmentSelectorProps {
 
 const InstallmentSelector = ({ basePrice, hasCouponActive, onSelect }: InstallmentSelectorProps) => {
   const [selectedValue, setSelectedValue] = useState<string>("");
+  const [installmentOptions, setInstallmentOptions] = useState<InstallmentOption[]>([]);
   
   // Resetar seleção se estava em "cash" e cupom foi ativado
   useEffect(() => {
@@ -22,7 +23,14 @@ const InstallmentSelector = ({ basePrice, hasCouponActive, onSelect }: Installme
     }
   }, [hasCouponActive, selectedValue, onSelect]);
   
-  const installmentOptions = getAllInstallmentOptions(basePrice);
+  useEffect(() => {
+    const loadOptions = async () => {
+      const options = await getAllInstallmentOptions(basePrice);
+      setInstallmentOptions(options);
+    };
+    loadOptions();
+  }, [basePrice]);
+  
   const cashValue = calculateCashDiscount(basePrice);
 
   const handleValueChange = (value: string) => {

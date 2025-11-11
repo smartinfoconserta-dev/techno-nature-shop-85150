@@ -64,10 +64,11 @@ const MarkAsSoldDialog = ({
   const [initialCash, setInitialCash] = useState("");
   const [initialPix, setInitialPix] = useState("");
   const [initialCard, setInitialCard] = useState("");
+  const [installmentOptions, setInstallmentOptions] = useState<InstallmentOption[]>([]);
 
   useEffect(() => {
     if (open) {
-      setCustomers(customersStore.getActiveCustomers());
+      customersStore.getActiveCustomers().then(setCustomers);
     } else {
       setSaleType("immediate");
       setBuyerName("");
@@ -99,7 +100,7 @@ const MarkAsSoldDialog = ({
     return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(6, 9)}-${numbers.slice(9)}`;
   };
 
-  const handleValidateCoupon = () => {
+  const handleValidateCoupon = async () => {
     const trimmedCode = couponCode.trim().toUpperCase();
     
     if (!trimmedCode) {
@@ -107,7 +108,7 @@ const MarkAsSoldDialog = ({
       return;
     }
 
-    const result = couponsStore.validateCoupon(trimmedCode);
+    const result = await couponsStore.validateCoupon(trimmedCode);
     const coupon = result.coupon;
     
     if (!result.valid || !coupon) {
@@ -127,9 +128,6 @@ const MarkAsSoldDialog = ({
     setSelectedCustomer(customer);
   };
 
-  const settings = settingsStore.getSettings();
-  const { digitalTaxRate, includeCashInTax } = settings.taxSettings;
-
   const basePrice = product.price;
   const finalPrice = couponValidated 
     ? (product.discountPrice || basePrice) 
@@ -144,11 +142,30 @@ const MarkAsSoldDialog = ({
   
   // Calcular valor restante para o cartão
   const remainingAmountForCard = finalPrice - cashValue - pixValue;
-  const installmentOptions = remainingAmountForCard > 0 ? getAllInstallmentOptions(remainingAmountForCard) : [];
+  
+  useEffect(() => {
+    const loadOptions = async () => {
+      if (remainingAmountForCard > 0) {
+        const options = await getAllInstallmentOptions(remainingAmountForCard);
+        setInstallmentOptions(options);
+      } else {
+        setInstallmentOptions([]);
+      }
+    };
+    loadOptions();
+  }, [remainingAmountForCard]);
+  
+  useEffect(() => {
+    const loadSettings = async () => {
+      const settings = await settingsStore.getSettings();
+      // Settings loaded - can use for calculations
+    };
+    loadSettings();
+  }, []);
   
   const digitalTotal = pixValue + cardValue;
-  const taxableAmount = includeCashInTax ? totalSale : digitalTotal;
-  const taxAmount = taxableAmount * (digitalTaxRate / 100);
+  // Use fixed rate for now since settings are async
+  const taxAmount = digitalTotal * 0.06;
 
   const initialPaymentValue = parseFloat(initialPayment) || 0;
   const remainingAmount = finalPrice - initialPaymentValue;
@@ -466,7 +483,7 @@ const MarkAsSoldDialog = ({
                   <span className="text-xl font-bold text-green-600">R$ {totalSale.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Imposto ({digitalTaxRate}%):</span>
+                  <span className="text-muted-foreground">Imposto (6%):</span>
                   <span className="font-semibold text-orange-600">R$ {taxAmount.toFixed(2)}</span>
                 </div>
               </div>

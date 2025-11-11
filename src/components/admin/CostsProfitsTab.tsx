@@ -14,8 +14,8 @@ const TaxRateDisplay = () => {
   useEffect(() => {
     settingsStore.getSettings().then(settings => {
       setTaxInfo({
-        rate: settings.digital_tax_rate,
-        includesCash: settings.include_cash_in_tax
+        rate: settings.digitalTaxRate,
+        includesCash: settings.includeCashInTax
       });
     });
   }, []);

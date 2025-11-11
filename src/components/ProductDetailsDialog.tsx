@@ -54,6 +54,12 @@ const ProductDetailsDialog = ({
   const installmentRefs = useRef<{ [key: number]: HTMLButtonElement | null }>({});
   
   const [couponValidation, setCouponValidation] = useState<{ valid: boolean; coupon?: any }>({ valid: false });
+  const [installmentOptions, setInstallmentOptions] = useState<InstallmentOption[]>([]);
+  
+  const isDiscountActive = couponValidation.valid;
+
+  // Calcular o preço de vitrine baseado no passOnCashDiscount
+  const displayPrice = calculateDisplayPrice(price, passOnCashDiscount);
   
   useEffect(() => {
     const validateCoupon = async () => {
@@ -67,10 +73,13 @@ const ProductDetailsDialog = ({
     validateCoupon();
   }, [coupon]);
   
-  const isDiscountActive = couponValidation.valid;
-
-  // Calcular o preço de vitrine baseado no passOnCashDiscount
-  const displayPrice = calculateDisplayPrice(price, passOnCashDiscount);
+  useEffect(() => {
+    const loadOptions = async () => {
+      const options = await getAllInstallmentOptions(displayPrice);
+      setInstallmentOptions(options);
+    };
+    loadOptions();
+  }, [displayPrice]);
   
   useEffect(() => {
     if (!api) return;
@@ -192,9 +201,8 @@ const ProductDetailsDialog = ({
       messageLines.push(`• R$ ${cashPrice.toFixed(2)}`);
       messageLines.push("");
       
-      const options = getAllInstallmentOptions(displayPrice);
       messageLines.push(`💳 *Parcelado (Visa/Mastercard):*`);
-      options.forEach(option => {
+      installmentOptions.forEach(option => {
         messageLines.push(
           `• ${option.installments}x de R$ ${option.installmentValue.toFixed(2)} ` +
           `(Total: R$ ${option.totalAmount.toFixed(2)})`
@@ -312,7 +320,7 @@ const ProductDetailsDialog = ({
                   </p>
                   {!isDiscountActive && (
                     <p className="text-sm text-muted-foreground mt-1">
-                      ou 12x de R$ {(getAllInstallmentOptions(displayPrice).find(o => o.installments === 12)?.installmentValue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      ou 12x de R$ {(installmentOptions.find(o => o.installments === 12)?.installmentValue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                     </p>
                   )}
                 </div>
@@ -449,7 +457,7 @@ const ProductDetailsDialog = ({
                             <span className="text-[10px] text-muted-foreground/60">Role para ver mais</span>
                           </div>
 
-                          {getAllInstallmentOptions(isDiscountActive ? finalPrice : displayPrice).map((option) => (
+                          {installmentOptions.map((option) => (
                             <Button
                               key={option.installments}
                               ref={(el) => (installmentRefs.current[option.installments] = el)}

@@ -43,6 +43,14 @@ const ProductCard = ({ id, images, name, brand, category, specs, description, pr
   const { addProduct, removeProduct, isSelected, canAddMore, selectedProducts } = useComparison();
   
   const [couponValidation, setCouponValidation] = useState<{ valid: boolean; coupon?: any }>({ valid: false });
+  const [installmentOptions, setInstallmentOptions] = useState<InstallmentOption[]>([]);
+  
+  const isDiscountActive = couponValidation.valid;
+  const mainImage = images[0] || "/placeholder.svg";
+  const hasMultipleImages = images.length > 1;
+
+  // Calcular o preço de vitrine baseado no passOnCashDiscount
+  const displayPrice = calculateDisplayPrice(price, passOnCashDiscount);
   
   useEffect(() => {
     const validateCoupon = async () => {
@@ -56,12 +64,13 @@ const ProductCard = ({ id, images, name, brand, category, specs, description, pr
     validateCoupon();
   }, [coupon]);
   
-  const isDiscountActive = couponValidation.valid;
-  const mainImage = images[0] || "/placeholder.svg";
-  const hasMultipleImages = images.length > 1;
-  
-  // Calcular o preço de vitrine baseado no passOnCashDiscount
-  const displayPrice = calculateDisplayPrice(price, passOnCashDiscount);
+  useEffect(() => {
+    const loadOptions = async () => {
+      const options = await getAllInstallmentOptions(displayPrice);
+      setInstallmentOptions(options);
+    };
+    loadOptions();
+  }, [displayPrice]);
   
   // Calcular preço a mostrar com prioridades: cupom + parcelamento > cupom > pagamento selecionado > original
   let finalPrice = displayPrice;
@@ -180,9 +189,8 @@ const ProductCard = ({ id, images, name, brand, category, specs, description, pr
       messageLines.push("");
       
       // 2. Opções de parcelamento
-      const options = getAllInstallmentOptions(displayPrice);
       messageLines.push(`💳 *Parcelado (Visa/Mastercard):*`);
-      options.forEach(option => {
+      installmentOptions.forEach(option => {
         messageLines.push(
           `• ${option.installments}x de R$ ${option.installmentValue.toFixed(2)} ` +
           `(Total: R$ ${option.totalAmount.toFixed(2)})`
@@ -261,7 +269,7 @@ const ProductCard = ({ id, images, name, brand, category, specs, description, pr
               R$ {displayPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </p>
             <p className="text-xs text-muted-foreground mt-0.5">
-              em até 12x de R$ {(getAllInstallmentOptions(displayPrice).find(o => o.installments === 12)?.installmentValue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              em até 12x de R$ {(installmentOptions.find(o => o.installments === 12)?.installmentValue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </p>
           </div>
         </CardContent>
