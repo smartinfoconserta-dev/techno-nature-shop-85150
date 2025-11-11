@@ -6,7 +6,6 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
-import Install from "./pages/Install";
 import CustomerLogin from "./pages/CustomerLogin";
 import CustomerPortal from "./pages/CustomerPortal";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -27,7 +26,6 @@ const App = () => (
         <ComparisonProvider>
           <Routes>
             <Route path="/" element={<Index />} />
-            <Route path="/install" element={<Install />} />
             <Route path="/login" element={<CustomerLogin />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
