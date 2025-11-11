@@ -1,5 +1,7 @@
-import { User } from "lucide-react";
+import { User, RefreshCw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { clearAllCache } from "@/lib/appVersion";
+import { toast } from "sonner";
 import MobileMenu from "./MobileMenu";
 import SearchBar from "./SearchBar";
 
@@ -10,6 +12,11 @@ interface HeaderProps {
 
 const Header = ({ searchValue, onSearchChange }: HeaderProps) => {
   const navigate = useNavigate();
+
+  const handleClearCache = () => {
+    toast.success("Limpando cache e recarregando...");
+    setTimeout(() => clearAllCache(), 500);
+  };
 
   return (
     <>
@@ -33,6 +40,13 @@ const Header = ({ searchValue, onSearchChange }: HeaderProps) => {
           />
           
           <div className="flex items-center gap-2">
+            <button
+              onClick={handleClearCache}
+              className="h-10 w-10 flex items-center justify-center rounded-full hover:bg-muted transition-colors"
+              title="Limpar cache e atualizar"
+            >
+              <RefreshCw className="h-4 w-4 text-foreground" />
+            </button>
             <button
               onClick={() => navigate('/login')}
               className="h-10 w-10 flex items-center justify-center rounded-full hover:bg-muted transition-colors"

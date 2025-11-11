@@ -104,6 +104,7 @@ function mapRowToProduct(row: any): Product {
 
 export const productsStore = {
   async refreshFromBackend(): Promise<void> {
+    const timestamp = Date.now();
     const { data, error } = await supabase
       .from("products")
       .select("*")
@@ -115,6 +116,7 @@ export const productsStore = {
     const mapped = (data || []).map(mapRowToProduct);
     productsCache = mapped;
     saveProductsCache();
+    console.log(`✅ Produtos atualizados: ${mapped.length} produtos (timestamp: ${timestamp})`);
   },
 
   getAllProducts(): Product[] {

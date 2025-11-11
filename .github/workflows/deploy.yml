@@ -21,6 +21,39 @@ jobs:
       - name: 📦 Instalar dependências
         run: npm ci
 
+      - name: 📝 Incrementar versão da aplicação
+        run: |
+          VERSION=$(date +%Y.%m.%d.%H%M)
+          echo "const APP_VERSION = \"$VERSION\"; // Auto-gerado no deploy" > src/lib/appVersion.ts
+          echo "const VERSION_KEY = \"app_version\";" >> src/lib/appVersion.ts
+          echo "" >> src/lib/appVersion.ts
+          echo "export function checkAppVersion() {" >> src/lib/appVersion.ts
+          echo "  const stored = localStorage.getItem(VERSION_KEY);" >> src/lib/appVersion.ts
+          echo "  if (stored !== APP_VERSION) {" >> src/lib/appVersion.ts
+          echo "    console.log(\`🔄 Nova versão \${APP_VERSION} detectada (anterior: \${stored || 'nenhuma'})\`);" >> src/lib/appVersion.ts
+          echo "    localStorage.clear();" >> src/lib/appVersion.ts
+          echo "    sessionStorage.clear();" >> src/lib/appVersion.ts
+          echo "    if ('caches' in window) {" >> src/lib/appVersion.ts
+          echo "      caches.keys().then(names => { names.forEach(name => caches.delete(name)); });" >> src/lib/appVersion.ts
+          echo "    }" >> src/lib/appVersion.ts
+          echo "    localStorage.setItem(VERSION_KEY, APP_VERSION);" >> src/lib/appVersion.ts
+          echo "    window.location.reload();" >> src/lib/appVersion.ts
+          echo "  }" >> src/lib/appVersion.ts
+          echo "}" >> src/lib/appVersion.ts
+          echo "" >> src/lib/appVersion.ts
+          echo "export function getCurrentVersion() { return APP_VERSION; }" >> src/lib/appVersion.ts
+          echo "" >> src/lib/appVersion.ts
+          echo "export function clearAllCache() {" >> src/lib/appVersion.ts
+          echo "  console.log('🧹 Limpando cache manualmente...');" >> src/lib/appVersion.ts
+          echo "  localStorage.clear();" >> src/lib/appVersion.ts
+          echo "  sessionStorage.clear();" >> src/lib/appVersion.ts
+          echo "  if ('caches' in window) {" >> src/lib/appVersion.ts
+          echo "    caches.keys().then(names => { names.forEach(name => caches.delete(name)); });" >> src/lib/appVersion.ts
+          echo "  }" >> src/lib/appVersion.ts
+          echo "  window.location.href = window.location.href.split('?')[0] + '?t=' + Date.now();" >> src/lib/appVersion.ts
+          echo "}" >> src/lib/appVersion.ts
+          echo "✅ Versão definida: $VERSION"
+
       - name: 🏗️ Buildar projeto
         run: npm run build
 

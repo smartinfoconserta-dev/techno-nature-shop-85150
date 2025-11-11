@@ -4,10 +4,16 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     
-    <!-- Anti-Cache Meta Tags -->
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <!-- Versão da Aplicação -->
+    <meta name="app-version" content="2.0.0" />
+    
+    <!-- Anti-Cache Meta Tags AGRESSIVO -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0" />
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
+    
+    <!-- DNS Prefetch para Supabase -->
+    <link rel="dns-prefetch" href="https://sqgssikzmacnrvnmxbxe.supabase.co" />
     
     <!-- CRITICAL: Mata Service Worker ANTES de qualquer outro script -->
     <script>
