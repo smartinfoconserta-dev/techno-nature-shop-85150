@@ -1,100 +1,115 @@
+import { supabase } from "@/integrations/supabase/client";
+
 export interface Brand {
   id: string;
   name: string;
   category: string;
-  createdAt: Date;
+  createdAt: string;
 }
 
-const STORAGE_KEY = "catalog_brands";
-
-// Marcas iniciais
-const initialBrands: Brand[] = [
-  { id: "1", name: "Samsung", category: "Celulares", createdAt: new Date() },
-  { id: "2", name: "Motorola", category: "Celulares", createdAt: new Date() },
-  { id: "3", name: "Apple", category: "Celulares", createdAt: new Date() },
-  { id: "4", name: "Xiaomi", category: "Celulares", createdAt: new Date() },
-  { id: "5", name: "Acer", category: "Notebooks", createdAt: new Date() },
-  { id: "6", name: "HP", category: "Notebooks", createdAt: new Date() },
-  { id: "7", name: "Dell", category: "Notebooks", createdAt: new Date() },
-  { id: "8", name: "Lenovo", category: "Notebooks", createdAt: new Date() },
-  { id: "9", name: "Samsung", category: "Notebooks", createdAt: new Date() },
-  { id: "10", name: "Apple", category: "Notebooks", createdAt: new Date() },
-];
-
 export const brandsStore = {
-  getAllBrands: (): Brand[] => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (!stored) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(initialBrands));
-      return initialBrands;
+  async getAllBrands(): Promise<Brand[]> {
+    const { data, error } = await supabase
+      .from("brands")
+      .select("*")
+      .order("name");
+
+    if (error) {
+      console.error("Erro ao buscar marcas:", error);
+      return [];
     }
-    return JSON.parse(stored).map((b: any) => ({
-      ...b,
-      createdAt: new Date(b.createdAt),
+
+    return data.map((brand) => ({
+      id: brand.id,
+      name: brand.name,
+      category: brand.category,
+      createdAt: brand.created_at,
     }));
   },
 
-  getBrandsByCategory: (category: string): Brand[] => {
-    const allBrands = brandsStore.getAllBrands();
-    return allBrands
-      .filter(b => b.category === category)
-      .sort((a, b) => a.name.localeCompare(b.name));
-  },
+  async getBrandsByCategory(category: string): Promise<Brand[]> {
+    const { data, error } = await supabase
+      .from("brands")
+      .select("*")
+      .eq("category", category)
+      .order("name");
 
-  addBrand: (name: string, category: string): Brand => {
-    const brands = brandsStore.getAllBrands();
-    
-    // Verificar duplicata
-    const exists = brands.some(
-      b => b.name.toLowerCase() === name.toLowerCase() && b.category === category
-    );
-    
-    if (exists) {
-      throw new Error("Esta marca já existe nesta categoria");
+    if (error) {
+      console.error("Erro ao buscar marcas por categoria:", error);
+      return [];
     }
 
-    const newBrand: Brand = {
-      id: Date.now().toString(),
-      name: name.trim(),
-      category,
-      createdAt: new Date(),
+    return data.map((brand) => ({
+      id: brand.id,
+      name: brand.name,
+      category: brand.category,
+      createdAt: brand.created_at,
+    }));
+  },
+
+  async addBrand(name: string, category: string): Promise<Brand> {
+    const trimmedName = name.trim();
+
+    if (trimmedName.length < 2 || trimmedName.length > 30) {
+      throw new Error("O nome deve ter entre 2 e 30 caracteres");
+    }
+
+    const { data, error } = await supabase
+      .from("brands")
+      .insert([{ name: trimmedName, category }])
+      .select()
+      .single();
+
+    if (error) {
+      if (error.code === "23505") {
+        throw new Error("Já existe uma marca com este nome nesta categoria");
+      }
+      throw error;
+    }
+
+    return {
+      id: data.id,
+      name: data.name,
+      category: data.category,
+      createdAt: data.created_at,
     };
-
-    const updatedBrands = [...brands, newBrand];
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedBrands));
-    return newBrand;
   },
 
-  updateBrand: (id: string, name: string, category: string): Brand => {
-    const brands = brandsStore.getAllBrands();
-    const index = brands.findIndex(b => b.id === id);
-    
-    if (index === -1) {
-      throw new Error("Marca não encontrada");
+  async updateBrand(id: string, name: string, category: string): Promise<Brand> {
+    const trimmedName = name.trim();
+
+    if (trimmedName.length < 2 || trimmedName.length > 30) {
+      throw new Error("O nome deve ter entre 2 e 30 caracteres");
     }
 
-    // Verificar duplicata (exceto ela mesma)
-    const exists = brands.some(
-      b => b.id !== id && b.name.toLowerCase() === name.toLowerCase() && b.category === category
-    );
-    
-    if (exists) {
-      throw new Error("Já existe uma marca com este nome nesta categoria");
+    const { data, error } = await supabase
+      .from("brands")
+      .update({ name: trimmedName, category })
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) {
+      if (error.code === "23505") {
+        throw new Error("Já existe uma marca com este nome nesta categoria");
+      }
+      throw error;
     }
 
-    brands[index] = {
-      ...brands[index],
-      name: name.trim(),
-      category,
+    return {
+      id: data.id,
+      name: data.name,
+      category: data.category,
+      createdAt: data.created_at,
     };
-
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(brands));
-    return brands[index];
   },
 
-  deleteBrand: (id: string): void => {
-    const brands = brandsStore.getAllBrands();
-    const filtered = brands.filter(b => b.id !== id);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
+  async deleteBrand(id: string): Promise<void> {
+    const { error } = await supabase.from("brands").delete().eq("id", id);
+
+    if (error) {
+      console.error("Erro ao deletar marca:", error);
+      throw error;
+    }
   },
 };

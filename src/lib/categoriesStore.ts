@@ -1,3 +1,5 @@
+import { supabase } from "@/integrations/supabase/client";
+
 export interface Category {
   id: string;
   name: string;
@@ -5,122 +7,104 @@ export interface Category {
   createdAt: string;
 }
 
-const STORAGE_KEY = "categories_data";
-
-const initialCategories: Category[] = [
-  {
-    id: "1",
-    name: "Notebooks",
-    icon: "Laptop",
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "2",
-    name: "Celulares",
-    icon: "Smartphone",
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "3",
-    name: "Tablets",
-    icon: "Tablet",
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "4",
-    name: "Smartwatches",
-    icon: "Watch",
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "5",
-    name: "Fones de Ouvido",
-    icon: "Headphones",
-    createdAt: new Date().toISOString(),
-  },
-];
-
 export const categoriesStore = {
-  getAllCategories(): Category[] {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (!stored) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(initialCategories));
-      return initialCategories;
-    }
-    return JSON.parse(stored);
-  },
+  async getAllCategories(): Promise<Category[]> {
+    const { data, error } = await supabase
+      .from("categories")
+      .select("*")
+      .order("name");
 
-  getCategoryNames(): string[] {
-    return this.getAllCategories()
-      .map((c) => c.name)
-      .sort();
-  },
-
-  addCategory(name: string, icon: string): Category {
-    const categories = this.getAllCategories();
-    
-    const nameLower = name.trim().toLowerCase();
-    const exists = categories.some((c) => c.name.toLowerCase() === nameLower);
-    
-    if (exists) {
-      throw new Error("Já existe uma categoria com este nome");
+    if (error) {
+      console.error("Erro ao buscar categorias:", error);
+      return [];
     }
 
-    if (name.trim().length < 3 || name.trim().length > 30) {
+    return data.map((cat) => ({
+      id: cat.id,
+      name: cat.name,
+      icon: cat.icon,
+      createdAt: cat.created_at,
+    }));
+  },
+
+  async getCategoryNames(): Promise<string[]> {
+    const categories = await this.getAllCategories();
+    return categories.map((c) => c.name).sort();
+  },
+
+  async addCategory(name: string, icon: string): Promise<Category> {
+    const trimmedName = name.trim();
+
+    if (trimmedName.length < 3 || trimmedName.length > 30) {
       throw new Error("O nome deve ter entre 3 e 30 caracteres");
     }
 
-    const newCategory: Category = {
-      id: Date.now().toString(),
-      name: name.trim(),
-      icon,
-      createdAt: new Date().toISOString(),
-    };
+    const { data, error } = await supabase
+      .from("categories")
+      .insert([{ name: trimmedName, icon }])
+      .select()
+      .single();
 
-    categories.push(newCategory);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(categories));
-    return newCategory;
-  },
-
-  updateCategory(id: string, name: string, icon: string): Category {
-    const categories = this.getAllCategories();
-    const index = categories.findIndex((c) => c.id === id);
-
-    if (index === -1) throw new Error("Categoria não encontrada");
-
-    const nameLower = name.trim().toLowerCase();
-    const exists = categories.some(
-      (c) => c.id !== id && c.name.toLowerCase() === nameLower
-    );
-
-    if (exists) {
-      throw new Error("Já existe uma categoria com este nome");
+    if (error) {
+      if (error.code === "23505") {
+        throw new Error("Já existe uma categoria com este nome");
+      }
+      throw error;
     }
 
-    if (name.trim().length < 3 || name.trim().length > 30) {
+    return {
+      id: data.id,
+      name: data.name,
+      icon: data.icon,
+      createdAt: data.created_at,
+    };
+  },
+
+  async updateCategory(id: string, name: string, icon: string): Promise<Category> {
+    const trimmedName = name.trim();
+
+    if (trimmedName.length < 3 || trimmedName.length > 30) {
       throw new Error("O nome deve ter entre 3 e 30 caracteres");
     }
 
-    categories[index] = {
-      ...categories[index],
-      name: name.trim(),
-      icon,
+    const { data, error } = await supabase
+      .from("categories")
+      .update({ name: trimmedName, icon })
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) {
+      if (error.code === "23505") {
+        throw new Error("Já existe uma categoria com este nome");
+      }
+      throw error;
+    }
+
+    return {
+      id: data.id,
+      name: data.name,
+      icon: data.icon,
+      createdAt: data.created_at,
     };
-
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(categories));
-    return categories[index];
   },
 
-  deleteCategory(id: string): void {
-    const categories = this.getAllCategories();
-    const filtered = categories.filter((c) => c.id !== id);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
+  async deleteCategory(id: string): Promise<void> {
+    const { error } = await supabase.from("categories").delete().eq("id", id);
+
+    if (error) {
+      console.error("Erro ao deletar categoria:", error);
+      throw error;
+    }
   },
 
-  getCategoryIcon(categoryName: string): string {
-    const category = this.getAllCategories().find(
-      (c) => c.name === categoryName
-    );
-    return category?.icon || "Package";
+  async getCategoryIcon(categoryName: string): Promise<string> {
+    const { data } = await supabase
+      .from("categories")
+      .select("icon")
+      .eq("name", categoryName)
+      .single();
+
+    return data?.icon || "Package";
   },
 };

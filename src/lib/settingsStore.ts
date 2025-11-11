@@ -1,6 +1,8 @@
+import { supabase } from "@/integrations/supabase/client";
+
 export interface TaxSettings {
-  digitalTaxRate: number; // Taxa de imposto em % (ex: 6 = 6%)
-  includeCashInTax: boolean; // Se true, aplica imposto sobre dinheiro físico também
+  digitalTaxRate: number;
+  includeCashInTax: boolean;
 }
 
 export interface InstallmentRate {
@@ -8,98 +10,123 @@ export interface InstallmentRate {
   rate: number;
 }
 
-interface Settings {
-  taxSettings: TaxSettings;
+export interface Settings extends TaxSettings {
   installmentRates: InstallmentRate[];
 }
 
-const STORAGE_KEY = "app_settings";
-
-// Taxas padrão Visa/Mastercard
 const DEFAULT_INSTALLMENT_RATES: InstallmentRate[] = [
-  { installments: 1, rate: 2.85 },
-  { installments: 2, rate: 3.90 },
-  { installments: 3, rate: 4.90 },
-  { installments: 4, rate: 5.90 },
-  { installments: 5, rate: 6.90 },
-  { installments: 6, rate: 7.90 },
-  { installments: 7, rate: 8.90 },
-  { installments: 8, rate: 9.90 },
-  { installments: 9, rate: 9.90 },
-  { installments: 10, rate: 9.90 },
-  { installments: 11, rate: 9.90 },
-  { installments: 12, rate: 9.90 },
+  { installments: 1, rate: 0 },
+  { installments: 2, rate: 2.99 },
+  { installments: 3, rate: 3.99 },
+  { installments: 4, rate: 4.99 },
+  { installments: 5, rate: 5.99 },
+  { installments: 6, rate: 6.99 },
+  { installments: 7, rate: 7.99 },
+  { installments: 8, rate: 8.99 },
+  { installments: 9, rate: 9.99 },
+  { installments: 10, rate: 10.99 },
+  { installments: 11, rate: 11.99 },
+  { installments: 12, rate: 12.99 },
 ];
 
-const DEFAULT_TAX_SETTINGS: TaxSettings = {
-  digitalTaxRate: 6,
-  includeCashInTax: false,
-};
-
 export const settingsStore = {
-  getSettings(): Settings {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (!stored) {
-      const defaultSettings: Settings = {
-        taxSettings: DEFAULT_TAX_SETTINGS,
+  async getSettings(): Promise<Settings> {
+    const { data, error } = await supabase
+      .from("settings")
+      .select("*")
+      .limit(1)
+      .single();
+
+    if (error || !data) {
+      return {
+        digitalTaxRate: 3.9,
+        includeCashInTax: false,
         installmentRates: DEFAULT_INSTALLMENT_RATES,
       };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultSettings));
-      return defaultSettings;
     }
-    return JSON.parse(stored);
-  },
 
-  updateTaxSettings(digitalTaxRate: number, includeCashInTax: boolean): void {
-    const settings = this.getSettings();
-    settings.taxSettings = {
-      digitalTaxRate,
-      includeCashInTax,
+    return {
+      digitalTaxRate: Number(data.digital_tax_rate),
+      includeCashInTax: data.include_cash_in_tax,
+      installmentRates: (data.installment_rates as any[]) || DEFAULT_INSTALLMENT_RATES,
     };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
   },
 
-  updateInstallmentRates(rates: InstallmentRate[]): void {
-    const settings = this.getSettings();
-    settings.installmentRates = rates.sort((a, b) => a.installments - b.installments);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+  async updateTaxSettings(
+    digitalTaxRate: number,
+    includeCashInTax: boolean
+  ): Promise<void> {
+    const { data: existing } = await supabase
+      .from("settings")
+      .select("id")
+      .limit(1)
+      .single();
+
+    if (existing) {
+      const { error } = await supabase
+        .from("settings")
+        .update({
+          digital_tax_rate: digitalTaxRate,
+          include_cash_in_tax: includeCashInTax,
+        })
+        .eq("id", existing.id);
+
+      if (error) {
+        console.error("Erro ao atualizar configurações de taxa:", error);
+        throw error;
+      }
+    }
   },
 
-  addInstallmentRate(installments: number, rate: number): void {
-    const settings = this.getSettings();
-    
-    // Verifica se já existe
-    const exists = settings.installmentRates.some(r => r.installments === installments);
+  async updateInstallmentRates(rates: InstallmentRate[]): Promise<void> {
+    const sorted = [...rates].sort((a, b) => a.installments - b.installments);
+
+    const { data: existing } = await supabase
+      .from("settings")
+      .select("id")
+      .limit(1)
+      .single();
+
+    if (existing) {
+      const { error } = await supabase
+        .from("settings")
+        .update({ installment_rates: sorted })
+        .eq("id", existing.id);
+
+      if (error) {
+        console.error("Erro ao atualizar taxas de parcelamento:", error);
+        throw error;
+      }
+    }
+  },
+
+  async addInstallmentRate(installments: number, rate: number): Promise<void> {
+    const settings = await this.getSettings();
+    const exists = settings.installmentRates.some((r) => r.installments === installments);
+
     if (exists) {
-      throw new Error("Já existe uma taxa configurada para este número de parcelas");
+      throw new Error(`Já existe uma taxa configurada para ${installments}x`);
     }
-    
-    settings.installmentRates.push({ installments, rate });
-    settings.installmentRates.sort((a, b) => a.installments - b.installments);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+
+    const newRates = [...settings.installmentRates, { installments, rate }];
+    await this.updateInstallmentRates(newRates);
   },
 
-  removeInstallmentRate(installments: number): void {
-    if (installments <= 12) {
-      throw new Error("Não é possível remover parcelas padrão (1-12x)");
+  async removeInstallmentRate(installments: number): Promise<void> {
+    if (installments >= 1 && installments <= 12) {
+      throw new Error("Não é possível remover taxas padrão (1x a 12x)");
     }
-    
-    const settings = this.getSettings();
-    settings.installmentRates = settings.installmentRates.filter(
-      r => r.installments !== installments
+
+    const settings = await this.getSettings();
+    const filtered = settings.installmentRates.filter((r) => r.installments !== installments);
+    await this.updateInstallmentRates(filtered);
+  },
+
+  async updateSingleRate(installments: number, rate: number): Promise<void> {
+    const settings = await this.getSettings();
+    const updated = settings.installmentRates.map((r) =>
+      r.installments === installments ? { installments, rate } : r
     );
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
-  },
-
-  updateSingleRate(installments: number, rate: number): void {
-    const settings = this.getSettings();
-    const rateObj = settings.installmentRates.find(r => r.installments === installments);
-    
-    if (!rateObj) {
-      throw new Error("Taxa não encontrada");
-    }
-    
-    rateObj.rate = rate;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+    await this.updateInstallmentRates(updated);
   },
 };
