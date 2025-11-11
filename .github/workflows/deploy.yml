@@ -1,4 +1,4 @@
-name: Deploy do site na Hostinger (modo fácil)
+name: Deploy Hostinger via FTPS
 
 on:
   push:
@@ -17,6 +17,95 @@ jobs:
         with:
           node-version: '18'
 
+      - name: Validar secrets obrigatórios
+        run: |
+          echo "🔍 Verificando secrets..."
+          MISSING=false
+          
+          if [ -z "${{ secrets.VITE_SUPABASE_URL }}" ]; then
+            echo "❌ VITE_SUPABASE_URL não definido"
+            MISSING=true
+          else
+            echo "✅ VITE_SUPABASE_URL encontrado"
+          fi
+          
+          if [ -z "${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}" ]; then
+            echo "❌ VITE_SUPABASE_PUBLISHABLE_KEY não definido"
+            MISSING=true
+          else
+            echo "✅ VITE_SUPABASE_PUBLISHABLE_KEY encontrado"
+          fi
+          
+          if [ -z "${{ secrets.VITE_SUPABASE_PROJECT_ID }}" ]; then
+            echo "❌ VITE_SUPABASE_PROJECT_ID não definido"
+            MISSING=true
+          else
+            echo "✅ VITE_SUPABASE_PROJECT_ID encontrado"
+          fi
+          
+          if [ -z "${{ secrets.FTP_HOST }}" ]; then
+            echo "❌ FTP_HOST não definido"
+            MISSING=true
+          else
+            echo "✅ FTP_HOST: ${{ secrets.FTP_HOST }}"
+          fi
+          
+          if [ -z "${{ secrets.FTP_USER }}" ]; then
+            echo "❌ FTP_USER não definido"
+            MISSING=true
+          else
+            echo "✅ FTP_USER: ${{ secrets.FTP_USER }}"
+          fi
+          
+          if [ -z "${{ secrets.FTP_PASS }}" ]; then
+            echo "❌ FTP_PASS não definido"
+            MISSING=true
+          else
+            echo "✅ FTP_PASS definido (senha oculta)"
+          fi
+          
+          if [ -z "${{ secrets.FTP_SERVER_DIR }}" ]; then
+            echo "⚠️ FTP_SERVER_DIR não definido, usando /public_html/"
+            echo "DEPLOY_PATH=/public_html/" >> $GITHUB_ENV
+          else
+            echo "✅ FTP_SERVER_DIR: ${{ secrets.FTP_SERVER_DIR }}"
+            echo "DEPLOY_PATH=${{ secrets.FTP_SERVER_DIR }}" >> $GITHUB_ENV
+          fi
+          
+          if [ "$MISSING" = true ]; then
+            echo ""
+            echo "❌ Faltam secrets! Configure em: Settings > Secrets and variables > Actions"
+            exit 1
+          fi
+          
+          echo ""
+          echo "✅ Todos os secrets obrigatórios estão configurados!"
+
+      - name: Testar conexão FTP
+        run: |
+          echo "🔌 Testando conexão FTP..."
+          echo "Host: ${{ secrets.FTP_HOST }}"
+          echo "User: ${{ secrets.FTP_USER }}"
+          echo "Path: ${{ env.DEPLOY_PATH }}"
+          echo ""
+          
+          curl -v --ssl --ftp-ssl-reqd \
+            --user "${{ secrets.FTP_USER }}:${{ secrets.FTP_PASS }}" \
+            "ftp://${{ secrets.FTP_HOST }}${{ env.DEPLOY_PATH }}" \
+            2>&1 | tee ftp-test.log
+          
+          if grep -q "230 User" ftp-test.log; then
+            echo ""
+            echo "✅ Login FTP bem-sucedido!"
+          else
+            echo ""
+            echo "❌ Falha no login FTP. Verifique as credenciais:"
+            echo "   FTP_HOST deve ser: 147.93.64.216 (sem ftp://)"
+            echo "   FTP_USER deve ser: u728860321"
+            echo "   FTP_PASS deve estar correto"
+            exit 1
+          fi
+
       - name: Instalar pacotes do projeto
         run: npm install
 
@@ -29,7 +118,15 @@ jobs:
       - name: Fazer o build (empacotar o site)
         run: npm run build
 
-      - name: Enviar o site pra Hostinger
+      - name: Verificar arquivos do build
+        run: |
+          echo "📦 Arquivos gerados no build:"
+          ls -lh dist/
+          echo ""
+          echo "📊 Tamanho total:"
+          du -sh dist/
+
+      - name: Enviar o site pra Hostinger via FTPS
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
           server: ${{ secrets.FTP_HOST }}
@@ -38,7 +135,20 @@ jobs:
           password: ${{ secrets.FTP_PASS }}
           protocol: ftps
           local-dir: dist/
-          server-dir: ${{ secrets.FTP_SERVER_DIR }}
+          server-dir: ${{ env.DEPLOY_PATH }}
           dangerous-clean-slate: false
           dry-run: false
           log-level: verbose
+
+      - name: Verificar site online
+        run: |
+          echo "🌐 Verificando https://ramontech.com.br ..."
+          sleep 5
+          STATUS=$(curl -I -s -o /dev/null -w "%{http_code}" https://ramontech.com.br 2>/dev/null || echo "000")
+          echo "Status HTTP: $STATUS"
+          
+          if [ "$STATUS" = "200" ] || [ "$STATUS" = "301" ] || [ "$STATUS" = "302" ]; then
+            echo "✅ Site está acessível!"
+          else
+            echo "⚠️ Site retornou status $STATUS. Pode precisar aguardar propagação."
+          fi
