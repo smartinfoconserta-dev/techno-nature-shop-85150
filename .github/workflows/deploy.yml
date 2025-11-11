@@ -1,210 +1,87 @@
-name: Deploy do site na Hostinger via FTPS
+name: 🚀 Deploy do site na Hostinger via FTPS
 
 on:
   push:
-    branches:
-      - main
+    branches: [ "main" ]
+  workflow_dispatch:
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Clonar o repositório
-        uses: actions/checkout@v3
+      - name: 🔍 Verificar repositório
+        uses: actions/checkout@v4
 
-      - name: Instalar Node.js 18
-        uses: actions/setup-node@v3
+      - name: ⚙️ Configurar Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: '18'
 
-      - name: Instalar dependências
-        run: npm install
+      - name: 📦 Instalar dependências
+        run: npm ci
 
-      - name: Validar secrets de FTP obrigatórios
-        run: |
-          echo "🔍 Validando secrets de FTP..."
-          missing=0
-          
-          # Validar apenas secrets do FTP (obrigatórios)
-          if [ -z "${{ secrets.FTP_HOST }}" ]; then
-            echo "❌ ERRO: FTP_HOST não definido!"
-            missing=1
-          else
-            echo "✅ FTP_HOST definido: ${{ secrets.FTP_HOST }}"
-          fi
-          
-          if [ -z "${{ secrets.FTP_USER }}" ]; then
-            echo "❌ ERRO: FTP_USER não definido!"
-            missing=1
-          else
-            echo "✅ FTP_USER definido"
-          fi
-          
-          if [ -z "${{ secrets.FTP_PASS }}" ]; then
-            echo "❌ ERRO: FTP_PASS não definido!"
-            missing=1
-          else
-            echo "✅ FTP_PASS definido (oculto)"
-          fi
-          
-          echo ""
-          echo "📁 Definindo caminho de deploy..."
-          
-          if [ "$missing" -eq 1 ]; then
-            echo ""
-            echo "❌ Secrets de FTP obrigatórios estão faltando!"
-            echo "📝 Configure em: Settings > Secrets and variables > Actions"
-            echo "   - FTP_HOST (ex: 147.93.64.216)"
-            echo "   - FTP_USER (ex: u728860321)"
-            echo "   - FTP_PASS (sua senha FTP)"
-            exit 1
-          fi
-          
-          echo ""
-          echo "✅ Todos os secrets de FTP configurados!"
-
-      - name: Definir caminho de deploy
-        run: |
-          if [ -z "${{ secrets.FTP_SERVER_DIR }}" ]; then
-            # A raiz do FTP já é o public_html do Hostinger
-            echo "⚙️ Usando padrão DEPLOY_PATH=/ (raiz do FTP)"
-            echo "DEPLOY_PATH=/" >> $GITHUB_ENV
-          else
-            RAW="${{ secrets.FTP_SERVER_DIR }}"
-            # Normaliza: garante barra inicial e final, remove repetições
-            NORM="/${RAW#/}"
-            case "$NORM" in
-              */) ;; 
-              *) NORM="$NORM/";;
-            esac
-            NORM="${NORM//\/\//\/}"
-
-            # Proteção: se o usuário informar /public_html/, forçamos raiz
-            if [ "$NORM" = "/public_html/" ]; then
-              echo "⚠️ FTP_SERVER_DIR=/public_html/ detectado. Seu FTP já inicia em public_html."
-              echo "⚙️ Ajustando automaticamente para DEPLOY_PATH=/"
-              echo "DEPLOY_PATH=/" >> $GITHUB_ENV
-              exit 0
-            fi
-
-            # Bloquear caminhos claramente inválidos
-            if echo "$NORM" | grep -q "public_html/public_html"; then
-              echo "❌ Caminho inválido: $NORM (geraria duplicação)"
-              exit 1
-            fi
-
-            echo "✅ FTP_SERVER_DIR normalizado: $NORM"
-            echo "DEPLOY_PATH=$NORM" >> $GITHUB_ENV
-          fi
-          echo "📁 Deploy será feito em: $DEPLOY_PATH"
-
-      - name: Detectar ou criar .env
-        run: |
-          echo "🔍 Verificando arquivo .env..."
-          
-          if [ -f .env ] && [ -s .env ]; then
-            echo "✅ Arquivo .env encontrado no repositório, usando existente."
-            cat .env
-          else
-            echo "⚠️ Arquivo .env não encontrado ou vazio."
-            
-            # Tentar criar a partir dos secrets (se existirem)
-            if [ -n "${{ secrets.VITE_SUPABASE_URL }}" ]; then
-              echo "📝 Criando .env a partir dos secrets GitHub..."
-              echo "VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }}" > .env
-              echo "VITE_SUPABASE_PUBLISHABLE_KEY=${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}" >> .env
-              echo "VITE_SUPABASE_PROJECT_ID=${{ secrets.VITE_SUPABASE_PROJECT_ID }}" >> .env
-              echo "✅ Arquivo .env criado com sucesso"
-            else
-              echo "⚠️ Secrets VITE_SUPABASE_* não definidos, build usará variáveis padrão"
-            fi
-          fi
-
-      - name: Testar conexão FTP
-        run: |
-          echo "🔐 Testando login FTPS em ${{ secrets.FTP_HOST }}..."
-          echo "📁 Caminho de deploy: ${{ env.DEPLOY_PATH }}"
-          
-          # Testar conexão FTPS com curl (porta 21, ssl-reqd)
-          curl -v --ssl-reqd --ftp-ssl -k \
-            --user "${{ secrets.FTP_USER }}:${{ secrets.FTP_PASS }}" \
-            "ftp://${{ secrets.FTP_HOST }}${{ env.DEPLOY_PATH }}" 2>&1 | tee ftp_test.log
-          
-          # Verificar se houve erro 530 (login incorreto)
-          if grep -q "530" ftp_test.log; then
-            echo ""
-            echo "❌ ERRO 530: Login FTP incorreto!"
-            echo "🔍 Verifique no GitHub Secrets:"
-            echo "   - FTP_HOST = apenas IP ou domínio (SEM ftp://)"
-            echo "   - FTP_USER = usuário FTP correto"
-            echo "   - FTP_PASS = senha FTP correta"
-            echo ""
-            echo "💡 Teste suas credenciais em FileZilla/WinSCP primeiro!"
-            exit 1
-          fi
-          
-          echo "✅ Conexão FTPS bem-sucedida!"
-        continue-on-error: false
-
-      - name: Listar diretório remoto
-        run: |
-          echo "📂 Listando conteúdo de ${{ env.DEPLOY_PATH }}..."
-          curl -v --ssl-reqd --ftp-ssl -k \
-            --user "${{ secrets.FTP_USER }}:${{ secrets.FTP_PASS }}" \
-            "ftp://${{ secrets.FTP_HOST }}${{ env.DEPLOY_PATH }}" || echo "⚠️ Não foi possível listar. Verifique permissões."
-        continue-on-error: true
-
-      - name: Fazer o build (compilar site)
+      - name: 🏗️ Buildar projeto
         run: npm run build
 
-      - name: Verificar arquivos do build
+      - name: 🔐 Validar secrets obrigatórios
         run: |
-          echo "📦 Arquivos gerados em dist/:"
-          ls -alh dist/
+          if [ -z "${{ secrets.FTP_HOST }}" ] || [ -z "${{ secrets.FTP_USER }}" ] || [ -z "${{ secrets.FTP_PASS }}" ]; then
+            echo "❌ ERRO: Secrets FTP obrigatórios ausentes!"
+            exit 1
+          fi
+          echo "✅ Secrets FTP detectados com sucesso."
 
-      - name: Enviar o site pra Hostinger via FTPS
+      - name: 🗂️ Definir caminho de deploy
+        run: |
+          if [ -z "${{ secrets.FTP_SERVER_DIR }}" ]; then
+            echo "⚙️ Usando DEPLOY_PATH=./ (raiz do FTP)"
+            echo "DEPLOY_PATH=./" >> $GITHUB_ENV
+          else
+            RAW="${{ secrets.FTP_SERVER_DIR }}"
+            NORM="./${RAW#./}"
+            case "$NORM" in */) ;; *) NORM="$NORM/";; esac
+            if echo "$NORM" | grep -q "public_html/public_html"; then
+              echo "❌ Caminho inválido: $NORM"
+              exit 1
+            fi
+            echo "✅ Caminho de deploy definido: $NORM"
+            echo "DEPLOY_PATH=$NORM" >> $GITHUB_ENV
+          fi
+
+      - name: 🔎 Testar login FTP
+        run: |
+          echo "🔍 Testando conexão FTPS..."
+          curl -v --ssl-reqd --ftp-ssl --user "${{ secrets.FTP_USER }}:${{ secrets.FTP_PASS }}" "ftp://${{ secrets.FTP_HOST }}" || true
+
+      - name: 📂 Listar diretório remoto antes do deploy
+        run: |
+          curl -v --ssl-reqd --ftp-ssl --user "${{ secrets.FTP_USER }}:${{ secrets.FTP_PASS }}" "ftp://${{ secrets.FTP_HOST }}${{ env.DEPLOY_PATH }}" || true
+
+      - name: 🚀 Enviar site pra Hostinger via FTPS
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
           server: ${{ secrets.FTP_HOST }}
           username: ${{ secrets.FTP_USER }}
           password: ${{ secrets.FTP_PASS }}
-          protocol: ftps
           port: 21
-          local-dir: dist/
+          protocol: ftps
           server-dir: ${{ env.DEPLOY_PATH }}
-          dangerous-clean-slate: true
-          dry-run: false
+          local-dir: dist/
           log-level: verbose
+          dangerous-clean-slate: true
 
-      - name: Conferir arquivos no servidor após deploy
+      - name: 🧾 Listar diretório remoto após deploy
         run: |
-          echo "📂 Conteúdo final em ${{ env.DEPLOY_PATH }}:"
-          curl -v --ssl-reqd --ftp-ssl -k \
-            --user "${{ secrets.FTP_USER }}:${{ secrets.FTP_PASS }}" \
-            "ftp://${{ secrets.FTP_HOST }}${{ env.DEPLOY_PATH }}" || true
-        continue-on-error: true
+          echo "📂 Conteúdo final no servidor:"
+          curl -v --ssl-reqd --ftp-ssl --user "${{ secrets.FTP_USER }}:${{ secrets.FTP_PASS }}" "ftp://${{ secrets.FTP_HOST }}${{ env.DEPLOY_PATH }}" || true
 
-      - name: Verificar site online
+      - name: 🌐 Testar site online
         run: |
-          echo "🌐 Testando site em https://ramontech.com.br..."
-          STATUS=$(curl -I -s -o /dev/null -w "%{http_code}" https://ramontech.com.br || echo "000")
-          echo "🔎 Status HTTP: $STATUS"
-          
-          if [ "$STATUS" = "200" ] || [ "$STATUS" = "301" ] || [ "$STATUS" = "302" ]; then
-            echo "✅ Site acessível com sucesso!"
-          else
-            echo "⚠️ Site não respondeu corretamente. Aguarde propagação ou verifique configuração."
-          fi
+          echo "🌍 Verificando status HTTPS..."
+          curl -I https://ramontech.com.br
 
-      - name: Validar HTML online
+      - name: 🧠 Validar HTML no ar
         run: |
-          echo "🔍 Validando conteúdo HTML..."
           HTML=$(curl -s https://ramontech.com.br/index.html || true)
-          if echo "$HTML" | grep -q "<title>Ramon Tech Solutions"; then
-            echo "✅ Index correto no ar com título esperado"
-          else
-            echo "⚠️ Título não encontrado (pode ser cache antigo ou deploy incorreto)"
-            echo "Faça hard reload (Ctrl+F5) ou teste em janela anônima"
-          fi
-        continue-on-error: true
+          echo "$HTML" | grep -q "<title>Ramon Tech" && echo "✅ Página carregada com sucesso" || { echo "❌ HTML inesperado"; exit 1; }
