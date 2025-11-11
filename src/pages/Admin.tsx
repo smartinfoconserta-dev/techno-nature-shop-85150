@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
-import { useMigrateFromLocalStorage } from "@/hooks/useMigrateFromLocalStorage";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -26,9 +25,8 @@ const Admin = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("dashboard");
   const [productCount, setProductCount] = useState<number>(0);
-  const { isMigrating, migrationComplete } = useMigrateFromLocalStorage();
 
-  // Refresh inicial dos dados em background quando a tela abre ou migração conclui
+  // Refresh inicial dos dados em background quando a tela abre
   useEffect(() => {
     const loadData = async () => {
       await productsStore.refreshFromBackend();
@@ -37,7 +35,7 @@ const Admin = () => {
       updateProductCount();
     };
     loadData();
-  }, [migrationComplete]);
+  }, []);
 
   const updateProductCount = () => {
     setProductCount(productsStore.getAllProducts().length);
@@ -56,18 +54,6 @@ const Admin = () => {
     await logout();
     navigate("/");
   };
-
-  if (isMigrating) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center space-y-4">
-          <Loader2 className="h-12 w-12 animate-spin mx-auto text-primary" />
-          <h2 className="text-2xl font-bold">Migrando dados...</h2>
-          <p className="text-muted-foreground">Aguarde enquanto seus dados são transferidos para o backend.</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <SidebarProvider>

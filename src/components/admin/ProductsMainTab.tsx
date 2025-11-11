@@ -4,7 +4,6 @@ import ProductsTab from "./ProductsTab";
 import BrandsTab from "./BrandsTab";
 import CategoriesTab from "./CategoriesTab";
 import ImportProductsTab from "./ImportProductsTab";
-import ImportFromBrowserDialog from "./ImportFromBrowserDialog";
 import { Package, Tags, FolderOpen, Upload } from "lucide-react";
 
 const ProductsMainTab = () => {
@@ -12,10 +11,6 @@ const ProductsMainTab = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-end">
-        <ImportFromBrowserDialog />
-      </div>
-      
       <Tabs value={activeSubTab} onValueChange={setActiveSubTab}>
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="catalog" className="gap-2">

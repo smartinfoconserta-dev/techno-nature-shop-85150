@@ -65,24 +65,6 @@ export const ProductComparisonModal: React.FC<ProductComparisonModalProps> = ({
     setLoading(true);
     setError(null);
 
-    // Verificar cache
-    const cacheKey = `comparison_${selectedProducts.map(p => p.id).sort().join('_')}`;
-    const cached = localStorage.getItem(cacheKey);
-    
-    if (cached) {
-      try {
-        const parsedCache = JSON.parse(cached);
-        // Cache válido por 24h
-        if (Date.now() - parsedCache.timestamp < 24 * 60 * 60 * 1000) {
-          setResult(parsedCache.data);
-          setLoading(false);
-          return;
-        }
-      } catch (e) {
-        console.error('Cache inválido:', e);
-      }
-    }
-
     try {
       const { data, error: funcError } = await supabase.functions.invoke('compare-products', {
         body: { 
@@ -100,12 +82,6 @@ export const ProductComparisonModal: React.FC<ProductComparisonModalProps> = ({
       if (funcError) throw funcError;
       
       setResult(data);
-      
-      // Salvar no cache
-      localStorage.setItem(cacheKey, JSON.stringify({
-        data,
-        timestamp: Date.now()
-      }));
     } catch (err: any) {
       console.error('Erro ao comparar produtos:', err);
       setError(err.message || 'Erro ao analisar produtos. Tente novamente.');
