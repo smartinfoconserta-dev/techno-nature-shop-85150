@@ -13,10 +13,11 @@
     <script>
       (function() {
         'use strict';
-        var FLAG_KEY = 'sw_killed_v2';
+        var FLAG_KEY = 'sw_killed_v5';
         var alreadyKilled = localStorage.getItem(FLAG_KEY);
         
-        if ('serviceWorker' in navigator && !alreadyKilled) {
+        // ALWAYS kill Service Workers on every load until flag is set
+        if ('serviceWorker' in navigator) {
           navigator.serviceWorker.getRegistrations().then(function(registrations) {
             var hasActive = false;
             registrations.forEach(function(reg) {
@@ -32,17 +33,31 @@
                   return caches.delete(name);
                 }));
               }).then(function() {
-                console.log('✅ Service Workers e caches removidos (inline)');
-                localStorage.setItem(FLAG_KEY, 'true');
-                if (hasActive && navigator.serviceWorker.controller) {
+                console.log('✅ Service Workers e caches removidos v5 (inline)');
+                
+                // Force clear PWA-related localStorage
+                if (!alreadyKilled) {
+                  ['products_data', 'quick_sales_data', 'receivables_data', 
+                   'monthly_reports_data', 'last_month_check', 'app_settings',
+                   'customer_session', 'sw_killed_v2', 'sw_killed_v3', 'sw_killed_v4',
+                   'cleared_products_v4', 'pwa_killed_v4'].forEach(function(key) {
+                    localStorage.removeItem(key);
+                  });
+                  localStorage.setItem(FLAG_KEY, 'true');
+                  console.log('🧹 LocalStorage PWA limpo');
+                }
+                
+                if (hasActive && navigator.serviceWorker.controller && !alreadyKilled) {
                   console.log('🔄 Recarregando para aplicar mudanças...');
                   location.reload();
                 }
               });
             } else {
-              localStorage.setItem(FLAG_KEY, 'true');
-              if (hasActive && navigator.serviceWorker.controller) {
-                location.reload();
+              if (!alreadyKilled) {
+                localStorage.setItem(FLAG_KEY, 'true');
+                if (hasActive && navigator.serviceWorker.controller) {
+                  location.reload();
+                }
               }
             }
           });

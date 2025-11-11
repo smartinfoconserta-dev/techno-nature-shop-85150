@@ -1,4 +1,4 @@
-const APP_CACHE_VERSION = "4";
+const APP_CACHE_VERSION = "5";
 
 const CACHE_KEYS = [
   "products_data",
@@ -25,11 +25,20 @@ export function ensureFreshCache() {
       console.log("Cache cleared and version updated to", APP_CACHE_VERSION);
     }
 
-    // One-shot: force clear products_data for version 4
-    if (!localStorage.getItem("cleared_products_v4")) {
-      console.log("One-shot: Clearing products_data for v4...");
+    // One-shot: force clear products_data for version 5
+    if (!localStorage.getItem("cleared_products_v5")) {
+      console.log("One-shot: Clearing products_data for v5...");
       localStorage.removeItem("products_data");
-      localStorage.setItem("cleared_products_v4", "true");
+      localStorage.setItem("cleared_products_v5", "true");
+    }
+    
+    // Force clear ALL PWA caches on v5
+    if (!localStorage.getItem("pwa_killed_v5")) {
+      console.log("Killing PWA caches v5...");
+      CACHE_KEYS.forEach((key) => {
+        localStorage.removeItem(key);
+      });
+      localStorage.setItem("pwa_killed_v5", "true");
     }
   } catch (error) {
     console.error("Error clearing cache:", error);
