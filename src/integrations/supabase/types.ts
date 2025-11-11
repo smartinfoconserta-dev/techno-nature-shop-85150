@@ -14,6 +14,304 @@ export type Database = {
   }
   public: {
     Tables: {
+      brands: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      categories: {
+        Row: {
+          created_at: string
+          icon: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          icon: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          icon?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      coupons: {
+        Row: {
+          active: boolean
+          code: string
+          created_at: string
+          discount_percent: number
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          created_at?: string
+          discount_percent: number
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          created_at?: string
+          discount_percent?: number
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      credit_history: {
+        Row: {
+          amount: number
+          created_at: string
+          customer_id: string
+          description: string
+          id: string
+          transaction_type: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          customer_id: string
+          description: string
+          id?: string
+          transaction_type: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          customer_id?: string
+          description?: string
+          id?: string
+          transaction_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_history_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customers: {
+        Row: {
+          active: boolean
+          address: string | null
+          city: string | null
+          code: string
+          cpf_cnpj: string | null
+          created_at: string
+          credit_balance: number
+          credit_limit: number
+          customer_type: string
+          email: string | null
+          id: string
+          name: string
+          notes: string | null
+          phone: string | null
+          portal_password: string | null
+          portal_username: string | null
+          state: string | null
+          updated_at: string
+          zip_code: string | null
+        }
+        Insert: {
+          active?: boolean
+          address?: string | null
+          city?: string | null
+          code: string
+          cpf_cnpj?: string | null
+          created_at?: string
+          credit_balance?: number
+          credit_limit?: number
+          customer_type: string
+          email?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          portal_password?: string | null
+          portal_username?: string | null
+          state?: string | null
+          updated_at?: string
+          zip_code?: string | null
+        }
+        Update: {
+          active?: boolean
+          address?: string | null
+          city?: string | null
+          code?: string
+          cpf_cnpj?: string | null
+          created_at?: string
+          credit_balance?: number
+          credit_limit?: number
+          customer_type?: string
+          email?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          portal_password?: string | null
+          portal_username?: string | null
+          state?: string | null
+          updated_at?: string
+          zip_code?: string | null
+        }
+        Relationships: []
+      }
+      monthly_reports: {
+        Row: {
+          average_margin: number
+          generated_at: string
+          id: string
+          month: string
+          net_profit: number
+          sold_count: number
+          taxes: number
+          total_purchases: number
+          total_sales: number
+        }
+        Insert: {
+          average_margin?: number
+          generated_at?: string
+          id?: string
+          month: string
+          net_profit?: number
+          sold_count?: number
+          taxes?: number
+          total_purchases?: number
+          total_sales?: number
+        }
+        Update: {
+          average_margin?: number
+          generated_at?: string
+          id?: string
+          month?: string
+          net_profit?: number
+          sold_count?: number
+          taxes?: number
+          total_purchases?: number
+          total_sales?: number
+        }
+        Relationships: []
+      }
+      products: {
+        Row: {
+          base_price: number
+          brand: string
+          category: string
+          created_at: string
+          customer_id: string | null
+          customer_name: string | null
+          description: string | null
+          digital_tax: number | null
+          expenses: Json | null
+          id: string
+          images: string[] | null
+          installment_rate: number | null
+          installments: number | null
+          margin: number | null
+          name: string
+          notes: string | null
+          payment_breakdown: Json | null
+          payment_method: string | null
+          product_order: number | null
+          profit: number | null
+          sale_price: number | null
+          sold: boolean
+          sold_date: string | null
+          specifications: Json | null
+          warranty_months: number | null
+        }
+        Insert: {
+          base_price: number
+          brand: string
+          category: string
+          created_at?: string
+          customer_id?: string | null
+          customer_name?: string | null
+          description?: string | null
+          digital_tax?: number | null
+          expenses?: Json | null
+          id?: string
+          images?: string[] | null
+          installment_rate?: number | null
+          installments?: number | null
+          margin?: number | null
+          name: string
+          notes?: string | null
+          payment_breakdown?: Json | null
+          payment_method?: string | null
+          product_order?: number | null
+          profit?: number | null
+          sale_price?: number | null
+          sold?: boolean
+          sold_date?: string | null
+          specifications?: Json | null
+          warranty_months?: number | null
+        }
+        Update: {
+          base_price?: number
+          brand?: string
+          category?: string
+          created_at?: string
+          customer_id?: string | null
+          customer_name?: string | null
+          description?: string | null
+          digital_tax?: number | null
+          expenses?: Json | null
+          id?: string
+          images?: string[] | null
+          installment_rate?: number | null
+          installments?: number | null
+          margin?: number | null
+          name?: string
+          notes?: string | null
+          payment_breakdown?: Json | null
+          payment_method?: string | null
+          product_order?: number | null
+          profit?: number | null
+          sale_price?: number | null
+          sold?: boolean
+          sold_date?: string | null
+          specifications?: Json | null
+          warranty_months?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -31,6 +329,187 @@ export type Database = {
           created_at?: string
           email?: string
           id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      quick_sales: {
+        Row: {
+          brand: string | null
+          category: string | null
+          cost_price: number
+          created_at: string
+          customer_id: string | null
+          customer_name: string
+          digital_tax: number | null
+          id: string
+          installment_rate: number | null
+          installments: number | null
+          margin: number
+          notes: string | null
+          payment_breakdown: Json
+          payment_method: string
+          product_name: string
+          profit: number
+          sale_price: number
+          updated_at: string
+          warranty_months: number | null
+        }
+        Insert: {
+          brand?: string | null
+          category?: string | null
+          cost_price: number
+          created_at?: string
+          customer_id?: string | null
+          customer_name: string
+          digital_tax?: number | null
+          id?: string
+          installment_rate?: number | null
+          installments?: number | null
+          margin: number
+          notes?: string | null
+          payment_breakdown: Json
+          payment_method: string
+          product_name: string
+          profit: number
+          sale_price: number
+          updated_at?: string
+          warranty_months?: number | null
+        }
+        Update: {
+          brand?: string | null
+          category?: string | null
+          cost_price?: number
+          created_at?: string
+          customer_id?: string | null
+          customer_name?: string
+          digital_tax?: number | null
+          id?: string
+          installment_rate?: number | null
+          installments?: number | null
+          margin?: number
+          notes?: string | null
+          payment_breakdown?: Json
+          payment_method?: string
+          product_name?: string
+          profit?: number
+          sale_price?: number
+          updated_at?: string
+          warranty_months?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quick_sales_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      receivables: {
+        Row: {
+          archived: boolean
+          base_price: number
+          brand: string | null
+          category: string | null
+          cost_price: number | null
+          created_at: string
+          customer_id: string
+          customer_name: string
+          due_date: string
+          id: string
+          installment_rate: number | null
+          installments: number
+          notes: string | null
+          paid_amount: number
+          payments: Json | null
+          product_name: string
+          profit: number | null
+          remaining_amount: number
+          sale_price: number
+          status: string
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          archived?: boolean
+          base_price: number
+          brand?: string | null
+          category?: string | null
+          cost_price?: number | null
+          created_at?: string
+          customer_id: string
+          customer_name: string
+          due_date: string
+          id?: string
+          installment_rate?: number | null
+          installments: number
+          notes?: string | null
+          paid_amount?: number
+          payments?: Json | null
+          product_name: string
+          profit?: number | null
+          remaining_amount: number
+          sale_price: number
+          status: string
+          total_amount: number
+          updated_at?: string
+        }
+        Update: {
+          archived?: boolean
+          base_price?: number
+          brand?: string | null
+          category?: string | null
+          cost_price?: number | null
+          created_at?: string
+          customer_id?: string
+          customer_name?: string
+          due_date?: string
+          id?: string
+          installment_rate?: number | null
+          installments?: number
+          notes?: string | null
+          paid_amount?: number
+          payments?: Json | null
+          product_name?: string
+          profit?: number | null
+          remaining_amount?: number
+          sale_price?: number
+          status?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "receivables_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      settings: {
+        Row: {
+          digital_tax_rate: number
+          id: string
+          include_cash_in_tax: boolean
+          installment_rates: Json
+          updated_at: string
+        }
+        Insert: {
+          digital_tax_rate?: number
+          id?: string
+          include_cash_in_tax?: boolean
+          installment_rates?: Json
+          updated_at?: string
+        }
+        Update: {
+          digital_tax_rate?: number
+          id?: string
+          include_cash_in_tax?: boolean
+          installment_rates?: Json
           updated_at?: string
         }
         Relationships: []
