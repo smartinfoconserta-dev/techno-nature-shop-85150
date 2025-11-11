@@ -34,10 +34,23 @@ const Admin = () => {
       await productsStore.refreshFromBackend();
       await quickSalesStore.refreshFromBackend();
       await receivablesStore.refreshFromBackend();
-      setProductCount(productsStore.getAllProducts().length);
+      updateProductCount();
     };
     loadData();
   }, [migrationComplete]);
+
+  const updateProductCount = () => {
+    setProductCount(productsStore.getAllProducts().length);
+  };
+
+  // Atualizar contagem periodicamente (polling simples)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      updateProductCount();
+    }, 5000); // A cada 5 segundos
+
+    return () => clearInterval(interval);
+  }, []);
 
   const handleLogout = async () => {
     await logout();

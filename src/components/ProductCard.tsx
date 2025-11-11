@@ -241,6 +241,7 @@ const ProductCard = ({ id, images, name, brand, category, specs, description, pr
           <img 
             src={mainImage} 
             alt={name}
+            loading="lazy"
             className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
           />
           {hasMultipleImages && (

@@ -19,7 +19,7 @@ import { toast } from "sonner";
 
 interface ProductFormProps {
   product?: Product;
-  onSave: (data: Omit<Product, "id" | "order" | "sold" | "expenses" | "createdAt">) => void;
+  onSave: (data: Omit<Product, "id" | "order" | "sold" | "expenses" | "createdAt">) => Promise<void>;
   onCancel: () => void;
 }
 
@@ -40,6 +40,7 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
   const [availableBrands, setAvailableBrands] = useState<string[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     import("@/lib/categoriesStore").then(async ({ categoriesStore }) => {
@@ -116,25 +117,30 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
     setImages(newImages);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!name || !brand || !price || images.length === 0) {
-      alert("Preencha todos os campos obrigatórios e adicione pelo menos uma imagem");
+      toast.error("Preencha todos os campos obrigatórios e adicione pelo menos uma imagem");
       return;
     }
 
-    onSave({
-      name,
-      category,
-      brand,
-      specs,
-      description,
-      price: parseFloat(price),
-      discountPrice: discountPrice ? parseFloat(discountPrice) : undefined,
-      passOnCashDiscount,
-      images,
-    });
+    setSaving(true);
+    try {
+      await onSave({
+        name,
+        category,
+        brand,
+        specs,
+        description,
+        price: parseFloat(price),
+        discountPrice: discountPrice ? parseFloat(discountPrice) : undefined,
+        passOnCashDiscount,
+        images,
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -333,11 +339,11 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
       </div>
 
       <div className="flex gap-3 justify-end">
-        <Button type="button" variant="outline" onClick={onCancel}>
+        <Button type="button" variant="outline" onClick={onCancel} disabled={saving}>
           Cancelar
         </Button>
-        <Button type="submit">
-          {product ? "Atualizar" : "Criar"} Produto
+        <Button type="submit" disabled={saving || uploading}>
+          {saving ? "Salvando..." : product ? "Atualizar" : "Criar"} Produto
         </Button>
       </div>
     </form>

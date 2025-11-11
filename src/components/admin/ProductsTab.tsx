@@ -59,16 +59,16 @@ const ProductsTab = () => {
     }
   };
 
-  const handleSave = (data: Omit<Product, "id" | "order" | "sold" | "expenses" | "createdAt">) => {
+  const handleSave = async (data: Omit<Product, "id" | "order" | "sold" | "expenses" | "createdAt">) => {
     try {
       if (editingProduct) {
-        productsStore.updateProduct(editingProduct.id, data);
+        await productsStore.updateProduct(editingProduct.id, data);
         toast({
           title: "Produto atualizado!",
           description: `${data.name} foi atualizado com sucesso.`,
         });
       } else {
-        productsStore.addProduct(data);
+        await productsStore.addProduct(data);
         toast({
           title: "Produto criado!",
           description: `${data.name} foi adicionado ao catálogo.`,
@@ -92,15 +92,23 @@ const ProductsTab = () => {
     setIsFormOpen(true);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm("Tem certeza que deseja excluir este produto?")) {
       const product = products.find((p) => p.id === id);
-      productsStore.deleteProduct(id);
-      toast({
-        title: "Produto excluído",
-        description: `${product?.name} foi removido do catálogo.`,
-      });
-      loadProducts();
+      try {
+        await productsStore.deleteProduct(id);
+        toast({
+          title: "Produto excluído",
+          description: `${product?.name} foi removido do catálogo.`,
+        });
+        loadProducts();
+      } catch (error) {
+        toast({
+          title: "Erro",
+          description: error instanceof Error ? error.message : "Erro ao excluir produto",
+          variant: "destructive",
+        });
+      }
     }
   };
 

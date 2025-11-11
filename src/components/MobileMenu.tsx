@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Menu, Home, Users, Download, Settings } from "lucide-react";
+import { Menu, Home, Users, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -18,7 +18,6 @@ const MobileMenu = () => {
   const menuItems = [
     { icon: Home, label: "Início", path: "/", action: "navigate" },
     { icon: Users, label: "Parceiros", path: "/login", action: "navigate" },
-    { icon: Download, label: "Instalar App", path: "/install", action: "navigate" },
     { icon: Settings, label: "Administração", path: "", action: "admin" },
   ];
 

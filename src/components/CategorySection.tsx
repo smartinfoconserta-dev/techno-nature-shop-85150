@@ -29,7 +29,12 @@ const CategorySection = ({ categoryName, onViewAll }: CategorySectionProps) => {
 
   useEffect(() => {
     const loadProducts = async () => {
-      await productsStore.refreshFromBackend();
+      // Só faz refresh se o cache estiver vazio
+      const currentProducts = productsStore.getAllProducts();
+      if (currentProducts.length === 0) {
+        await productsStore.refreshFromBackend();
+      }
+      
       const categoryProducts = await productsStore.getProductsByCategory(categoryName);
       const filtered = categoryProducts
         .filter(p => !p.sold)

@@ -148,7 +148,7 @@ export const productsStore = {
       });
   },
 
-  addProduct(data: Omit<Product, "id" | "order" | "sold" | "expenses" | "createdAt">): Product {
+  async addProduct(data: Omit<Product, "id" | "order" | "sold" | "expenses" | "createdAt">): Promise<Product> {
     const list = this.getAllProducts();
     const maxOrder = list.length > 0 ? Math.max(...list.map((p) => p.order)) : -1;
 
@@ -184,33 +184,34 @@ export const productsStore = {
     productsCache = [...productsCache, product];
     saveProductsCache();
 
-    // Persistir em background
-    (async () => {
-      try {
-        await supabase.from("products").upsert({
-          id: product.id,
-          name: product.name,
-          brand: product.brand,
-          category: product.category,
-          images: product.images,
-          specifications: product.specs,
-          description: product.description,
-          base_price: product.price,
-          product_order: product.order,
-          sold: false,
-          expenses: [],
-          created_at: product.createdAt,
-        } as any);
-        await this.refreshFromBackend();
-      } catch (e) {
-        console.error("Falha ao persistir produto:", e);
-      }
-    })();
+    // Persistir de forma síncrona com tratamento de erro
+    const { error } = await supabase.from("products").upsert({
+      id: product.id,
+      name: product.name,
+      brand: product.brand,
+      category: product.category,
+      images: product.images,
+      specifications: product.specs,
+      description: product.description,
+      base_price: product.price,
+      product_order: product.order,
+      sold: false,
+      expenses: [],
+      created_at: product.createdAt,
+    } as any);
 
+    if (error) {
+      console.error("Falha ao persistir produto:", error);
+      // Remover do cache em caso de erro
+      productsCache = productsCache.filter((p) => p.id !== product.id);
+      throw new Error(`Erro ao salvar produto: ${error.message}`);
+    }
+
+    await this.refreshFromBackend();
     return product;
   },
 
-  updateProduct(id: string, data: Partial<Product>): Product {
+  async updateProduct(id: string, data: Partial<Product>): Promise<Product> {
     const list = this.getAllProducts();
     const idx = list.findIndex((p) => p.id === id);
     if (idx === -1) throw new Error("Produto não encontrado");
@@ -219,49 +220,53 @@ export const productsStore = {
     productsCache = list.map((p) => (p.id === id ? updated : p));
     saveProductsCache();
 
-    (async () => {
-      try {
-        const updateData: any = {};
-        if (data.name !== undefined) updateData.name = data.name;
-        if (data.brand !== undefined) updateData.brand = data.brand;
-        if (data.category !== undefined) updateData.category = data.category;
-        if (data.images !== undefined) updateData.images = data.images;
-        if (data.specs !== undefined) updateData.specifications = data.specs;
-        if (data.description !== undefined) updateData.description = data.description;
-        if (data.price !== undefined) updateData.base_price = data.price;
-        if (data.order !== undefined) updateData.product_order = data.order;
-        if (data.sold !== undefined) updateData.sold = data.sold;
-        if (data.salePrice !== undefined) updateData.sale_price = data.salePrice;
-        if (data.paymentBreakdown !== undefined) updateData.payment_breakdown = data.paymentBreakdown;
-        if (data.taxAmount !== undefined) updateData.digital_tax = data.taxAmount;
-        if (data.saleDate !== undefined) updateData.sold_date = data.saleDate;
-        if (data.buyerName !== undefined) updateData.customer_name = data.buyerName;
-        if (data.warranty !== undefined) updateData.warranty_months = data.warranty;
-        if (data.expenses !== undefined) updateData.expenses = data.expenses;
+    const updateData: any = {};
+    if (data.name !== undefined) updateData.name = data.name;
+    if (data.brand !== undefined) updateData.brand = data.brand;
+    if (data.category !== undefined) updateData.category = data.category;
+    if (data.images !== undefined) updateData.images = data.images;
+    if (data.specs !== undefined) updateData.specifications = data.specs;
+    if (data.description !== undefined) updateData.description = data.description;
+    if (data.price !== undefined) updateData.base_price = data.price;
+    if (data.order !== undefined) updateData.product_order = data.order;
+    if (data.sold !== undefined) updateData.sold = data.sold;
+    if (data.salePrice !== undefined) updateData.sale_price = data.salePrice;
+    if (data.paymentBreakdown !== undefined) updateData.payment_breakdown = data.paymentBreakdown;
+    if (data.taxAmount !== undefined) updateData.digital_tax = data.taxAmount;
+    if (data.saleDate !== undefined) updateData.sold_date = data.saleDate;
+    if (data.buyerName !== undefined) updateData.customer_name = data.buyerName;
+    if (data.warranty !== undefined) updateData.warranty_months = data.warranty;
+    if (data.expenses !== undefined) updateData.expenses = data.expenses;
 
-        await supabase.from("products").update(updateData).eq("id", id);
-        await this.refreshFromBackend();
-      } catch (e) {
-        console.error("Falha ao atualizar produto:", e);
-      }
-    })();
+    const { error } = await supabase.from("products").update(updateData).eq("id", id);
+    
+    if (error) {
+      console.error("Falha ao atualizar produto:", error);
+      // Reverter no cache em caso de erro
+      productsCache = list;
+      throw new Error(`Erro ao atualizar produto: ${error.message}`);
+    }
 
+    await this.refreshFromBackend();
     return updated;
   },
 
-  deleteProduct(id: string): void {
+  async deleteProduct(id: string): Promise<void> {
     const list = this.getAllProducts();
+    const backup = [...productsCache];
     productsCache = list.filter((p) => p.id !== id);
     saveProductsCache();
 
-    (async () => {
-      try {
-        await supabase.from("products").delete().eq("id", id);
-        await this.refreshFromBackend();
-      } catch (e) {
-        console.error("Falha ao deletar produto:", e);
-      }
-    })();
+    const { error } = await supabase.from("products").delete().eq("id", id);
+    
+    if (error) {
+      console.error("Falha ao deletar produto:", error);
+      // Reverter no cache em caso de erro
+      productsCache = backup;
+      throw new Error(`Erro ao deletar produto: ${error.message}`);
+    }
+
+    await this.refreshFromBackend();
   },
 
   reorderProducts(reorderedList: Product[]): void {

@@ -17,6 +17,7 @@ const Index = () => {
   const [brands, setBrands] = useState<string[]>([]);
   const [products, setProducts] = useState(productsStore.getAvailableProducts());
   const [categories, setCategories] = useState<string[]>([]);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
     categoriesStore.getCategoryNames().then(names => {
@@ -52,6 +53,16 @@ const Index = () => {
 
   const loadProducts = () => {
     setProducts(productsStore.getAvailableProducts());
+  };
+
+  const handleRefreshCatalog = async () => {
+    setIsRefreshing(true);
+    try {
+      await productsStore.refreshFromBackend();
+      loadProducts();
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   const filteredProducts = useMemo(() => {
@@ -142,9 +153,7 @@ const Index = () => {
                 />
               ))}
               
-              {filteredCategories.every(cat => 
-                productsStore.getProductsByCategory(cat.name).filter(p => !p.sold).length === 0
-              ) && (
+              {products.length === 0 && (
                 <div className="text-center py-20">
                   <p className="text-muted-foreground text-lg">
                     Catálogo em breve
@@ -152,6 +161,13 @@ const Index = () => {
                   <p className="text-sm text-muted-foreground mt-2">
                     Novos produtos serão adicionados em breve
                   </p>
+                  <Button
+                    onClick={handleRefreshCatalog}
+                    disabled={isRefreshing}
+                    className="mt-4"
+                  >
+                    {isRefreshing ? "Atualizando..." : "Atualizar catálogo"}
+                  </Button>
                 </div>
               )}
             </div>
