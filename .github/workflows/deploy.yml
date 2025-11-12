@@ -1,9 +1,9 @@
-name: 🚀 Deploy Automático para Hostinger via FTP
+name: Deploy Lovable via FTP na Hostinger
 
 on:
   push:
     branches:
-      - main   # executa sempre que você fizer push na branch principal
+      - main   # Executa o deploy sempre que houver push na branch "main"
 
 jobs:
   build-and-deploy:
@@ -11,43 +11,37 @@ jobs:
 
     steps:
       # 1️⃣ Clona o repositório
-      - name: 📦 Checkout do código
+      - name: 📥 Clonar o repositório
         uses: actions/checkout@v3
 
-      # 2️⃣ Configura a versão do Node.js
-      - name: ⚙️ Configurar Node.js
+      # 2️⃣ Configura a versão do Node.js (necessária para npm)
+      - name: ⚙️ Configurar Node.js 18
         uses: actions/setup-node@v3
         with:
-          node-version: ${{ secrets.NODE_VERSION || '20' }}
+          node-version: '18'
 
-      # 3️⃣ Instala dependências
+      # 3️⃣ Instala todas as dependências do projeto
       - name: 📦 Instalar dependências
         run: npm install
 
-      # 4️⃣ Cria o build do projeto
-      - name: 🧱 Gerar build de produção
+      # 4️⃣ Executa o build (gera os arquivos finais da aplicação)
+      - name: 🏗️ Gerar build de produção
         run: npm run build
 
-      # 5️⃣ Faz upload dos arquivos da pasta dist/ para o Hostinger via FTP
-      - name: 🚀 Enviar para Hostinger (via FTP)
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+      # 5️⃣ Lista os arquivos gerados (só pra debug)
+      - name: 📁 Mostrar arquivos gerados
+        run: ls -al build/
+
+      # 6️⃣ Envia os arquivos para o servidor Hostinger via FTP
+      - name: 🚀 Deploy FTP para Hostinger
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
           server: ${{ secrets.FTP_HOST }}
           username: ${{ secrets.FTP_USER }}
           password: ${{ secrets.FTP_PASS }}
-          port: ${{ secrets.FTP_PORT || 21 }}
-          local-dir: ./dist
-          server-dir: ${{ secrets.FTP_PATH }}
-          protocol: ftp
-          timeout: 60000
-          log-level: standard
-          exclude: |
-            **/.git*
-            **/.git*/**
-            **/node_modules/**
-            **/.github/**
-            **/README.md
-
-      # 6️⃣ Mensagem de confirmação no log
-      - name: ✅ Deploy Concluído
-        run: echo "Deploy finalizado com sucesso em ${{ secrets.FTP_HOST }}"
+          port: 21
+          local-dir: build/
+          server-dir: /public_html/
+          dangerous-clean-slate: true
+          dry-run: false
+          log-level: verbose
