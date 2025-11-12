@@ -1,7 +1,13 @@
 import { Button } from "@/components/ui/button";
-import { Filter, X, Search } from "lucide-react";
+import { Filter, X, Search, ArrowUpDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Slider } from "@/components/ui/slider";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Sheet,
   SheetContent,
@@ -25,6 +31,8 @@ interface ProductFiltersProps {
   maxPrice: number;
   filterSearch: string;
   onFilterSearchChange: (search: string) => void;
+  priceSort: "none" | "asc" | "desc";
+  onPriceSortChange: (sort: "none" | "asc" | "desc") => void;
 }
 
 const ProductFilters = ({ 
@@ -38,17 +46,21 @@ const ProductFilters = ({
   onPriceRangeChange,
   maxPrice,
   filterSearch,
-  onFilterSearchChange
+  onFilterSearchChange,
+  priceSort,
+  onPriceSortChange
 }: ProductFiltersProps) => {
   const activeFiltersCount = 
     (selectedBrand !== "all" ? 1 : 0) + 
     (priceRange[0] > 0 || priceRange[1] < maxPrice ? 1 : 0) +
-    (filterSearch !== "" ? 1 : 0);
+    (filterSearch !== "" ? 1 : 0) +
+    (priceSort !== "none" ? 1 : 0);
 
   const handleClear = () => {
     onBrandChange("all");
     onPriceRangeChange([0, maxPrice]);
     onFilterSearchChange("");
+    onPriceSortChange("none");
   };
 
   const formatPrice = (value: number) => {
@@ -58,6 +70,26 @@ const ProductFilters = ({
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(value);
+  };
+
+  const formatPriceInput = (value: number): string => {
+    if (value === 0) return "";
+    return value.toString();
+  };
+
+  const parsePriceInput = (value: string): number => {
+    const parsed = parseInt(value.replace(/\D/g, ''), 10);
+    return isNaN(parsed) ? 0 : parsed;
+  };
+
+  const handleMinPriceChange = (value: string) => {
+    const minPrice = parsePriceInput(value);
+    onPriceRangeChange([minPrice, priceRange[1]]);
+  };
+
+  const handleMaxPriceChange = (value: string) => {
+    const maxPrice = parsePriceInput(value);
+    onPriceRangeChange([priceRange[0], maxPrice]);
   };
 
   return (
@@ -94,24 +126,52 @@ const ProductFilters = ({
             </div>
 
             <div>
+              <h3 className="font-semibold mb-3 flex items-center gap-2">
+                <ArrowUpDown className="h-4 w-4" />
+                Ordenar por Preço
+              </h3>
+              <Select value={priceSort} onValueChange={onPriceSortChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Sem ordenação</SelectItem>
+                  <SelectItem value="asc">Menor preço primeiro</SelectItem>
+                  <SelectItem value="desc">Maior preço primeiro</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
               <h3 className="font-semibold mb-3">Faixa de Preço</h3>
-              <div className="space-y-4">
-                <Slider
-                  min={0}
-                  max={maxPrice}
-                  step={100}
-                  value={priceRange}
-                  onValueChange={(value) => onPriceRangeChange(value as [number, number])}
-                  className="w-full"
-                />
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">
-                    {formatPrice(priceRange[0])}
-                  </span>
-                  <span className="text-muted-foreground">
-                    {formatPrice(priceRange[1])}
-                  </span>
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">Preço mínimo</label>
+                  <Input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="R$ 0"
+                    value={formatPriceInput(priceRange[0])}
+                    onChange={(e) => handleMinPriceChange(e.target.value)}
+                    className="w-full"
+                  />
                 </div>
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">Preço máximo</label>
+                  <Input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder={`R$ ${maxPrice}`}
+                    value={formatPriceInput(priceRange[1])}
+                    onChange={(e) => handleMaxPriceChange(e.target.value)}
+                    className="w-full"
+                  />
+                </div>
+                {(priceRange[0] > 0 || priceRange[1] < maxPrice) && (
+                  <p className="text-xs text-muted-foreground">
+                    De {formatPrice(priceRange[0])} até {formatPrice(priceRange[1])}
+                  </p>
+                )}
               </div>
             </div>
 
