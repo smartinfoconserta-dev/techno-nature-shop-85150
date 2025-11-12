@@ -1,5 +1,7 @@
 import { Button } from "@/components/ui/button";
-import { Filter, X } from "lucide-react";
+import { Filter, X, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Slider } from "@/components/ui/slider";
 import {
   Sheet,
   SheetContent,
@@ -18,6 +20,11 @@ interface ProductFiltersProps {
   onBrandChange: (brand: string) => void;
   brands: string[];
   categories: string[];
+  priceRange: [number, number];
+  onPriceRangeChange: (range: [number, number]) => void;
+  maxPrice: number;
+  filterSearch: string;
+  onFilterSearchChange: (search: string) => void;
 }
 
 const ProductFilters = ({ 
@@ -26,12 +33,31 @@ const ProductFilters = ({
   selectedBrand, 
   onBrandChange,
   brands,
-  categories
+  categories,
+  priceRange,
+  onPriceRangeChange,
+  maxPrice,
+  filterSearch,
+  onFilterSearchChange
 }: ProductFiltersProps) => {
-  const activeFiltersCount = (selectedBrand !== "all" ? 1 : 0);
+  const activeFiltersCount = 
+    (selectedBrand !== "all" ? 1 : 0) + 
+    (priceRange[0] > 0 || priceRange[1] < maxPrice ? 1 : 0) +
+    (filterSearch !== "" ? 1 : 0);
 
   const handleClear = () => {
     onBrandChange("all");
+    onPriceRangeChange([0, maxPrice]);
+    onFilterSearchChange("");
+  };
+
+  const formatPrice = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(value);
   };
 
   return (
@@ -54,6 +80,41 @@ const ProductFilters = ({
         
         <ScrollArea className="h-[calc(100vh-180px)] pr-4 mt-6">
           <div className="space-y-6">
+            <div>
+              <h3 className="font-semibold mb-3">Buscar Produto</h3>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Digite para buscar..."
+                  value={filterSearch}
+                  onChange={(e) => onFilterSearchChange(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+            </div>
+
+            <div>
+              <h3 className="font-semibold mb-3">Faixa de Preço</h3>
+              <div className="space-y-4">
+                <Slider
+                  min={0}
+                  max={maxPrice}
+                  step={100}
+                  value={priceRange}
+                  onValueChange={(value) => onPriceRangeChange(value as [number, number])}
+                  className="w-full"
+                />
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">
+                    {formatPrice(priceRange[0])}
+                  </span>
+                  <span className="text-muted-foreground">
+                    {formatPrice(priceRange[1])}
+                  </span>
+                </div>
+              </div>
+            </div>
+
             <div>
               <h3 className="font-semibold mb-3">Marcas</h3>
               <div className="flex flex-wrap gap-2">
