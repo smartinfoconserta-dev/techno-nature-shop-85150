@@ -1,41 +1,53 @@
-name: Deploy Lovable via FTP na Hostinger
+name: 🚀 Deploy Automático para Hostinger via FTP
 
 on:
   push:
     branches:
-      - main
+      - main   # executa sempre que você fizer push na branch principal
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 📥 Clonar o repositório
+      # 1️⃣ Clona o repositório
+      - name: 📦 Checkout do código
         uses: actions/checkout@v3
 
-      - name: ⚙️ Configurar Node.js 18
+      # 2️⃣ Configura a versão do Node.js
+      - name: ⚙️ Configurar Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '18'
+          node-version: ${{ secrets.NODE_VERSION || '20' }}
 
+      # 3️⃣ Instala dependências
       - name: 📦 Instalar dependências
         run: npm install
 
-      - name: 🏗️ Build do projeto
+      # 4️⃣ Cria o build do projeto
+      - name: 🧱 Gerar build de produção
         run: npm run build
 
-      - name: 📁 Mostrar arquivos gerados
-        run: ls -al dist/
-
-      - name: 🚀 Deploy FTP para Hostinger
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+      # 5️⃣ Faz upload dos arquivos da pasta dist/ para o Hostinger via FTP
+      - name: 🚀 Enviar para Hostinger (via FTP)
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_HOST }}
           username: ${{ secrets.FTP_USER }}
           password: ${{ secrets.FTP_PASS }}
-          port: 21
-          local-dir: dist/
-          server-dir: /public_html/
-          dangerous-clean-slate: true
-          dry-run: false
-          log-level: verbose
+          port: ${{ secrets.FTP_PORT || 21 }}
+          local-dir: ./dist
+          server-dir: ${{ secrets.FTP_PATH }}
+          protocol: ftp
+          timeout: 60000
+          log-level: standard
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+            **/.github/**
+            **/README.md
+
+      # 6️⃣ Mensagem de confirmação no log
+      - name: ✅ Deploy Concluído
+        run: echo "Deploy finalizado com sucesso em ${{ secrets.FTP_HOST }}"
