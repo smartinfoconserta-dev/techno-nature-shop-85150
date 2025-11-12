@@ -32,8 +32,8 @@ jobs:
       - name: 📁 Mostrar arquivos gerados
         run: ls -al dist/
 
-      # 5.1️⃣ Verificar tamanho e estrutura do build
-      - name: 📊 Informações Detalhadas do Build
+      # 5.1️⃣ Verificar tamanho do build
+      - name: 📊 Informações do Build
         run: |
           echo "=========================================="
           echo "📦 INFORMAÇÕES DO BUILD"
@@ -44,8 +44,8 @@ jobs:
           echo "📊 Tamanho total:"
           du -sh dist/
           echo ""
-          echo "🗂️ Estrutura de arquivos:"
-          find dist/ -maxdepth 2 -type f | head -20
+          echo "🗂️ Estrutura:"
+          tree -L 2 dist/ || find dist/ -maxdepth 2
           echo "=========================================="
 
       # 6️⃣ Deploy via SFTP (método principal)
@@ -64,25 +64,16 @@ jobs:
           delete_remote_files: true
 
       # 6.1️⃣ Verificar resultado do SFTP
-      - name: ✅ Status do Deploy SFTP
+      - name: ✅ Status do SFTP
         run: |
           if [ "${{ steps.sftp-deploy.outcome }}" == "success" ]; then
-            echo "=========================================="
-            echo "✅ SFTP COMPLETADO COM SUCESSO!"
-            echo "=========================================="
-            echo "🎯 Servidor: ${{ secrets.FTP_HOST }}"
-            echo "📁 Destino: ${{ secrets.FTP_PATH }}"
+            echo "✅ SFTP completado com SUCESSO!"
+            echo "📁 Destino: ${{ secrets.FTP_HOST }}:${{ secrets.FTP_PATH }}"
             echo "🔐 Usuário: ${{ secrets.FTP_USER }}"
-            echo "🚀 Método: SFTP (porta 22)"
-            echo "⏰ Horário: $(date '+%Y-%m-%d %H:%M:%S')"
-            echo "=========================================="
+            echo "📝 Arquivos devem estar em: ${{ secrets.FTP_PATH }}"
           else
-            echo "=========================================="
-            echo "❌ SFTP FALHOU!"
-            echo "=========================================="
-            echo "⚠️ Iniciando fallback para FTPS..."
-            echo "🔍 Possível causa: porta 22 bloqueada ou credenciais incorretas"
-            echo "=========================================="
+            echo "❌ SFTP FALHOU! Iniciando fallback..."
+            echo "⚠️ Verifique credenciais e porta 22"
           fi
 
       # 7️⃣ Fallback para FTPS (caso SFTP falhe)
@@ -104,46 +95,30 @@ jobs:
           log-level: verbose
 
       # 7.1️⃣ Verificar resultado do FTPS
-      - name: ✅ Status do Deploy FTPS
+      - name: ✅ Status do FTPS
         if: steps.sftp-deploy.outcome == 'failure'
         run: |
-          echo "=========================================="
-          echo "✅ FALLBACK FTPS EXECUTADO"
-          echo "=========================================="
-          echo "🎯 Servidor: ${{ secrets.FTP_HOST }}"
-          echo "📁 Destino: ${{ secrets.FTP_PATH }}"
+          echo "🔄 Fallback FTPS executado"
+          echo "📁 Destino: ${{ secrets.FTP_HOST }}:${{ secrets.FTP_PATH }}"
           echo "🔐 Usuário: ${{ secrets.FTP_USER }}"
-          echo "🚀 Método: FTPS (porta 21)"
-          echo "⏰ Horário: $(date '+%Y-%m-%d %H:%M:%S')"
-          echo "=========================================="
 
-      # 8️⃣ Resumo Final do Deploy
-      - name: 📋 Resumo Final do Deploy
+      # 8️⃣ RESUMO FINAL
+      - name: 📋 Resumo do Deploy
         if: always()
         run: |
           echo ""
           echo "=========================================="
-          echo "🎉 DEPLOY FINALIZADO"
+          echo "✅ DEPLOY FINALIZADO"
           echo "=========================================="
-          echo ""
-          echo "📊 INFORMAÇÕES DO DEPLOY:"
-          echo "  🎯 Servidor: ${{ secrets.FTP_HOST }}"
-          echo "  📂 Caminho Remoto: ${{ secrets.FTP_PATH }}"
-          echo "  👤 Usuário FTP: ${{ secrets.FTP_USER }}"
+          echo "🎯 Servidor: ${{ secrets.FTP_HOST }}"
+          echo "📂 Caminho: ${{ secrets.FTP_PATH }}"
+          echo "👤 Usuário: ${{ secrets.FTP_USER }}"
           echo ""
           if [ "${{ steps.sftp-deploy.outcome }}" == "success" ]; then
-            echo "  ✅ Método Usado: SFTP (porta 22)"
-            echo "  📡 Status: Deploy bem-sucedido via SFTP"
+            echo "✅ Método usado: SFTP (porta 22)"
           else
-            echo "  🔄 Método Usado: FTPS (porta 21 - fallback)"
-            echo "  📡 Status: Deploy bem-sucedido via FTPS"
+            echo "🔄 Método usado: FTPS (porta 21)"
           fi
           echo ""
-          echo "  ⏰ Concluído em: $(date '+%Y-%m-%d %H:%M:%S %Z')"
-          echo "  🔗 Site: https://ramontech.com.br"
-          echo ""
-          echo "=========================================="
-          echo "✨ Arquivos enviados com sucesso!"
-          echo "🔄 Aguarde 1-2 minutos para propagação"
-          echo "🌐 Limpe o cache do navegador se necessário"
+          echo "⏰ Deploy concluído em: $(date '+%Y-%m-%d %H:%M:%S')"
           echo "=========================================="
