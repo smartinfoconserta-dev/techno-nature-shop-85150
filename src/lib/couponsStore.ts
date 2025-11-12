@@ -4,6 +4,7 @@ export interface Coupon {
   id: string;
   code: string;
   active: boolean;
+  discountType: 'fixed';
   discountPercent: number;
   createdAt: string;
   updatedAt: string;
@@ -25,7 +26,8 @@ export const couponsStore = {
       id: coupon.id,
       code: coupon.code,
       active: coupon.active,
-      discountPercent: coupon.discount_percent,
+      discountType: 'fixed' as const,
+      discountPercent: coupon.discount_percent || 0,
       createdAt: coupon.created_at,
       updatedAt: coupon.updated_at,
     }));
@@ -47,7 +49,8 @@ export const couponsStore = {
       id: coupon.id,
       code: coupon.code,
       active: coupon.active,
-      discountPercent: coupon.discount_percent,
+      discountType: 'fixed' as const,
+      discountPercent: coupon.discount_percent || 0,
       createdAt: coupon.created_at,
       updatedAt: coupon.updated_at,
     }));
@@ -71,27 +74,28 @@ export const couponsStore = {
         id: data.id,
         code: data.code,
         active: data.active,
-        discountPercent: data.discount_percent,
+        discountType: 'fixed' as const,
+        discountPercent: data.discount_percent || 0,
         createdAt: data.created_at,
         updatedAt: data.updated_at,
       },
     };
   },
 
-  async addCoupon(code: string, discountPercent: number): Promise<Coupon> {
+  async addCoupon(code: string): Promise<Coupon> {
     const trimmedCode = code.trim().toUpperCase();
 
     if (trimmedCode.length < 3 || trimmedCode.length > 20) {
       throw new Error("O código deve ter entre 3 e 20 caracteres");
     }
 
-    if (discountPercent <= 0 || discountPercent > 100) {
-      throw new Error("O desconto deve ser entre 1% e 100%");
-    }
-
     const { data, error } = await supabase
       .from("coupons")
-      .insert([{ code: trimmedCode, discount_percent: discountPercent }])
+      .insert([{ 
+        code: trimmedCode, 
+        discount_type: 'fixed',
+        discount_percent: 0 
+      }])
       .select()
       .single();
 
@@ -106,7 +110,8 @@ export const couponsStore = {
       id: data.id,
       code: data.code,
       active: data.active,
-      discountPercent: data.discount_percent,
+      discountType: 'fixed',
+      discountPercent: 0,
       createdAt: data.created_at,
       updatedAt: data.updated_at,
     };
@@ -115,7 +120,6 @@ export const couponsStore = {
   async updateCoupon(
     id: string,
     code: string,
-    discountPercent: number,
     active: boolean
   ): Promise<Coupon> {
     const trimmedCode = code.trim().toUpperCase();
@@ -124,13 +128,14 @@ export const couponsStore = {
       throw new Error("O código deve ter entre 3 e 20 caracteres");
     }
 
-    if (discountPercent <= 0 || discountPercent > 100) {
-      throw new Error("O desconto deve ser entre 1% e 100%");
-    }
-
     const { data, error } = await supabase
       .from("coupons")
-      .update({ code: trimmedCode, discount_percent: discountPercent, active })
+      .update({ 
+        code: trimmedCode, 
+        active,
+        discount_type: 'fixed',
+        discount_percent: 0 
+      })
       .eq("id", id)
       .select()
       .single();
@@ -146,7 +151,8 @@ export const couponsStore = {
       id: data.id,
       code: data.code,
       active: data.active,
-      discountPercent: data.discount_percent,
+      discountType: 'fixed',
+      discountPercent: 0,
       createdAt: data.created_at,
       updatedAt: data.updated_at,
     };

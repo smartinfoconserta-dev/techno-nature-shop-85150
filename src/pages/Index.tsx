@@ -91,7 +91,6 @@ const Index = () => {
     setSelectedCategory("Todos");
     setSelectedBrand("all");
     setSearchQuery("");
-    setHomeFilter("Todas");
     setViewMode("home");
   };
   const scrollToTop = () => {
@@ -124,12 +123,6 @@ const Index = () => {
       <div className="space-y-6 pb-20">
             {/* Filtro de Categorias */}
             <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-              <Button variant={homeFilter === "Todas" ? "default" : "outline"} size="sm" onClick={() => {
-                setHomeFilter("Todas");
-                setViewMode("home");
-              }} className="whitespace-nowrap">
-                Todas
-              </Button>
               {categories.filter(c => c !== "Todos").map(categoryName => <Button key={categoryName} variant={homeFilter === categoryName ? "default" : "outline"} size="sm" onClick={() => handleViewAll(categoryName)} className="whitespace-nowrap">
                   {categoryName}
                 </Button>)}
