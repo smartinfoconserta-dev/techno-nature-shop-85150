@@ -20,6 +20,7 @@ const Index = () => {
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 50000]);
   const [filterSearch, setFilterSearch] = useState("");
+  const [priceSort, setPriceSort] = useState<"none" | "asc" | "desc">("none");
   useEffect(() => {
     const initCategories = async () => {
       const names = await categoriesStore.getCategoryNames();
@@ -74,7 +75,7 @@ const Index = () => {
     }
   };
   const filteredProducts = useMemo(() => {
-    return products.filter(product => {
+    let filtered = products.filter(product => {
       const categoryMatch = product.category === selectedCategory;
       const brandMatch = selectedBrand === "all" || product.brand === selectedBrand;
       
@@ -95,7 +96,16 @@ const Index = () => {
       
       return categoryMatch && brandMatch && globalSearchMatch && filterSearchMatch && priceMatch;
     });
-  }, [products, selectedCategory, selectedBrand, searchQuery, filterSearch, priceRange]);
+
+    // Aplicar ordenação
+    if (priceSort === "asc") {
+      filtered.sort((a, b) => a.price - b.price);
+    } else if (priceSort === "desc") {
+      filtered.sort((a, b) => b.price - a.price);
+    }
+
+    return filtered;
+  }, [products, selectedCategory, selectedBrand, searchQuery, filterSearch, priceRange, priceSort]);
   const scrollToTop = () => {
     window.scrollTo({
       top: 0,
@@ -111,6 +121,7 @@ const Index = () => {
     setSearchQuery("");
     setFilterSearch("");
     setPriceRange([0, maxProductPrice]);
+    setPriceSort("none");
     scrollToTop();
   };
   return <div className="min-h-screen bg-background">
@@ -145,6 +156,8 @@ const Index = () => {
               maxPrice={maxProductPrice}
               filterSearch={filterSearch}
               onFilterSearchChange={setFilterSearch}
+              priceSort={priceSort}
+              onPriceSortChange={setPriceSort}
             />
             <p className="text-sm text-muted-foreground">
               {filteredProducts.length} {filteredProducts.length === 1 ? 'produto' : 'produtos'}
