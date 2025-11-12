@@ -10,8 +10,8 @@ import { brandsStore } from "@/lib/brandsStore";
 import { productsStore } from "@/lib/productsStore";
 import { categoriesStore } from "@/lib/categoriesStore";
 const Index = () => {
-  const [viewMode, setViewMode] = useState<"home" | "filtered">("home");
-  const [selectedCategory, setSelectedCategory] = useState("Todos");
+  const [viewMode, setViewMode] = useState<"home" | "filtered">("filtered");
+  const [selectedCategory, setSelectedCategory] = useState("Notebooks");
   const [selectedBrand, setSelectedBrand] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [homeFilter, setHomeFilter] = useState("Todas");
