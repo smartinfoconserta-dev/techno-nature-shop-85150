@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { productsStore, Product } from "@/lib/productsStore";
@@ -37,12 +37,9 @@ const ProductsTab = () => {
   );
 
   // Persistir estado do formulário
-  useState(() => {
-    const interval = setInterval(() => {
-      sessionStorage.setItem('admin.products.isFormOpen', isFormOpen.toString());
-    }, 100);
-    return () => clearInterval(interval);
-  });
+  useEffect(() => {
+    sessionStorage.setItem('admin.products.isFormOpen', isFormOpen.toString());
+  }, [isFormOpen]);
 
   const loadProducts = () => {
     setProducts(productsStore.getAvailableProducts());
