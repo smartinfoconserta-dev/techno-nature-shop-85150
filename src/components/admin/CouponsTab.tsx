@@ -45,13 +45,13 @@ const CouponsTab = () => {
     setFormOpen(true);
   };
 
-  const handleSubmit = (code: string, discountPercent: number, active: boolean) => {
+  const handleSubmit = (code: string, active: boolean) => {
     try {
       if (editingCoupon) {
-        couponsStore.updateCoupon(editingCoupon.id, code, discountPercent, active);
+        couponsStore.updateCoupon(editingCoupon.id, code, active);
         toast.success("Cupom atualizado com sucesso!");
       } else {
-        couponsStore.addCoupon(code, discountPercent);
+        couponsStore.addCoupon(code);
         toast.success("Cupom criado com sucesso!");
       }
       setFormOpen(false);
@@ -152,8 +152,8 @@ const CouponsTab = () => {
                         {coupon.active ? "ATIVO" : "INATIVO"}
                       </Badge>
                     </div>
-                    <p className="text-lg font-semibold text-primary">
-                      {coupon.discountPercent}% de desconto
+                    <p className="text-sm text-muted-foreground">
+                      Cupom de acesso ao preço de lojista B2B
                     </p>
                   </div>
                 </div>
