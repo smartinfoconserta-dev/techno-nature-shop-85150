@@ -24,15 +24,15 @@ jobs:
       - name: 📦 Instalar dependências
         run: npm install
 
-      # 4️⃣ Gerar build de produção (Lovable → Vite → dist/)
+      # 4️⃣ Gerar build de produção
       - name: 🏗️ Gerar build de produção
         run: npm run build
 
-      # 5️⃣ Mostrar os arquivos gerados (para debug)
+      # 5️⃣ Mostrar os arquivos gerados
       - name: 📁 Mostrar arquivos gerados
         run: ls -al dist/
 
-      # 6️⃣ Fazer o deploy via FTPS (modo seguro "loose" compatível com Hostinger)
+      # 6️⃣ Fazer o deploy automático via FTPS (seguro)
       - name: 🚀 Deploy FTP para Hostinger (FTPS seguro)
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
@@ -43,7 +43,7 @@ jobs:
           protocol: ftps
           security: loose
           local-dir: dist/
-          server-dir: /public_html/
+          server-dir: ${{ secrets.FTP_PATH }}
           dangerous-clean-slate: true
           dry-run: false
           log-level: verbose
