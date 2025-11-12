@@ -1,4 +1,4 @@
-const APP_VERSION = "2.0.0";
+const APP_VERSION = "2.0.1";
 
 export function getCurrentVersion() {
   return APP_VERSION;

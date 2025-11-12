@@ -32,10 +32,24 @@ jobs:
       - name: 📁 Mostrar arquivos gerados
         run: ls -al dist/
 
-      # 6️⃣ Deploy via FTPS
-      - name: 🚀 Deploy via FTPS para Hostinger
-        id: ftp-deploy
+      # 6️⃣ Deploy via SFTP (método principal)
+      - name: 🚀 Deploy via SFTP para Hostinger
+        id: sftp-deploy
         continue-on-error: true
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USER }}
+          password: ${{ secrets.FTP_PASS }}
+          port: 22
+          local_path: dist/*
+          remote_path: ${{ secrets.FTP_PATH }}
+          sftp_only: true
+          delete_remote_files: true
+
+      # 7️⃣ Fallback para FTPS (caso SFTP falhe)
+      - name: 🔁 Fallback para FTPS (caso SFTP falhe)
+        if: steps.sftp-deploy.outcome == 'failure'
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
           server: ${{ secrets.FTP_HOST }}
@@ -49,17 +63,3 @@ jobs:
           dangerous-clean-slate: true
           dry-run: false
           log-level: verbose
-
-      # 7️⃣ Fallback para SFTP (caso FTPS falhe)
-      - name: 🔁 Fallback para SFTP (caso FTPS falhe)
-        if: steps.ftp-deploy.outcome == 'failure'
-        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
-        with:
-          server: ${{ secrets.FTP_HOST }}
-          username: ${{ secrets.FTP_USER }}
-          password: ${{ secrets.FTP_PASS }}
-          port: 22
-          local_path: dist/*
-          remote_path: ${{ secrets.FTP_PATH }}
-          sftp_only: true
-          delete_remote_files: true
