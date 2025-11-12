@@ -1,197 +1,45 @@
-name: 🚀 Deploy do site na Hostinger via FTPS
+name: Deploy Lovable via FTP na Hostinger
 
 on:
   push:
-    branches: [ "main" ]
-  workflow_dispatch:
+    branches:
+      - main
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
-
     steps:
-      - name: 🔍 Verificar repositório
-        uses: actions/checkout@v4
+      - name: Clonar o repositório
+        uses: actions/checkout@v3
 
-      - name: ⚙️ Configurar Node.js
-        uses: actions/setup-node@v4
+      - name: Configurar Node.js 18
+        uses: actions/setup-node@v3
         with:
           node-version: '18'
 
-      - name: 📦 Instalar dependências
-        run: npm ci
+      - name: Instalar dependências
+        run: npm install
 
-      - name: 📝 Incrementar versão da aplicação
-        run: |
-          VERSION=$(date +%Y.%m.%d.%H%M)
-          cat > src/lib/appVersion.ts <<'EOF'
-          const APP_VERSION = "$VERSION";
-
-          export function getCurrentVersion() {
-            return APP_VERSION;
-          }
-
-          export function clearAllCache() {
-            console.log('🧹 Limpando cache manualmente...');
-            
-            try {
-              localStorage.clear();
-              sessionStorage.clear();
-              
-              if ('caches' in window) {
-                caches.keys().then(names => {
-                  names.forEach(name => caches.delete(name));
-                });
-              }
-              
-              setTimeout(() => {
-                window.location.href = window.location.href.split('?')[0] + '?t=' + Date.now();
-              }, 100);
-            } catch (error) {
-              console.error('Erro ao limpar cache:', error);
-              window.location.reload();
-            }
-          }
-          EOF
-          sed -i "s/\$VERSION/$VERSION/g" src/lib/appVersion.ts
-          echo "✅ Versão definida: $VERSION"
-
-      - name: 🏗️ Buildar projeto
+      - name: Build do projeto
         run: npm run build
 
-      - name: 🔄 Adicionar timestamp anti-cache no HTML
-        run: |
-          TIMESTAMP=$(date +%s)
-          BUILD_ID=$(date +%Y%m%d-%H%M%S)
-          
-          echo "🔨 Injetando timestamp $TIMESTAMP no index.html..."
-          
-          # Adicionar meta tags únicas
-          sed -i "s|</head>|<meta name=\"build-id\" content=\"$BUILD_ID\" /><meta name=\"cache-buster\" content=\"$TIMESTAMP\" /></head>|g" dist/index.html
-          
-          # Adicionar comentário único no final do HTML
-          echo "<!-- 🏗️ Build ID: $BUILD_ID | Timestamp: $TIMESTAMP | Anti-Cache: TRUE -->" >> dist/index.html
-          
-          echo "✅ HTML modificado com sucesso"
-          echo "📊 Build ID: $BUILD_ID"
-          echo "⏰ Timestamp: $TIMESTAMP"
+      - name: Mostrar arquivos gerados
+        run: ls -al dist/
 
-      - name: 🔐 Validar secrets obrigatórios
-        run: |
-          if [ -z "${{ secrets.FTP_HOST }}" ] || [ -z "${{ secrets.FTP_USER }}" ] || [ -z "${{ secrets.FTP_PASS }}" ]; then
-            echo "❌ ERRO: Secrets FTP obrigatórios ausentes!"
-            exit 1
-          fi
-          echo "✅ Secrets FTP detectados com sucesso."
-
-      - name: 🗂️ Definir caminho de deploy
-        run: |
-          if [ -z "${{ secrets.FTP_SERVER_DIR }}" ]; then
-            echo "⚙️ Usando DEPLOY_PATH=/ (raiz do FTP)"
-            echo "DEPLOY_PATH=/" >> $GITHUB_ENV
-          else
-            RAW="${{ secrets.FTP_SERVER_DIR }}"
-            # Remove "./" e garante formato "/path/"
-            NORM="/${RAW#./}"
-            NORM="/${NORM#/}"
-            case "$NORM" in */) ;; *) NORM="$NORM/";; esac
-            
-            if echo "$NORM" | grep -q "public_html/public_html"; then
-              echo "❌ Caminho inválido: $NORM"
-              exit 1
-            fi
-            
-            echo "✅ Caminho de deploy definido: $NORM"
-            echo "DEPLOY_PATH=$NORM" >> $GITHUB_ENV
-          fi
-
-      - name: 🔎 Testar login FTP
-        run: |
-          echo "🔍 Testando conexão FTPS..."
-          curl -v --ssl-reqd --ftp-ssl --user "${{ secrets.FTP_USER }}:${{ secrets.FTP_PASS }}" "ftp://${{ secrets.FTP_HOST }}" || true
-
-      - name: 📂 Listar diretório remoto antes do deploy
-        run: |
-          echo "📁 Listando conteúdo atual em ${{ env.DEPLOY_PATH }}"
-          curl -v --ssl-reqd --ftp-ssl --user "${{ secrets.FTP_USER }}:${{ secrets.FTP_PASS }}" "ftp://${{ secrets.FTP_HOST }}${{ env.DEPLOY_PATH }}" || true
-
-      - name: 🚀 Enviar site pra Hostinger via FTPS
-        id: deploy
-        continue-on-error: true
+      - name: Deploy FTP para Hostinger
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
           server: ${{ secrets.FTP_HOST }}
+          port: 21
           username: ${{ secrets.FTP_USER }}
           password: ${{ secrets.FTP_PASS }}
-          port: 21
-          protocol: ftps
-          server-dir: ${{ env.DEPLOY_PATH }}
           local-dir: dist/
-          log-level: verbose
+          server-dir: /
           dangerous-clean-slate: true
+          dry-run: false
+          log-level: verbose
 
-      - name: 🧾 Listar diretório remoto após deploy
-        run: |
-          echo "📂 Conteúdo final no servidor:"
-          curl -v --ssl-reqd --ftp-ssl --user "${{ secrets.FTP_USER }}:${{ secrets.FTP_PASS }}" "ftp://${{ secrets.FTP_HOST }}${{ env.DEPLOY_PATH }}" || true
 
-      # =============================
-      # 🌐 TESTES APÓS DEPLOY
-      # =============================
-
-      - name: 🌍 Testar site online (forçando SSL inseguro)
-        run: |
-          echo "🌍 Verificando status HTTPS (ignorando certificado inválido)..."
-          curl -k -I -L https://ramontech.com.br || true
-
-      - name: 🧠 Validar HTML e anti-cache
-        run: |
-          echo "🧩 Verificando conteúdo do site..."
-          HTML=$(curl -ksL https://ramontech.com.br/index.html || true)
-          if echo "$HTML" | grep -q "<title>Ramon Tech"; then
-            echo "✅ Página carregada corretamente"
-          else
-            echo "⚠️ Aviso: conteúdo não corresponde ao esperado (pode ser cache antigo)"
-          fi
-
-          echo "⚙️ Adicionando cabeçalhos anti-cache..."
-          cat > ./dist/.htaccess <<'EOF'
-          <IfModule mod_headers.c>
-            Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
-            Header set Pragma "no-cache"
-            Header set Expires 0
-          </IfModule>
-          <FilesMatch "\.(html|js|css|json|png|jpg|jpeg|svg|ico|webmanifest)$">
-            Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
-          </FilesMatch>
-          <IfModule mod_rewrite.c>
-            RewriteEngine On
-            RewriteBase /
-            RewriteCond %{REQUEST_FILENAME} !-f
-            RewriteCond %{REQUEST_FILENAME} !-d
-            RewriteRule . /index.html [L]
-          </IfModule>
-          EOF
-
-      # =============================
-      # 🧩 DIAGNÓSTICO DE ERROS
-      # =============================
-      - name: ❗ Diagnóstico de erros de deploy
-        if: failure()
-        run: |
-          echo "⚠️ Analisando logs de erro..."
-          LOGS=$(cat $GITHUB_WORKSPACE/* || true)
-
-          if echo "$LOGS" | grep -q "530"; then
-            echo "❌ ERRO 530: Falha de login no FTP (usuário ou senha incorretos)"
-          elif echo "$LOGS" | grep -q "550"; then
-            echo "❌ ERRO 550: Permissão negada ou diretório inexistente no servidor"
-          elif echo "$LOGS" | grep -q "425"; then
-            echo "❌ ERRO 425: Conexão não estabelecida com o servidor"
-          elif echo "$LOGS" | grep -q "Timed out"; then
-            echo "⏰ ERRO: Tempo de conexão excedido"
-          elif echo "$LOGS" | grep -q "ENOTFOUND"; then
-            echo "🌐 ERRO: Host FTP não encontrado — verifique o FTP_HOST"
-          else
-            echo "⚙️ Nenhum erro padrão detectado. Veja os logs acima para detalhes técnicos."
-          fi
+FTP_HOST	exemplo: ftp.seudominio.com
+FTP_USER	seu usuário FTP
+FTP_PASS	sua senha FTP
