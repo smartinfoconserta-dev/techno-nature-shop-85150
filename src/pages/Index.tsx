@@ -91,7 +91,6 @@ const Index = () => {
     setSelectedCategory("Todos");
     setSelectedBrand("all");
     setSearchQuery("");
-    setHomeFilter("Todas");
     setViewMode("home");
   };
   const scrollToTop = () => {
@@ -107,14 +106,10 @@ const Index = () => {
   useEffect(() => {
     const loadFilteredCategories = async () => {
       const allCategories = await categoriesStore.getAllCategories();
-      if (homeFilter === "Todas") {
-        setFilteredCats(allCategories);
-      } else {
-        setFilteredCats(allCategories.filter(cat => cat.name === homeFilter));
-      }
+      setFilteredCats(allCategories);
     };
     loadFilteredCategories();
-  }, [homeFilter]);
+  }, []);
   return <div className="min-h-screen bg-background">
       <Header searchValue={searchQuery} onSearchChange={setSearchQuery} />
       
@@ -124,12 +119,6 @@ const Index = () => {
       <div className="space-y-6 pb-20">
             {/* Filtro de Categorias */}
             <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-              <Button variant={homeFilter === "Todas" ? "default" : "outline"} size="sm" onClick={() => {
-                setHomeFilter("Todas");
-                setViewMode("home");
-              }} className="whitespace-nowrap">
-                Todas
-              </Button>
               {categories.filter(c => c !== "Todos").map(categoryName => <Button key={categoryName} variant={homeFilter === categoryName ? "default" : "outline"} size="sm" onClick={() => handleViewAll(categoryName)} className="whitespace-nowrap">
                   {categoryName}
                 </Button>)}
