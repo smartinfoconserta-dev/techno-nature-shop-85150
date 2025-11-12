@@ -113,8 +113,19 @@ const ProductsTab = () => {
   };
 
   const handleCancel = () => {
-    setIsFormOpen(false);
-    setEditingProduct(undefined);
+    const hasDraft = sessionStorage.getItem('product-form-draft');
+    if (hasDraft) {
+      if (confirm("Descartar rascunho? Seus dados não salvos serão perdidos.")) {
+        sessionStorage.removeItem('product-form-draft');
+        sessionStorage.removeItem('admin.products.isFormOpen');
+        setIsFormOpen(false);
+        setEditingProduct(undefined);
+      }
+    } else {
+      sessionStorage.removeItem('admin.products.isFormOpen');
+      setIsFormOpen(false);
+      setEditingProduct(undefined);
+    }
   };
 
   return (
