@@ -1,13 +1,14 @@
-const APP_VERSION = "2.0.0"; // Incrementado automaticamente a cada deploy
-const VERSION_KEY = "app_version";
+const APP_VERSION = "2.0.0";
 
-export function checkAppVersion() {
-  const stored = localStorage.getItem(VERSION_KEY);
+export function getCurrentVersion() {
+  return APP_VERSION;
+}
+
+export function clearAllCache() {
+  console.log('🧹 Limpando cache manualmente...');
   
-  if (stored !== APP_VERSION) {
-    console.log(`🔄 Nova versão ${APP_VERSION} detectada (anterior: ${stored || 'nenhuma'})`);
-    
-    // Limpar TODOS os storages
+  try {
+    // Limpar storages com proteção para modo anônimo
     localStorage.clear();
     sessionStorage.clear();
     
@@ -18,32 +19,13 @@ export function checkAppVersion() {
       });
     }
     
-    // Salvar nova versão
-    localStorage.setItem(VERSION_KEY, APP_VERSION);
-    
-    // Force reload SEM cache
+    // Reload com timestamp para evitar cache HTTP
+    setTimeout(() => {
+      window.location.href = window.location.href.split('?')[0] + '?t=' + Date.now();
+    }, 100);
+  } catch (error) {
+    console.error('Erro ao limpar cache:', error);
+    // Fallback simples em caso de erro (modo anônimo)
     window.location.reload();
   }
-}
-
-export function getCurrentVersion() {
-  return APP_VERSION;
-}
-
-export function clearAllCache() {
-  console.log('🧹 Limpando cache manualmente...');
-  
-  // Limpar storages
-  localStorage.clear();
-  sessionStorage.clear();
-  
-  // Limpar caches do navegador
-  if ('caches' in window) {
-    caches.keys().then(names => {
-      names.forEach(name => caches.delete(name));
-    });
-  }
-  
-  // Reload com timestamp para evitar cache HTTP
-  window.location.href = window.location.href.split('?')[0] + '?t=' + Date.now();
 }

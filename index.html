@@ -4,72 +4,13 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     
-    <!-- Versão da Aplicação -->
-    <meta name="app-version" content="2.0.0" />
-    
-    <!-- Anti-Cache Meta Tags AGRESSIVO -->
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0" />
+    <!-- Anti-Cache Meta Tags -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
     
     <!-- DNS Prefetch para Supabase -->
     <link rel="dns-prefetch" href="https://sqgssikzmacnrvnmxbxe.supabase.co" />
-    
-    <!-- CRITICAL: Mata Service Worker ANTES de qualquer outro script -->
-    <script>
-      (function() {
-        'use strict';
-        var FLAG_KEY = 'sw_killed_v5';
-        var alreadyKilled = localStorage.getItem(FLAG_KEY);
-        
-        // ALWAYS kill Service Workers on every load until flag is set
-        if ('serviceWorker' in navigator) {
-          navigator.serviceWorker.getRegistrations().then(function(registrations) {
-            var hasActive = false;
-            registrations.forEach(function(reg) {
-              if (reg.active || reg.waiting || reg.installing) {
-                hasActive = true;
-              }
-              reg.unregister();
-            });
-            
-            if ('caches' in window) {
-              caches.keys().then(function(names) {
-                return Promise.all(names.map(function(name) {
-                  return caches.delete(name);
-                }));
-              }).then(function() {
-                console.log('✅ Service Workers e caches removidos v5 (inline)');
-                
-                // Force clear PWA-related localStorage
-                if (!alreadyKilled) {
-                  ['products_data', 'quick_sales_data', 'receivables_data', 
-                   'monthly_reports_data', 'last_month_check', 'app_settings',
-                   'customer_session', 'sw_killed_v2', 'sw_killed_v3', 'sw_killed_v4',
-                   'cleared_products_v4', 'pwa_killed_v4'].forEach(function(key) {
-                    localStorage.removeItem(key);
-                  });
-                  localStorage.setItem(FLAG_KEY, 'true');
-                  console.log('🧹 LocalStorage PWA limpo');
-                }
-                
-                if (hasActive && navigator.serviceWorker.controller && !alreadyKilled) {
-                  console.log('🔄 Recarregando para aplicar mudanças...');
-                  location.reload();
-                }
-              });
-            } else {
-              if (!alreadyKilled) {
-                localStorage.setItem(FLAG_KEY, 'true');
-                if (hasActive && navigator.serviceWorker.controller) {
-                  location.reload();
-                }
-              }
-            }
-          });
-        }
-      })();
-    </script>
     
     <!-- Favicons -->
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
