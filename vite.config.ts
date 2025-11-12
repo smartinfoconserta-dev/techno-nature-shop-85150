@@ -21,13 +21,14 @@ export default defineConfig(({ mode }) => ({
   build: {
     rollupOptions: {
       output: {
-        // Adiciona hash nos nomes dos arquivos para cache busting
-        entryFileNames: 'assets/[name].[hash].js',
-        chunkFileNames: 'assets/[name].[hash].js',
-        assetFileNames: 'assets/[name].[hash].[ext]'
+        // Hash + formato otimizado para cache busting
+        entryFileNames: 'assets/[name]-[hash].js',
+        chunkFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash].[ext]'
       }
     },
     // Força rebuild completo
-    manifest: true
+    manifest: true,
+    sourcemap: false
   }
 }));

@@ -59,6 +59,23 @@ jobs:
       - name: 🏗️ Buildar projeto
         run: npm run build
 
+      - name: 🔄 Adicionar timestamp anti-cache no HTML
+        run: |
+          TIMESTAMP=$(date +%s)
+          BUILD_ID=$(date +%Y%m%d-%H%M%S)
+          
+          echo "🔨 Injetando timestamp $TIMESTAMP no index.html..."
+          
+          # Adicionar meta tags únicas
+          sed -i "s|</head>|<meta name=\"build-id\" content=\"$BUILD_ID\" /><meta name=\"cache-buster\" content=\"$TIMESTAMP\" /></head>|g" dist/index.html
+          
+          # Adicionar comentário único no final do HTML
+          echo "<!-- 🏗️ Build ID: $BUILD_ID | Timestamp: $TIMESTAMP | Anti-Cache: TRUE -->" >> dist/index.html
+          
+          echo "✅ HTML modificado com sucesso"
+          echo "📊 Build ID: $BUILD_ID"
+          echo "⏰ Timestamp: $TIMESTAMP"
+
       - name: 🔐 Validar secrets obrigatórios
         run: |
           if [ -z "${{ secrets.FTP_HOST }}" ] || [ -z "${{ secrets.FTP_USER }}" ] || [ -z "${{ secrets.FTP_PASS }}" ]; then

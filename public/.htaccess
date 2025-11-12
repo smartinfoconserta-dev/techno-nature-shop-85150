@@ -1,5 +1,5 @@
 # ==========================================
-# RAMON TECH - Configuração para Hostinger
+# RAMON TECH - Configuração DEFINITIVA
 # ==========================================
 
 # MIME Types
@@ -8,7 +8,9 @@ AddType text/css .css
 AddType application/json .json
 AddDefaultCharset UTF-8
 
-# Forçar HTTPS automaticamente
+# ==========================================
+# 🔒 FORÇAR HTTPS E DOMÍNIO PRINCIPAL
+# ==========================================
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
@@ -27,22 +29,40 @@ AddDefaultCharset UTF-8
   RewriteRule ^ index.html [L]
 </IfModule>
 
-# Evita cache agressivo
+# ==========================================
+# 🚫 DESABILITAR CACHE DE CDN (CLOUDFLARE)
+# ==========================================
 <IfModule mod_headers.c>
-  # Cache-Control para HTML
-  <FilesMatch "\.(html)$">
-    Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+  # HTML: ZERO CACHE (navegador + CDN)
+  <FilesMatch "\.(html|htm)$">
+    Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0, s-maxage=0"
     Header set Pragma "no-cache"
-    Header set Expires "0"
+    Header set Expires "Thu, 01 Jan 1970 00:00:00 GMT"
+    Header set X-Accel-Expires "0"
+    
+    # Desabilita cache no Cloudflare especificamente
+    Header set CDN-Cache-Control "no-store"
+    Header set Cloudflare-CDN-Cache-Control "no-store"
+    
+    # Remove ETag estático
+    Header unset ETag
+    FileETag None
   </FilesMatch>
   
-  # Cache para assets com hash (gerados pelo Vite)
-  <FilesMatch "\.[a-f0-9]{8,}\.(js|css|png|jpg|jpeg|webp|svg)$">
+  # Assets com hash: cache LONGO (1 ano)
+  <FilesMatch "\.[a-f0-9]{8,}\.(js|css|png|jpg|jpeg|webp|svg|woff|woff2)$">
     Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+  
+  # Assets SEM hash: cache CURTO (1 hora)
+  <FilesMatch "^((?!\.[a-f0-9]{8,}\.).)*\.(js|css|png|jpg|jpeg|svg)$">
+    Header set Cache-Control "public, max-age=3600, must-revalidate"
   </FilesMatch>
 </IfModule>
 
-# Headers de Segurança
+# ==========================================
+# 🔐 HEADERS DE SEGURANÇA
+# ==========================================
 <IfModule mod_headers.c>
   Header set X-Content-Type-Options "nosniff"
   Header set X-Frame-Options "SAMEORIGIN"
@@ -51,16 +71,19 @@ AddDefaultCharset UTF-8
   Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
 </IfModule>
 
-# Compressão GZIP
+# ==========================================
+# 🗜️ COMPRESSÃO GZIP
+# ==========================================
 <IfModule mod_deflate.c>
   AddOutputFilterByType DEFLATE text/html text/plain text/css text/javascript application/javascript application/json
 </IfModule>
 
-# Proteção de Arquivos Sensíveis
+# ==========================================
+# 🛡️ PROTEÇÃO DE ARQUIVOS SENSÍVEIS
+# ==========================================
 <FilesMatch "^\.">
   Order allow,deny
   Deny from all
 </FilesMatch>
 
-# Desabilitar listagem de diretórios
 Options -Indexes
