@@ -1,9 +1,9 @@
-name: Deploy Lovable via FTP na Hostinger
+name: Deploy Lovable via FTP/SFTP na Hostinger
 
 on:
   push:
     branches:
-      - main   # Executa o deploy automático sempre que fizer push na branch main
+      - main
 
 jobs:
   build-and-deploy:
@@ -28,12 +28,14 @@ jobs:
       - name: 🏗️ Gerar build de produção
         run: npm run build
 
-      # 5️⃣ Mostrar os arquivos gerados
+      # 5️⃣ Mostrar arquivos gerados
       - name: 📁 Mostrar arquivos gerados
         run: ls -al dist/
 
-      # 6️⃣ Fazer o deploy automático via FTPS (seguro)
-      - name: 🚀 Deploy FTP para Hostinger (FTPS seguro)
+      # 6️⃣ Deploy via FTPS (padrão)
+      - name: 🚀 Deploy via FTPS para Hostinger
+        id: ftp-deploy
+        continue-on-error: true
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
           server: ${{ secrets.FTP_HOST }}
@@ -47,3 +49,17 @@ jobs:
           dangerous-clean-slate: true
           dry-run: false
           log-level: verbose
+
+      # 7️⃣ Se FTPS falhar, tenta SFTP automaticamente
+      - name: 🔁 Fallback para SFTP (caso FTPS falhe)
+        if: steps.ftp-deploy.outcome == 'failure'
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USER }}
+          password: ${{ secrets.FTP_PASS }}
+          port: 22
+          local_path: dist/*
+          remote_path: ${{ secrets.FTP_PATH }}
+          sftp_only: true
+          delete_remote_files: true
