@@ -48,7 +48,22 @@ jobs:
           tree -L 2 dist/ || find dist/ -maxdepth 2
           echo "=========================================="
 
-      # 6️⃣ Deploy via FTPS para Hostinger
+      # 6️⃣ Resolver diretório remoto
+      - name: 🔧 Resolver diretório remoto
+        id: resolve-path
+        env:
+          FTP_PATH: ${{ secrets.FTP_PATH }}
+        run: |
+          NORMALIZED="$(echo "$FTP_PATH" | sed 's#//*#/#g' | sed 's#/$##')"
+          if [ "$NORMALIZED" = "/public_html" ] || [ "$NORMALIZED" = "public_html" ]; then
+            echo "remote_dir=/" >> "$GITHUB_OUTPUT"
+            echo "✅ Usando diretório remoto: / (home do FTP, que já é public_html)"
+          else
+            echo "remote_dir=$FTP_PATH" >> "$GITHUB_OUTPUT"
+            echo "✅ Usando diretório remoto informado: $FTP_PATH"
+          fi
+
+      # 7️⃣ Deploy via FTPS para Hostinger
       - name: 🚀 Deploy via FTPS para Hostinger
         id: ftps-deploy
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
@@ -60,21 +75,22 @@ jobs:
           protocol: ftps
           security: loose
           local-dir: dist/
-          server-dir: ${{ secrets.FTP_PATH }}
+          server-dir: ${{ steps.resolve-path.outputs.remote_dir }}
           dangerous-clean-slate: true
           dry-run: false
           log-level: verbose
 
-      # 6.1️⃣ Verificar resultado do deploy
+      # 7.1️⃣ Verificar resultado do deploy
       - name: ✅ Status do Deploy
         run: |
           echo "✅ Deploy FTPS completado!"
-          echo "📁 Destino: ${{ secrets.FTP_HOST }}:${{ secrets.FTP_PATH }}"
+          echo "📁 Servidor: ${{ secrets.FTP_HOST }}"
+          echo "📂 Diretório remoto efetivo: ${{ steps.resolve-path.outputs.remote_dir }}"
           echo "🔐 Usuário: ${{ secrets.FTP_USER }}"
           echo "🗂️ Método: FTPS (porta 21)"
           echo "⚠️ dangerous-clean-slate: true (pasta limpa antes do upload)"
 
-      # 7️⃣ RESUMO FINAL
+      # 8️⃣ RESUMO FINAL
       - name: 📋 Resumo do Deploy
         if: always()
         run: |
@@ -83,7 +99,7 @@ jobs:
           echo "✅ DEPLOY FINALIZADO"
           echo "=========================================="
           echo "🎯 Servidor: ${{ secrets.FTP_HOST }}"
-          echo "📂 Caminho: ${{ secrets.FTP_PATH }}"
+          echo "📂 Diretório remoto efetivo: ${{ steps.resolve-path.outputs.remote_dir }}"
           echo "👤 Usuário: ${{ secrets.FTP_USER }}"
           echo "✅ Método usado: FTPS (porta 21)"
           echo "⏰ Deploy concluído em: $(date '+%Y-%m-%d %H:%M:%S')"
