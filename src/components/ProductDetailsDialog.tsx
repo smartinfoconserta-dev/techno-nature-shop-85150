@@ -77,12 +77,15 @@ const ProductDetailsDialog = ({
   useEffect(() => {
     const loadOptions = async () => {
       setIsLoadingInstallments(true);
-      const options = await getAllInstallmentOptions(displayPrice);
+      const baseAmount = (isDiscountActive && couponValidation.coupon && discountPrice && discountPrice < displayPrice) 
+        ? discountPrice 
+        : displayPrice;
+      const options = await getAllInstallmentOptions(baseAmount);
       setInstallmentOptions(options);
       setIsLoadingInstallments(false);
     };
     loadOptions();
-  }, [displayPrice]);
+  }, [displayPrice, discountPrice, isDiscountActive, couponValidation.coupon]);
   
   useEffect(() => {
     if (!api) return;
@@ -99,34 +102,29 @@ const ProductDetailsDialog = ({
   let displayMode: 'original' | 'coupon' | 'cash' | 'installment' | 'coupon-installment' = 'original';
   let paymentDetails: { installments?: number; installmentValue?: number; totalAmount?: number } = {};
 
-  if (isDiscountActive && couponValidation.coupon && 
-      typeof couponValidation.coupon.discountPercent === 'number' &&
-      couponValidation.coupon.discountPercent > 0) {
-    
-    // Calcular preço base com cupom
-    let discountedPrice = displayPrice;
+  // NOVO: Verificar se tem cupom válido e se produto tem preço B2B
+  if (isDiscountActive && couponValidation.coupon) {
+    // Cupom válido: usar preço B2B (discountPrice) se disponível
     if (discountPrice && discountPrice < displayPrice) {
-      discountedPrice = discountPrice;
-    } else {
-      const discount = couponValidation.coupon.discountPercent / 100;
-      discountedPrice = displayPrice * (1 - discount);
-    }
-    
-    // Prioridade 1: Cupom + Parcelamento
-    if (selectedPayment?.type === 'installment' && selectedPayment.data) {
-      displayMode = 'coupon-installment';
-      finalPrice = selectedPayment.data.totalAmount;
-      paymentDetails = {
-        installments: selectedPayment.data.installments,
-        installmentValue: selectedPayment.data.installmentValue,
-        totalAmount: selectedPayment.data.totalAmount,
-      };
-    } else {
-      // Prioridade 2: Apenas cupom
-      displayMode = 'coupon';
-      finalPrice = discountedPrice;
+      const b2bPrice = discountPrice;
+      
+      // Prioridade 1: Cupom + Parcelamento
+      if (selectedPayment?.type === 'installment' && selectedPayment.data) {
+        displayMode = 'coupon-installment';
+        finalPrice = selectedPayment.data.totalAmount;
+        paymentDetails = {
+          installments: selectedPayment.data.installments,
+          installmentValue: selectedPayment.data.installmentValue,
+          totalAmount: selectedPayment.data.totalAmount,
+        };
+      } else {
+        // Prioridade 2: Apenas cupom (preço B2B à vista, SEM desconto de 5%)
+        displayMode = 'coupon';
+        finalPrice = b2bPrice;
+      }
     }
   } else if (selectedPayment) {
+    // Cliente final sem cupom
     if (selectedPayment.type === 'cash') {
       finalPrice = calculateCashPriceWithPassOn(displayPrice, passOnCashDiscount, price);
       displayMode = 'cash';
@@ -364,13 +362,13 @@ const ProductDetailsDialog = ({
                     R$ {finalPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </p>
                   <p className="text-sm text-accent mt-1">
-                    {discountPrice && discountPrice < displayPrice 
-                      ? `🎟️ Preço especial! Economia de R$ ${(displayPrice - finalPrice).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-                      : `🎟️ ${couponValidation.coupon?.discountPercent}% de desconto!`
-                    }
+                    🎟️ Preço de Lojista B2B! Economia de R$ {(displayPrice - finalPrice).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </p>
                   <p className="text-sm text-muted-foreground line-through">
-                    De: R$ {displayPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    Preço cliente final: R$ {displayPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    💡 Sem desconto adicional à vista, mas pode parcelar este valor
                   </p>
                 </div>
               )}
@@ -381,13 +379,13 @@ const ProductDetailsDialog = ({
                     {paymentDetails.installments}x de R$ {paymentDetails.installmentValue?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </p>
                   <p className="text-sm text-accent mt-1">
-                    🎟️ Com cupom de desconto aplicado!
+                    🎟️ Preço de Lojista B2B parcelado!
                   </p>
                   <p className="text-sm text-muted-foreground">
                     Total parcelado: R$ {paymentDetails.totalAmount?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </p>
                   <p className="text-xs text-muted-foreground line-through">
-                    Sem cupom seria: R$ {displayPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    Preço cliente final: R$ {displayPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </p>
                 </div>
               )}

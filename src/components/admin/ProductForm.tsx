@@ -125,6 +125,12 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
       return;
     }
 
+    // Validar que preço com desconto é menor que preço normal
+    if (discountPrice && parseFloat(discountPrice) >= parseFloat(price)) {
+      toast.error("O preço com desconto (lojista) deve ser menor que o preço normal");
+      return;
+    }
+
     setSaving(true);
     try {
       await onSave({
@@ -213,7 +219,7 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="discountPrice">Preço com Desconto (R$)</Label>
+          <Label htmlFor="discountPrice">Preço com Desconto (Lojista B2B) - Opcional</Label>
           <Input
             id="discountPrice"
             type="number"
@@ -222,6 +228,10 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
             onChange={(e) => setDiscountPrice(e.target.value)}
             placeholder="0.00"
           />
+          <p className="text-xs text-muted-foreground">
+            Este é o preço exclusivo para lojistas com cupom. 
+            Não inclui desconto de 5% à vista, mas permite parcelamento.
+          </p>
         </div>
 
         <div className="col-span-2">
