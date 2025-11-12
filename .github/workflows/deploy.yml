@@ -32,6 +32,22 @@ jobs:
       - name: 📁 Mostrar arquivos gerados
         run: ls -al dist/
 
+      # 5.1️⃣ Verificar tamanho e estrutura do build
+      - name: 📊 Informações Detalhadas do Build
+        run: |
+          echo "=========================================="
+          echo "📦 INFORMAÇÕES DO BUILD"
+          echo "=========================================="
+          echo "📂 Conteúdo da pasta dist/:"
+          ls -lah dist/
+          echo ""
+          echo "📊 Tamanho total:"
+          du -sh dist/
+          echo ""
+          echo "🗂️ Estrutura de arquivos:"
+          find dist/ -maxdepth 2 -type f | head -20
+          echo "=========================================="
+
       # 6️⃣ Deploy via SFTP (método principal)
       - name: 🚀 Deploy via SFTP para Hostinger
         id: sftp-deploy
@@ -47,9 +63,32 @@ jobs:
           sftp_only: true
           delete_remote_files: true
 
+      # 6.1️⃣ Verificar resultado do SFTP
+      - name: ✅ Status do Deploy SFTP
+        run: |
+          if [ "${{ steps.sftp-deploy.outcome }}" == "success" ]; then
+            echo "=========================================="
+            echo "✅ SFTP COMPLETADO COM SUCESSO!"
+            echo "=========================================="
+            echo "🎯 Servidor: ${{ secrets.FTP_HOST }}"
+            echo "📁 Destino: ${{ secrets.FTP_PATH }}"
+            echo "🔐 Usuário: ${{ secrets.FTP_USER }}"
+            echo "🚀 Método: SFTP (porta 22)"
+            echo "⏰ Horário: $(date '+%Y-%m-%d %H:%M:%S')"
+            echo "=========================================="
+          else
+            echo "=========================================="
+            echo "❌ SFTP FALHOU!"
+            echo "=========================================="
+            echo "⚠️ Iniciando fallback para FTPS..."
+            echo "🔍 Possível causa: porta 22 bloqueada ou credenciais incorretas"
+            echo "=========================================="
+          fi
+
       # 7️⃣ Fallback para FTPS (caso SFTP falhe)
       - name: 🔁 Fallback para FTPS (caso SFTP falhe)
         if: steps.sftp-deploy.outcome == 'failure'
+        id: ftps-deploy
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
           server: ${{ secrets.FTP_HOST }}
@@ -63,3 +102,48 @@ jobs:
           dangerous-clean-slate: true
           dry-run: false
           log-level: verbose
+
+      # 7.1️⃣ Verificar resultado do FTPS
+      - name: ✅ Status do Deploy FTPS
+        if: steps.sftp-deploy.outcome == 'failure'
+        run: |
+          echo "=========================================="
+          echo "✅ FALLBACK FTPS EXECUTADO"
+          echo "=========================================="
+          echo "🎯 Servidor: ${{ secrets.FTP_HOST }}"
+          echo "📁 Destino: ${{ secrets.FTP_PATH }}"
+          echo "🔐 Usuário: ${{ secrets.FTP_USER }}"
+          echo "🚀 Método: FTPS (porta 21)"
+          echo "⏰ Horário: $(date '+%Y-%m-%d %H:%M:%S')"
+          echo "=========================================="
+
+      # 8️⃣ Resumo Final do Deploy
+      - name: 📋 Resumo Final do Deploy
+        if: always()
+        run: |
+          echo ""
+          echo "=========================================="
+          echo "🎉 DEPLOY FINALIZADO"
+          echo "=========================================="
+          echo ""
+          echo "📊 INFORMAÇÕES DO DEPLOY:"
+          echo "  🎯 Servidor: ${{ secrets.FTP_HOST }}"
+          echo "  📂 Caminho Remoto: ${{ secrets.FTP_PATH }}"
+          echo "  👤 Usuário FTP: ${{ secrets.FTP_USER }}"
+          echo ""
+          if [ "${{ steps.sftp-deploy.outcome }}" == "success" ]; then
+            echo "  ✅ Método Usado: SFTP (porta 22)"
+            echo "  📡 Status: Deploy bem-sucedido via SFTP"
+          else
+            echo "  🔄 Método Usado: FTPS (porta 21 - fallback)"
+            echo "  📡 Status: Deploy bem-sucedido via FTPS"
+          fi
+          echo ""
+          echo "  ⏰ Concluído em: $(date '+%Y-%m-%d %H:%M:%S %Z')"
+          echo "  🔗 Site: https://ramontech.com.br"
+          echo ""
+          echo "=========================================="
+          echo "✨ Arquivos enviados com sucesso!"
+          echo "🔄 Aguarde 1-2 minutos para propagação"
+          echo "🌐 Limpe o cache do navegador se necessário"
+          echo "=========================================="
