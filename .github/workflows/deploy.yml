@@ -32,7 +32,7 @@ jobs:
       - name: 📁 Mostrar arquivos gerados
         run: ls -al dist/
 
-      # 6️⃣ Deploy via FTPS (padrão)
+      # 6️⃣ Deploy via FTPS
       - name: 🚀 Deploy via FTPS para Hostinger
         id: ftp-deploy
         continue-on-error: true
@@ -50,7 +50,7 @@ jobs:
           dry-run: false
           log-level: verbose
 
-      # 7️⃣ Se FTPS falhar, tenta SFTP automaticamente
+      # 7️⃣ Fallback para SFTP (caso FTPS falhe)
       - name: 🔁 Fallback para SFTP (caso FTPS falhe)
         if: steps.ftp-deploy.outcome == 'failure'
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
