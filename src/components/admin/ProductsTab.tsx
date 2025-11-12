@@ -23,7 +23,9 @@ import {
 
 const ProductsTab = () => {
   const [products, setProducts] = useState<Product[]>(productsStore.getAvailableProducts());
-  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isFormOpen, setIsFormOpen] = useState(() => {
+    return sessionStorage.getItem('admin.products.isFormOpen') === 'true';
+  });
   const [editingProduct, setEditingProduct] = useState<Product | undefined>();
   const { toast } = useToast();
 
@@ -33,6 +35,14 @@ const ProductsTab = () => {
       coordinateGetter: sortableKeyboardCoordinates,
     })
   );
+
+  // Persistir estado do formulário
+  useState(() => {
+    const interval = setInterval(() => {
+      sessionStorage.setItem('admin.products.isFormOpen', isFormOpen.toString());
+    }, 100);
+    return () => clearInterval(interval);
+  });
 
   const loadProducts = () => {
     setProducts(productsStore.getAvailableProducts());
@@ -77,6 +87,8 @@ const ProductsTab = () => {
       
       setIsFormOpen(false);
       setEditingProduct(undefined);
+      sessionStorage.removeItem('admin.products.isFormOpen');
+      sessionStorage.removeItem('product-form-draft');
       loadProducts();
     } catch (error) {
       toast({
