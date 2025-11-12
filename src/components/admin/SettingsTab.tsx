@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/dialog";
 import { Info, Plus, X, Save, Settings as SettingsIcon } from "lucide-react";
 import { toast } from "sonner";
+import ChangePasswordCard from "./ChangePasswordCard";
 
 const SettingsTab = () => {
   const [digitalTaxRate, setDigitalTaxRate] = useState(6);
@@ -161,6 +162,9 @@ const SettingsTab = () => {
           Configure taxas de impostos e parcelamento para sua loja
         </p>
       </div>
+
+      {/* Seção 0: Alteração de Senha */}
+      <ChangePasswordCard />
 
       {/* Seção 1: Impostos */}
       <Card>

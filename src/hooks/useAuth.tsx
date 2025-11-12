@@ -122,5 +122,29 @@ export const useAuth = () => {
     return !!roles;
   };
 
-  return { ...authState, login, logout, checkIsAdmin };
+  const changePassword = async (currentPassword: string, newPassword: string) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user?.email) {
+      return { error: new Error('Usuário não autenticado') };
+    }
+    
+    // Re-autenticar com senha atual
+    const { error: reAuthError } = await supabase.auth.signInWithPassword({
+      email: session.user.email,
+      password: currentPassword,
+    });
+    
+    if (reAuthError) {
+      return { error: reAuthError };
+    }
+    
+    // Atualizar senha
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword
+    });
+    
+    return { error };
+  };
+
+  return { ...authState, login, logout, checkIsAdmin, changePassword };
 };
