@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ProductsTab from "./ProductsTab";
 import BrandsTab from "./BrandsTab";
@@ -7,7 +7,13 @@ import ImportProductsTab from "./ImportProductsTab";
 import { Package, Tags, FolderOpen, Upload } from "lucide-react";
 
 const ProductsMainTab = () => {
-  const [activeSubTab, setActiveSubTab] = useState("catalog");
+  const [activeSubTab, setActiveSubTab] = useState(() => {
+    return sessionStorage.getItem('admin.products.activeSubTab') || "catalog";
+  });
+
+  useEffect(() => {
+    sessionStorage.setItem('admin.products.activeSubTab', activeSubTab);
+  }, [activeSubTab]);
 
   return (
     <div className="space-y-6">

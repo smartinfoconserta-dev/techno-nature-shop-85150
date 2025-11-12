@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { productsStore, Product } from "@/lib/productsStore";
@@ -23,7 +23,9 @@ import {
 
 const ProductsTab = () => {
   const [products, setProducts] = useState<Product[]>(productsStore.getAvailableProducts());
-  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isFormOpen, setIsFormOpen] = useState(() => {
+    return sessionStorage.getItem('admin.products.isFormOpen') === 'true';
+  });
   const [editingProduct, setEditingProduct] = useState<Product | undefined>();
   const { toast } = useToast();
 
@@ -33,6 +35,11 @@ const ProductsTab = () => {
       coordinateGetter: sortableKeyboardCoordinates,
     })
   );
+
+  // Persistir estado do formulário
+  useEffect(() => {
+    sessionStorage.setItem('admin.products.isFormOpen', isFormOpen.toString());
+  }, [isFormOpen]);
 
   const loadProducts = () => {
     setProducts(productsStore.getAvailableProducts());
@@ -77,6 +84,8 @@ const ProductsTab = () => {
       
       setIsFormOpen(false);
       setEditingProduct(undefined);
+      sessionStorage.removeItem('admin.products.isFormOpen');
+      sessionStorage.removeItem('product-form-draft');
       loadProducts();
     } catch (error) {
       toast({
@@ -113,8 +122,19 @@ const ProductsTab = () => {
   };
 
   const handleCancel = () => {
-    setIsFormOpen(false);
-    setEditingProduct(undefined);
+    const hasDraft = sessionStorage.getItem('product-form-draft');
+    if (hasDraft) {
+      if (confirm("Descartar rascunho? Seus dados não salvos serão perdidos.")) {
+        sessionStorage.removeItem('product-form-draft');
+        sessionStorage.removeItem('admin.products.isFormOpen');
+        setIsFormOpen(false);
+        setEditingProduct(undefined);
+      }
+    } else {
+      sessionStorage.removeItem('admin.products.isFormOpen');
+      setIsFormOpen(false);
+      setEditingProduct(undefined);
+    }
   };
 
   return (
