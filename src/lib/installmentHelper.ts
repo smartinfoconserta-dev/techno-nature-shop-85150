@@ -14,6 +14,22 @@ interface InstallmentRate {
 }
 
 let cachedRates: InstallmentRate[] | null = null;
+let loadingPromise: Promise<InstallmentRate[]> | null = null;
+
+const DEFAULT_RATES: InstallmentRate[] = [
+  { installments: 1, rate: 0 },
+  { installments: 2, rate: 2.99 },
+  { installments: 3, rate: 3.99 },
+  { installments: 4, rate: 4.99 },
+  { installments: 5, rate: 5.99 },
+  { installments: 6, rate: 6.99 },
+  { installments: 7, rate: 7.99 },
+  { installments: 8, rate: 8.99 },
+  { installments: 9, rate: 9.99 },
+  { installments: 10, rate: 10.99 },
+  { installments: 11, rate: 11.99 },
+  { installments: 12, rate: 12.99 },
+];
 
 /**
  * Busca as taxas de parcelamento do edge function
@@ -23,30 +39,39 @@ async function getInstallmentRates(): Promise<InstallmentRate[]> {
     return cachedRates;
   }
 
-  try {
-    const { data, error } = await supabase.functions.invoke('get-installment-rates');
-    
-    if (error) throw error;
-    
-    cachedRates = data.installment_rates;
-    return cachedRates;
-  } catch (error) {
-    console.error('Error fetching installment rates:', error);
-    // Fallback para taxas padrão em caso de erro
-    return [
-      { installments: 1, rate: 0 },
-      { installments: 2, rate: 2.99 },
-      { installments: 3, rate: 3.99 },
-      { installments: 4, rate: 4.99 },
-      { installments: 5, rate: 5.99 },
-      { installments: 6, rate: 6.99 },
-      { installments: 7, rate: 7.99 },
-      { installments: 8, rate: 8.99 },
-      { installments: 9, rate: 9.99 },
-      { installments: 10, rate: 10.99 },
-      { installments: 11, rate: 11.99 },
-      { installments: 12, rate: 12.99 },
-    ];
+  // Se já está carregando, reutilizar a promise
+  if (loadingPromise) {
+    return loadingPromise;
+  }
+
+  loadingPromise = (async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('get-installment-rates');
+      
+      if (error) throw error;
+      
+      cachedRates = data.installment_rates;
+      console.log('✅ Taxas de parcelamento carregadas:', cachedRates.length);
+      return cachedRates;
+    } catch (error) {
+      console.error('❌ Erro ao buscar taxas:', error);
+      cachedRates = DEFAULT_RATES;
+      return cachedRates;
+    } finally {
+      loadingPromise = null;
+    }
+  })();
+
+  return loadingPromise;
+}
+
+/**
+ * Pré-carrega as taxas de parcelamento no início do app
+ */
+export async function preloadInstallmentRates(): Promise<void> {
+  if (!cachedRates) {
+    await getInstallmentRates();
+    console.log('✅ Taxas pré-carregadas e em cache');
   }
 }
 

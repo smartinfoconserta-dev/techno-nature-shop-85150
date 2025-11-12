@@ -55,6 +55,7 @@ const ProductDetailsDialog = ({
   
   const [couponValidation, setCouponValidation] = useState<{ valid: boolean; coupon?: any }>({ valid: false });
   const [installmentOptions, setInstallmentOptions] = useState<InstallmentOption[]>([]);
+  const [isLoadingInstallments, setIsLoadingInstallments] = useState(true);
   
   const isDiscountActive = couponValidation.valid;
 
@@ -75,8 +76,10 @@ const ProductDetailsDialog = ({
   
   useEffect(() => {
     const loadOptions = async () => {
+      setIsLoadingInstallments(true);
       const options = await getAllInstallmentOptions(displayPrice);
       setInstallmentOptions(options);
+      setIsLoadingInstallments(false);
     };
     loadOptions();
   }, [displayPrice]);
@@ -320,7 +323,11 @@ const ProductDetailsDialog = ({
                   </p>
                   {!isDiscountActive && (
                     <p className="text-sm text-muted-foreground mt-1">
-                      ou 12x de R$ {(installmentOptions.find(o => o.installments === 12)?.installmentValue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      {isLoadingInstallments ? (
+                        <span className="animate-pulse">Calculando parcelamento...</span>
+                      ) : (
+                        `ou 12x de R$ ${(installmentOptions.find(o => o.installments === 12)?.installmentValue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                      )}
                     </p>
                   )}
                 </div>

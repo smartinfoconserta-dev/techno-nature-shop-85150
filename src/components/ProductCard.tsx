@@ -44,6 +44,7 @@ const ProductCard = ({ id, images, name, brand, category, specs, description, pr
   
   const [couponValidation, setCouponValidation] = useState<{ valid: boolean; coupon?: any }>({ valid: false });
   const [installmentOptions, setInstallmentOptions] = useState<InstallmentOption[]>([]);
+  const [isLoadingInstallments, setIsLoadingInstallments] = useState(true);
   
   const isDiscountActive = couponValidation.valid;
   const mainImage = images[0] || "/placeholder.svg";
@@ -66,8 +67,10 @@ const ProductCard = ({ id, images, name, brand, category, specs, description, pr
   
   useEffect(() => {
     const loadOptions = async () => {
+      setIsLoadingInstallments(true);
       const options = await getAllInstallmentOptions(displayPrice);
       setInstallmentOptions(options);
+      setIsLoadingInstallments(false);
     };
     loadOptions();
   }, [displayPrice]);
@@ -270,7 +273,11 @@ const ProductCard = ({ id, images, name, brand, category, specs, description, pr
               R$ {displayPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </p>
             <p className="text-xs text-muted-foreground mt-0.5">
-              em até 12x de R$ {(installmentOptions.find(o => o.installments === 12)?.installmentValue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              {isLoadingInstallments ? (
+                <span className="animate-pulse">Calculando parcelamento...</span>
+              ) : (
+                `em até 12x de R$ ${(installmentOptions.find(o => o.installments === 12)?.installmentValue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+              )}
             </p>
           </div>
         </CardContent>
