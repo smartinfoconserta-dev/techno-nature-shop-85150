@@ -106,14 +106,10 @@ const Index = () => {
   useEffect(() => {
     const loadFilteredCategories = async () => {
       const allCategories = await categoriesStore.getAllCategories();
-      if (homeFilter === "Todas") {
-        setFilteredCats(allCategories);
-      } else {
-        setFilteredCats(allCategories.filter(cat => cat.name === homeFilter));
-      }
+      setFilteredCats(allCategories);
     };
     loadFilteredCategories();
-  }, [homeFilter]);
+  }, []);
   return <div className="min-h-screen bg-background">
       <Header searchValue={searchQuery} onSearchChange={setSearchQuery} />
       
