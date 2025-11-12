@@ -8,38 +8,34 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Clonar o repositório
+      - name: 📥 Clonar o repositório
         uses: actions/checkout@v3
 
-      - name: Configurar Node.js 18
+      - name: ⚙️ Configurar Node.js 18
         uses: actions/setup-node@v3
         with:
           node-version: '18'
 
-      - name: Instalar dependências
+      - name: 📦 Instalar dependências
         run: npm install
 
-      - name: Build do projeto
+      - name: 🏗️ Build do projeto
         run: npm run build
 
-      - name: Mostrar arquivos gerados
+      - name: 📁 Mostrar arquivos gerados
         run: ls -al dist/
 
-      - name: Deploy FTP para Hostinger
+      - name: 🚀 Deploy FTP para Hostinger
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
           server: ${{ secrets.FTP_HOST }}
-          port: 21
           username: ${{ secrets.FTP_USER }}
           password: ${{ secrets.FTP_PASS }}
+          port: 21
           local-dir: dist/
-          server-dir: /
+          server-dir: /public_html/
           dangerous-clean-slate: true
           dry-run: false
           log-level: verbose
-
-
-FTP_HOST	exemplo: ftp.seudominio.com
-FTP_USER	seu usuário FTP
-FTP_PASS	sua senha FTP
