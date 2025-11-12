@@ -18,6 +18,8 @@ const Index = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 50000]);
+  const [filterSearch, setFilterSearch] = useState("");
   useEffect(() => {
     const initCategories = async () => {
       const names = await categoriesStore.getCategoryNames();
@@ -30,6 +32,11 @@ const Index = () => {
     };
     initCategories();
   }, []);
+  const maxProductPrice = useMemo(() => {
+    if (products.length === 0) return 50000;
+    return Math.max(...products.map(p => p.price));
+  }, [products]);
+
   useEffect(() => {
     const init = async () => {
       setIsLoading(true);
@@ -39,7 +46,8 @@ const Index = () => {
     };
     init();
     loadBrands();
-  }, [selectedCategory]);
+    setPriceRange([0, maxProductPrice]);
+  }, [selectedCategory, maxProductPrice]);
   useEffect(() => {
     const handleScroll = () => {
       setShowScrollTop(window.scrollY > 400);
@@ -69,19 +77,44 @@ const Index = () => {
     return products.filter(product => {
       const categoryMatch = product.category === selectedCategory;
       const brandMatch = selectedBrand === "all" || product.brand === selectedBrand;
+      
       const searchLower = searchQuery.toLowerCase();
-      const searchMatch = searchQuery === "" || product.name.toLowerCase().includes(searchLower) || product.brand.toLowerCase().includes(searchLower) || product.specs.toLowerCase().includes(searchLower);
-      return categoryMatch && brandMatch && searchMatch;
+      const globalSearchMatch = searchQuery === "" || 
+        product.name.toLowerCase().includes(searchLower) || 
+        product.brand.toLowerCase().includes(searchLower) || 
+        product.specs.toLowerCase().includes(searchLower);
+      
+      const filterSearchLower = filterSearch.toLowerCase();
+      const filterSearchMatch = filterSearch === "" ||
+        product.name.toLowerCase().includes(filterSearchLower) ||
+        product.brand.toLowerCase().includes(filterSearchLower) ||
+        product.specs.toLowerCase().includes(filterSearchLower) ||
+        product.description.toLowerCase().includes(filterSearchLower);
+      
+      const priceMatch = product.price >= priceRange[0] && product.price <= priceRange[1];
+      
+      return categoryMatch && brandMatch && globalSearchMatch && filterSearchMatch && priceMatch;
     });
-  }, [products, selectedCategory, selectedBrand, searchQuery]);
+  }, [products, selectedCategory, selectedBrand, searchQuery, filterSearch, priceRange]);
   const scrollToTop = () => {
     window.scrollTo({
       top: 0,
       behavior: "smooth"
     });
   };
+
+  const handleResetFilters = () => {
+    if (categories.length > 0) {
+      setSelectedCategory(categories[0]);
+    }
+    setSelectedBrand("all");
+    setSearchQuery("");
+    setFilterSearch("");
+    setPriceRange([0, maxProductPrice]);
+    scrollToTop();
+  };
   return <div className="min-h-screen bg-background">
-      <Header searchValue={searchQuery} onSearchChange={setSearchQuery} />
+      <Header searchValue={searchQuery} onSearchChange={setSearchQuery} onReset={handleResetFilters} />
       
       <main className="container mx-auto px-4 py-6">
         <div className="mb-6 space-y-4">
@@ -106,7 +139,12 @@ const Index = () => {
               selectedBrand={selectedBrand} 
               onBrandChange={setSelectedBrand} 
               brands={brands} 
-              categories={categories} 
+              categories={categories}
+              priceRange={priceRange}
+              onPriceRangeChange={setPriceRange}
+              maxPrice={maxProductPrice}
+              filterSearch={filterSearch}
+              onFilterSearchChange={setFilterSearch}
             />
             <p className="text-sm text-muted-foreground">
               {filteredProducts.length} {filteredProducts.length === 1 ? 'produto' : 'produtos'}

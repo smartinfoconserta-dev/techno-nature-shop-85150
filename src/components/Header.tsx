@@ -8,9 +8,10 @@ import SearchBar from "./SearchBar";
 interface HeaderProps {
   searchValue: string;
   onSearchChange: (value: string) => void;
+  onReset: () => void;
 }
 
-const Header = ({ searchValue, onSearchChange }: HeaderProps) => {
+const Header = ({ searchValue, onSearchChange, onReset }: HeaderProps) => {
   const navigate = useNavigate();
 
   const handleClearCache = () => {
@@ -24,14 +25,17 @@ const Header = ({ searchValue, onSearchChange }: HeaderProps) => {
         <div className="container mx-auto px-4 h-14 flex items-center gap-3">
           <MobileMenu />
           
-          <div className="flex items-center gap-2 min-w-0">
+          <button 
+            onClick={onReset}
+            className="flex items-center gap-2 min-w-0 hover:opacity-80 transition-opacity"
+          >
             <h1 className="text-lg font-bold text-foreground whitespace-nowrap hidden sm:block">
               Ramon Tech
             </h1>
             <h1 className="text-lg font-bold text-foreground whitespace-nowrap sm:hidden">
               RT
             </h1>
-          </div>
+          </button>
           
           <SearchBar 
             value={searchValue}
