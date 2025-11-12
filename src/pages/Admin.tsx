@@ -23,7 +23,9 @@ import { receivablesStore } from "@/lib/receivablesStore";
 const Admin = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("dashboard");
+  const [activeTab, setActiveTab] = useState(() => {
+    return sessionStorage.getItem('admin.activeTab') || "dashboard";
+  });
   const [productCount, setProductCount] = useState<number>(0);
 
   // Refresh inicial dos dados em background quando a tela abre
@@ -49,6 +51,11 @@ const Admin = () => {
 
     return () => clearInterval(interval);
   }, []);
+
+  // Persistir aba ativa
+  useEffect(() => {
+    sessionStorage.setItem('admin.activeTab', activeTab);
+  }, [activeTab]);
 
   const handleLogout = async () => {
     await logout();

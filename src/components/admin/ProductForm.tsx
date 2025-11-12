@@ -17,6 +17,8 @@ import { brandsStore } from "@/lib/brandsStore";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+const STORAGE_KEY = 'product-form-draft';
+
 interface ProductFormProps {
   product?: Product;
   onSave: (data: Omit<Product, "id" | "order" | "sold" | "expenses" | "createdAt">) => Promise<void>;
@@ -41,6 +43,67 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
   const [categories, setCategories] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  // Carregar rascunho salvo ao montar (apenas para novos produtos)
+  useEffect(() => {
+    if (!product) {
+      const savedDraft = sessionStorage.getItem(STORAGE_KEY);
+      if (savedDraft) {
+        try {
+          const draft = JSON.parse(savedDraft);
+          setName(draft.name || "");
+          setCategory(draft.category || "Notebooks");
+          setBrand(draft.brand || "");
+          setSpecs(draft.specs || "");
+          setDescription(draft.description || "");
+          setPrice(draft.price || "");
+          setDiscountPrice(draft.discountPrice || "");
+          setPassOnCashDiscount(draft.passOnCashDiscount || false);
+          setImages(draft.images || []);
+          toast.success("Rascunho restaurado", {
+            description: "Seus dados não salvos foram recuperados",
+            duration: 3000,
+          });
+        } catch (e) {
+          console.error("Erro ao carregar rascunho:", e);
+        }
+      }
+    }
+  }, [product]);
+
+  // Salvar rascunho automaticamente ao digitar
+  useEffect(() => {
+    if (!product) {
+      const draft = {
+        name,
+        category,
+        brand,
+        specs,
+        description,
+        price,
+        discountPrice,
+        passOnCashDiscount,
+        images,
+      };
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
+    }
+  }, [name, category, brand, specs, description, price, discountPrice, passOnCashDiscount, images, product]);
+
+  // Avisar antes de fechar/recarregar se houver dados não salvos
+  useEffect(() => {
+    if (!product) {
+      const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+        const hasDraft = sessionStorage.getItem(STORAGE_KEY);
+        if (hasDraft) {
+          e.preventDefault();
+          e.returnValue = '';
+        }
+      };
+
+      window.addEventListener('beforeunload', handleBeforeUnload);
+      return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }
+  }, [product]);
 
   useEffect(() => {
     import("@/lib/categoriesStore").then(async ({ categoriesStore }) => {
@@ -144,6 +207,9 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
         passOnCashDiscount,
         images,
       });
+
+      // Limpar rascunho após salvar
+      sessionStorage.removeItem(STORAGE_KEY);
     } finally {
       setSaving(false);
     }
