@@ -217,7 +217,7 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6 bg-card p-6 rounded-lg border border-border">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-5 [&>*]:min-w-0">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-5">
         <div className="space-y-2">
           <Label htmlFor="name">Nome do Produto *</Label>
           <Input
