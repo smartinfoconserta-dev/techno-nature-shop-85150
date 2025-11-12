@@ -28,12 +28,9 @@ const ProductFilters = ({
   brands,
   categories
 }: ProductFiltersProps) => {
-  const activeFiltersCount = 
-    (selectedCategory !== "Todos" ? 1 : 0) + 
-    (selectedBrand !== "all" ? 1 : 0);
+  const activeFiltersCount = (selectedBrand !== "all" ? 1 : 0);
 
   const handleClear = () => {
-    onCategoryChange("Todos");
     onBrandChange("all");
   };
 
@@ -57,22 +54,6 @@ const ProductFilters = ({
         
         <ScrollArea className="h-[calc(100vh-180px)] pr-4 mt-6">
           <div className="space-y-6">
-            <div>
-              <h3 className="font-semibold mb-3">Categorias</h3>
-              <div className="flex flex-wrap gap-2">
-                {categories.map((category) => (
-                  <Button
-                    key={category}
-                    size="sm"
-                    variant={selectedCategory === category ? "default" : "outline"}
-                    onClick={() => onCategoryChange(category)}
-                  >
-                    {category}
-                  </Button>
-                ))}
-              </div>
-            </div>
-            
             <div>
               <h3 className="font-semibold mb-3">Marcas</h3>
               <div className="flex flex-wrap gap-2">
