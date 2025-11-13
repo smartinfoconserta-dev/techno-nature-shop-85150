@@ -61,7 +61,8 @@ export type Database = {
           active: boolean
           code: string
           created_at: string
-          discount_percent: number
+          discount_percent: number | null
+          discount_type: string | null
           id: string
           updated_at: string
         }
@@ -69,7 +70,8 @@ export type Database = {
           active?: boolean
           code: string
           created_at?: string
-          discount_percent: number
+          discount_percent?: number | null
+          discount_type?: string | null
           id?: string
           updated_at?: string
         }
@@ -77,7 +79,8 @@ export type Database = {
           active?: boolean
           code?: string
           created_at?: string
-          discount_percent?: number
+          discount_percent?: number | null
+          discount_type?: string | null
           id?: string
           updated_at?: string
         }

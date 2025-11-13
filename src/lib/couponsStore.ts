@@ -5,7 +5,7 @@ export interface Coupon {
   code: string;
   active: boolean;
   discountType: 'fixed';
-  discountPercent: number;
+  discountPercent: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -27,7 +27,7 @@ export const couponsStore = {
       code: coupon.code,
       active: coupon.active,
       discountType: 'fixed' as const,
-      discountPercent: coupon.discount_percent || 0,
+      discountPercent: coupon.discount_percent,
       createdAt: coupon.created_at,
       updatedAt: coupon.updated_at,
     }));
@@ -50,7 +50,7 @@ export const couponsStore = {
       code: coupon.code,
       active: coupon.active,
       discountType: 'fixed' as const,
-      discountPercent: coupon.discount_percent || 0,
+      discountPercent: coupon.discount_percent,
       createdAt: coupon.created_at,
       updatedAt: coupon.updated_at,
     }));
@@ -75,7 +75,7 @@ export const couponsStore = {
         code: data.code,
         active: data.active,
         discountType: 'fixed' as const,
-        discountPercent: data.discount_percent || 0,
+        discountPercent: data.discount_percent,
         createdAt: data.created_at,
         updatedAt: data.updated_at,
       },
@@ -94,7 +94,7 @@ export const couponsStore = {
       .insert([{ 
         code: trimmedCode, 
         discount_type: 'fixed',
-        discount_percent: 0 
+        discount_percent: null 
       }])
       .select()
       .single();
@@ -115,7 +115,7 @@ export const couponsStore = {
       code: data.code,
       active: data.active,
       discountType: 'fixed',
-      discountPercent: 0,
+      discountPercent: data.discount_percent,
       createdAt: data.created_at,
       updatedAt: data.updated_at,
     };
@@ -138,7 +138,7 @@ export const couponsStore = {
         code: trimmedCode, 
         active,
         discount_type: 'fixed',
-        discount_percent: 0 
+        discount_percent: null 
       })
       .eq("id", id)
       .select()
@@ -160,7 +160,7 @@ export const couponsStore = {
       code: data.code,
       active: data.active,
       discountType: 'fixed',
-      discountPercent: 0,
+      discountPercent: data.discount_percent,
       createdAt: data.created_at,
       updatedAt: data.updated_at,
     };

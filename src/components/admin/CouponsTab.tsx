@@ -153,7 +153,9 @@ const CouponsTab = () => {
                       </Badge>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      Cupom de acesso ao preço de lojista B2B
+                      {coupon.discountPercent 
+                        ? `Desconto de ${coupon.discountPercent}% aplicado` 
+                        : "Cupom de acesso ao preço de lojista B2B"}
                     </p>
                   </div>
                 </div>
