@@ -283,7 +283,7 @@ export const monthlyReportsStore = {
     };
   },
 
-  checkAndGeneratePreviousMonth(): void {
+  async checkAndGeneratePreviousMonth(): Promise<void> {
     const now = new Date();
     const currentMonth = format(now, "yyyy-MM");
     const lastCheck = localStorage.getItem(LAST_CHECK_KEY);
@@ -302,7 +302,7 @@ export const monthlyReportsStore = {
     
     if (!existingReport) {
       // Gera relatório do mês anterior
-      this.generateReportForMonth(previousMonth);
+      await this.generateReportForMonth(previousMonth);
     }
 
     // Atualiza última verificação

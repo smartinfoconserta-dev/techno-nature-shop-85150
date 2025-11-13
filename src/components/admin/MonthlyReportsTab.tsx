@@ -15,19 +15,22 @@ const MonthlyReportsTab = () => {
     loadReports();
   }, []);
 
-  const loadReports = () => {
+  const loadReports = async () => {
     const availableMonths = monthlyReportsStore.getAvailableMonths();
     const currentMonth = format(new Date(), "yyyy-MM");
     
-    const allReports: MonthlyReport[] = availableMonths.map((monthString) => {
+    const reportPromises = availableMonths.map(async (monthString) => {
       if (monthString === currentMonth) {
-        return monthlyReportsStore.getCurrentMonthData();
+        return await monthlyReportsStore.getCurrentMonthData();
       } else {
         return monthlyReportsStore.getReportByMonth(monthString);
       }
-    }).filter((report): report is MonthlyReport => report !== null);
+    });
     
-    setReports(allReports);
+    const allReports = await Promise.all(reportPromises);
+    const filteredReports = allReports.filter((report): report is MonthlyReport => report !== null);
+    
+    setReports(filteredReports);
   };
 
   const getMonthDisplayName = (monthString: string): string => {
