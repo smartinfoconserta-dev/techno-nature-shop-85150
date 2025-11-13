@@ -47,23 +47,34 @@ const CustomerLogin = () => {
     }, 5000);
 
     try {
-      console.log("[LOGIN] Iniciando autenticação...");
       const customer = await customersStore.authenticateCustomerByIdentifier(identifier, password);
-      console.log("[LOGIN] Resultado da autenticação:", customer ? "Sucesso" : "Falhou");
       
       clearTimeout(timeoutId);
       
       if (customer) {
-        console.log("[LOGIN] Salvando sessão...");
         login(customer);
-        console.log("[LOGIN] Navegando para portal...");
         navigate("/portal");
-      } else {
         toast({
-          title: "Erro no login",
-          description: "Usuário, CPF/CNPJ, Código ou senha incorretos",
-          variant: "destructive",
+          title: "Login realizado!",
+          description: `Bem-vindo(a), ${customer.name}!`,
         });
+      } else {
+        // Verificar se o usuário existe
+        const customerExists = await customersStore.getCustomerByIdentifier(identifier);
+        
+        if (customerExists) {
+          toast({
+            title: "Senha incorreta",
+            description: "A senha digitada está incorreta. Tente novamente ou recupere sua senha.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Usuário não encontrado",
+            description: "Código, CPF/CNPJ ou username não cadastrado no sistema.",
+            variant: "destructive",
+          });
+        }
       }
     } catch (error) {
       clearTimeout(timeoutId);
@@ -116,6 +127,9 @@ const CustomerLogin = () => {
                 placeholder="Digite seu usuário ou código"
                 required
               />
+              <p className="text-xs text-muted-foreground">
+                Use seu código (LOJ###), CPF/CNPJ ou username
+              </p>
             </div>
             
             <div className="space-y-2">

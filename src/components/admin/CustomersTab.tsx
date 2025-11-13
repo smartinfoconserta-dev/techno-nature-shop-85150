@@ -33,9 +33,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
-import { Copy, Eye, EyeOff, Key, ShoppingBag, Trash2 } from "lucide-react";
+import { Copy, Eye, EyeOff, Key, ShoppingBag, Trash2, KeyRound } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import CustomerReceivablesDialog from "./CustomerReceivablesDialog";
+import CustomerPasswordDialog from "./CustomerPasswordDialog";
 
 const CustomersTab = () => {
   const { toast } = useToast();
@@ -51,6 +52,8 @@ const CustomersTab = () => {
   const [filteredCustomers, setFilteredCustomers] = useState<Customer[]>([]);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(null);
+  const [showResetPasswordDialog, setShowResetPasswordDialog] = useState(false);
+  const [customerToResetPassword, setCustomerToResetPassword] = useState<Customer | null>(null);
 
   useEffect(() => {
     const loadCustomers = async () => {
@@ -289,10 +292,23 @@ const CustomersTab = () => {
                             setNewPassword("");
                             setShowPasswordDialog(true);
                           }}
-                          title="Definir/Alterar senha"
+                          title="Configurar username e senha"
                         >
                           <Key className="h-4 w-4" />
                         </Button>
+                        {customer.username && (
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => {
+                              setCustomerToResetPassword(customer);
+                              setShowResetPasswordDialog(true);
+                            }}
+                            title="Redefinir senha"
+                          >
+                            <KeyRound className="h-4 w-4" />
+                          </Button>
+                        )}
                         <Button
                           size="sm"
                           variant={customer.hasPortalAccess ? "destructive" : "default"}
@@ -388,6 +404,14 @@ const CustomersTab = () => {
           customerId={selectedCustomer.id}
         />
       )}
+
+      {/* Dialog: Redefinir Senha */}
+      <CustomerPasswordDialog
+        open={showResetPasswordDialog}
+        onOpenChange={setShowResetPasswordDialog}
+        customer={customerToResetPassword}
+        onSuccess={() => setRefreshKey(prev => prev + 1)}
+      />
 
       {/* Dialog: Confirmar Exclusão */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
