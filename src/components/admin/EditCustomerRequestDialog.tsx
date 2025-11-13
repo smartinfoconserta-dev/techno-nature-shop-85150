@@ -7,9 +7,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { customerRequestsStore, CustomerRequest } from "@/lib/customerRequestsStore";
+import { receivablesStore } from "@/lib/receivablesStore";
 import { categoriesStore } from "@/lib/categoriesStore";
 import { brandsStore } from "@/lib/brandsStore";
-import { Loader2, CheckCircle2, XCircle } from "lucide-react";
+import { Loader2, CheckCircle2, XCircle, Check } from "lucide-react";
 
 interface Props {
   request: CustomerRequest;
@@ -20,6 +21,7 @@ interface Props {
 
 export const EditCustomerRequestDialog = ({ request, open, onOpenChange, onSuccess }: Props) => {
   const [loading, setLoading] = useState(false);
+  const [confirmLoading, setConfirmLoading] = useState(false);
   const [categories, setCategories] = useState<string[]>([]);
   const [brands, setBrands] = useState<string[]>([]);
   
@@ -85,6 +87,99 @@ export const EditCustomerRequestDialog = ({ request, open, onOpenChange, onSucce
       toast.error("Erro ao rejeitar solicitação");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleConfirmAndConvert = async () => {
+    // Validações
+    if (!formData.productName.trim()) {
+      toast.error("Nome do produto é obrigatório");
+      return;
+    }
+    if (!formData.salePrice || parseFloat(formData.salePrice) <= 0) {
+      toast.error("Preço de venda deve ser maior que zero");
+      return;
+    }
+    if (!formData.costPrice || parseFloat(formData.costPrice) <= 0) {
+      toast.error("Preço de custo é obrigatório");
+      return;
+    }
+    if (!formData.brand) {
+      toast.error("Marca é obrigatória");
+      return;
+    }
+    if (!formData.category) {
+      toast.error("Categoria é obrigatória");
+      return;
+    }
+    if (!formData.paymentMethod) {
+      toast.error("Forma de pagamento é obrigatória");
+      return;
+    }
+
+    const salePrice = parseFloat(formData.salePrice);
+    const costPrice = parseFloat(formData.costPrice);
+
+    if (costPrice >= salePrice) {
+      toast.error("Preço de custo deve ser menor que o preço de venda");
+      return;
+    }
+
+    setConfirmLoading(true);
+    try {
+      // Primeiro atualiza a solicitação com todos os dados
+      await customerRequestsStore.updateRequest(request.id, {
+        product_name: formData.productName,
+        sale_price: salePrice,
+        cost_price: costPrice,
+        brand: formData.brand,
+        category: formData.category,
+        warranty_months: parseInt(formData.warrantyMonths),
+        payment_method: formData.paymentMethod,
+        installments: parseInt(formData.installments),
+        installment_rate: parseFloat(formData.installments) > 1 ? 0 : undefined,
+        admin_notes: formData.adminNotes || undefined,
+        notes: formData.notes || undefined,
+      });
+
+      // Calcular total com juros se tiver parcelamento
+      const installments = parseInt(formData.installments);
+      const installmentRate = installments > 1 ? 0 : 0; // Taxa será 0 por enquanto
+      const totalAmount = salePrice * (1 + (installmentRate / 100));
+
+      // Calcular data de vencimento (30 dias a partir de hoje)
+      const dueDate = new Date();
+      dueDate.setDate(dueDate.getDate() + 30);
+
+      // Criar receivable
+      const receivable = await receivablesStore.addReceivable({
+        customerId: request.customer_id,
+        customerCode: "", // Será preenchido pelo backend se necessário
+        customerName: request.customer_name,
+        productId: request.id, // Usando ID da solicitação como productId
+        productName: formData.productName,
+        costPrice: costPrice,
+        salePrice: salePrice,
+        totalAmount: totalAmount,
+        paidAmount: 0,
+        dueDate: dueDate.toISOString().split('T')[0],
+        payments: [],
+        source: "manual" as any,
+        warranty: parseInt(formData.warrantyMonths),
+        notes: formData.adminNotes || formData.notes,
+      });
+
+      // Marcar solicitação como confirmada e vincular ao receivable
+      await customerRequestsStore.confirmAndConvert(request.id, receivable.id);
+
+      toast.success("✅ Solicitação confirmada e convertida em venda!");
+      onOpenChange(false);
+      onSuccess();
+    } catch (error) {
+      console.error(error);
+      toast.error("Erro ao confirmar solicitação: " + (error as Error).message);
+    } finally {
+      setConfirmLoading(false);
     }
   };
 
@@ -230,16 +325,26 @@ export const EditCustomerRequestDialog = ({ request, open, onOpenChange, onSucce
           </div>
 
           <div className="flex gap-2 justify-end pt-4 border-t">
-            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
+            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading || confirmLoading}>
               Cancelar
             </Button>
             {request.status === "pending" && (
-              <Button variant="destructive" onClick={handleReject} disabled={loading}>
-                {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <XCircle className="w-4 h-4 mr-2" />}
-                Rejeitar
-              </Button>
+              <>
+                <Button variant="destructive" onClick={handleReject} disabled={loading || confirmLoading}>
+                  {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <XCircle className="w-4 h-4 mr-2" />}
+                  Rejeitar
+                </Button>
+                <Button 
+                  onClick={handleConfirmAndConvert} 
+                  disabled={loading || confirmLoading}
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                >
+                  {confirmLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Check className="w-4 h-4 mr-2" />}
+                  Confirmar e Converter em Venda
+                </Button>
+              </>
             )}
-            <Button onClick={handleUpdate} disabled={loading}>
+            <Button onClick={handleUpdate} disabled={loading || confirmLoading}>
               {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
               Salvar Alterações
             </Button>
