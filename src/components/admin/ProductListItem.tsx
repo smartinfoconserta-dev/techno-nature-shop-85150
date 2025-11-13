@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { GripVertical, Pencil, Trash2 } from "lucide-react";
+import { GripVertical, Pencil, Trash2, DollarSign } from "lucide-react";
 import { Product } from "@/lib/productsStore";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -8,9 +8,10 @@ interface ProductListItemProps {
   product: Product;
   onEdit: (product: Product) => void;
   onDelete: (id: string) => void;
+  onMarkAsSold: (product: Product) => void;
 }
 
-const ProductListItem = ({ product, onEdit, onDelete }: ProductListItemProps) => {
+const ProductListItem = ({ product, onEdit, onDelete, onMarkAsSold }: ProductListItemProps) => {
   const {
     attributes,
     listeners,
@@ -57,6 +58,14 @@ const ProductListItem = ({ product, onEdit, onDelete }: ProductListItemProps) =>
       </div>
 
       <div className="flex gap-2">
+        <Button
+          size="icon"
+          variant="default"
+          onClick={() => onMarkAsSold(product)}
+          title="Marcar como vendido"
+        >
+          <DollarSign className="h-4 w-4" />
+        </Button>
         <Button
           size="icon"
           variant="outline"

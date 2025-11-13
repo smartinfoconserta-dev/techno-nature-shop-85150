@@ -4,6 +4,7 @@ import { Plus } from "lucide-react";
 import { productsStore, Product } from "@/lib/productsStore";
 import ProductForm from "./ProductForm";
 import ProductListItem from "./ProductListItem";
+import MarkAsSoldDialog from "./MarkAsSoldDialog";
 import { useToast } from "@/hooks/use-toast";
 import {
   DndContext,
@@ -27,6 +28,8 @@ const ProductsTab = () => {
     return sessionStorage.getItem('admin.products.isFormOpen') === 'true';
   });
   const [editingProduct, setEditingProduct] = useState<Product | undefined>();
+  const [selectedProduct, setSelectedProduct] = useState<Product | undefined>();
+  const [isMarkAsSoldOpen, setIsMarkAsSoldOpen] = useState(false);
   const { toast } = useToast();
 
   const sensors = useSensors(
@@ -121,6 +124,51 @@ const ProductsTab = () => {
     }
   };
 
+  const handleMarkAsSold = (product: Product) => {
+    setSelectedProduct(product);
+    setIsMarkAsSoldOpen(true);
+  };
+
+  const handleMarkAsSoldConfirm = async (
+    buyerName: string,
+    buyerCpf: string,
+    cash: number,
+    pix: number,
+    card: number,
+    warranty: number,
+    warrantyExpires?: string
+  ) => {
+    if (!selectedProduct) return;
+
+    try {
+      await productsStore.markAsSold(
+        selectedProduct.id,
+        buyerName,
+        buyerCpf,
+        cash,
+        pix,
+        card,
+        warranty,
+        warrantyExpires
+      );
+
+      toast({
+        title: "Produto vendido!",
+        description: `${selectedProduct.name} foi marcado como vendido.`,
+      });
+
+      setIsMarkAsSoldOpen(false);
+      setSelectedProduct(undefined);
+      loadProducts();
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: error instanceof Error ? error.message : "Erro ao marcar produto como vendido",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleCancel = () => {
     const hasDraft = sessionStorage.getItem('product-form-draft');
     if (hasDraft) {
@@ -189,6 +237,7 @@ const ProductsTab = () => {
                       product={product}
                       onEdit={handleEdit}
                       onDelete={handleDelete}
+                      onMarkAsSold={handleMarkAsSold}
                     />
                   ))}
                 </div>
@@ -196,6 +245,16 @@ const ProductsTab = () => {
             </DndContext>
           )}
         </div>
+      )}
+
+      {selectedProduct && (
+        <MarkAsSoldDialog
+          product={selectedProduct}
+          open={isMarkAsSoldOpen}
+          onOpenChange={setIsMarkAsSoldOpen}
+          onConfirm={handleMarkAsSoldConfirm}
+          onUpdate={loadProducts}
+        />
       )}
     </div>
   );
