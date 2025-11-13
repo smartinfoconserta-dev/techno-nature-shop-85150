@@ -85,8 +85,8 @@ function mapRowToProduct(row: any): Product {
     buyerName: row.customer_name || undefined,
     buyerCpf: undefined,
     invoiceUrl: undefined,
-    soldOnCredit: false,
-    receivableId: undefined,
+    soldOnCredit: !!row.sold_on_credit,
+    receivableId: row.receivable_id || undefined,
     warranty: row.warranty_months || undefined,
     warrantyExpiresAt: undefined,
     expenses: ((row.expenses as any[]) || []).map((exp: any) => ({
@@ -491,6 +491,8 @@ export const productsStore = {
       taxAmount: 0,
       saleDate: undefined,
       buyerName: undefined,
+      soldOnCredit: false,
+      receivableId: undefined,
     };
 
     productsCache = list.map((p) => (p.id === id ? updated : p));
@@ -507,6 +509,8 @@ export const productsStore = {
             digital_tax: 0,
             sold_date: null,
             customer_name: null,
+            receivable_id: null,
+            sold_on_credit: false,
           })
           .eq("id", id);
         await this.refreshFromBackend();
@@ -539,6 +543,7 @@ export const productsStore = {
       saleDate: new Date().toISOString(),
       warranty,
       receivableId,
+      soldOnCredit: true,
     };
 
     productsCache = list.map((p) => (p.id === id ? updated : p));
@@ -554,6 +559,8 @@ export const productsStore = {
             sale_price: totalAmount,
             sold_date: new Date().toISOString(),
             warranty_months: warranty,
+            receivable_id: receivableId,
+            sold_on_credit: true,
           })
           .eq("id", id);
         await this.refreshFromBackend();
