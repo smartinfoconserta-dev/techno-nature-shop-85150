@@ -43,9 +43,12 @@ const CostsProfitsTab = () => {
   });
 
   useEffect(() => {
-    // Verifica se precisa gerar relatório do mês anterior
-    monthlyReportsStore.checkAndGeneratePreviousMonth();
-    loadData();
+    const init = async () => {
+      // Verifica se precisa gerar relatório do mês anterior
+      await monthlyReportsStore.checkAndGeneratePreviousMonth();
+      await loadData();
+    };
+    init();
   }, []);
 
   const loadData = async () => {
