@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
 import { productsStore, Product } from "@/lib/productsStore";
+import { quickSalesStore, QuickSale } from "@/lib/quickSalesStore";
+import { receivablesStore, Receivable } from "@/lib/receivablesStore";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { TrendingUp, DollarSign, Package, Percent, Pencil, FileText, XCircle, Search } from "lucide-react";
@@ -25,7 +28,27 @@ import { ProductRefundDialog } from "./ProductRefundDialog";
 import { customersStore } from "@/lib/customersStore";
 import { creditHistoryStore } from "@/lib/creditHistoryStore";
 
+// Interface para venda unificada
+interface HistorySale {
+  id: string;
+  type: "catalog" | "quick" | "receivable";
+  productName: string;
+  buyerName?: string;
+  buyerCpf?: string;
+  salePrice: number;
+  costPrice?: number;
+  profit?: number;
+  saleDate: string;
+  warranty?: number;
+  paymentBreakdown?: { cash: number; pix: number; card: number };
+  taxAmount?: number;
+  status?: string;
+  notes?: string;
+  originalData: Product | QuickSale | Receivable;
+}
+
 const SalesHistoryTab = () => {
+  const [unifiedSales, setUnifiedSales] = useState<HistorySale[]>([]);
   const [soldProducts, setSoldProducts] = useState<Product[]>([]);
   const [totals, setTotals] = useState({
     totalGross: 0,
@@ -42,6 +65,7 @@ const SalesHistoryTab = () => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [warrantyFilter, setWarrantyFilter] = useState<"all" | "active" | "expired">("all");
+  const [typeFilter, setTypeFilter] = useState<"all" | "catalog" | "quick" | "receivable">("all");
   const [cancelingProduct, setCancelingProduct] = useState<Product | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [showRefundDialog, setShowRefundDialog] = useState(false);
@@ -50,11 +74,88 @@ const SalesHistoryTab = () => {
     loadData();
   }, []);
 
-  const loadData = () => {
+  const loadData = async () => {
     const products = productsStore.getSoldProducts();
     const computedTotals = productsStore.computeTotals();
     setSoldProducts(products);
     setTotals(computedTotals);
+    
+    // Carregar histórico unificado
+    await loadUnifiedHistory();
+  };
+
+  const loadUnifiedHistory = async () => {
+    const allSales: HistorySale[] = [];
+    
+    // 1. Produtos do catálogo vendidos
+    const soldProducts = productsStore.getSoldProducts();
+    soldProducts.forEach(p => {
+      const totalExpenses = p.expenses.reduce((sum, e) => sum + e.value, 0);
+      allSales.push({
+        id: p.id,
+        type: "catalog",
+        productName: p.name,
+        buyerName: p.buyerName,
+        buyerCpf: p.buyerCpf,
+        salePrice: p.salePrice || 0,
+        costPrice: totalExpenses,
+        profit: (p.salePrice || 0) - totalExpenses,
+        saleDate: p.saleDate || p.createdAt,
+        warranty: p.warranty,
+        paymentBreakdown: p.paymentBreakdown,
+        taxAmount: p.taxAmount,
+        originalData: p,
+      });
+    });
+    
+    // 2. Vendas rápidas
+    const quickSales = quickSalesStore.getAllQuickSales();
+    quickSales.forEach(qs => {
+      allSales.push({
+        id: qs.id,
+        type: "quick",
+        productName: qs.productName,
+        buyerName: qs.customerName,
+        buyerCpf: qs.customerCpf,
+        salePrice: qs.salePrice,
+        costPrice: qs.costPrice,
+        profit: qs.profit,
+        saleDate: qs.saleDate,
+        warranty: qs.warranty,
+        paymentBreakdown: qs.paymentBreakdown,
+        taxAmount: qs.taxAmount,
+        notes: qs.notes,
+        originalData: qs,
+      });
+    });
+    
+    // 3. Caderneta (apenas pagas e parciais com valor pago > 0)
+    const receivables = receivablesStore.getAllReceivables();
+    receivables
+      .filter(r => !r.archived && r.paidAmount > 0)
+      .forEach(r => {
+        allSales.push({
+          id: r.id,
+          type: "receivable",
+          productName: r.productName,
+          buyerName: r.customerName,
+          salePrice: r.totalAmount,
+          costPrice: r.costPrice,
+          profit: r.profit,
+          saleDate: r.createdAt,
+          warranty: r.warranty,
+          status: r.status,
+          notes: r.notes,
+          originalData: r,
+        });
+      });
+    
+    // Ordenar por data (mais recente primeiro)
+    allSales.sort((a, b) => 
+      new Date(b.saleDate).getTime() - new Date(a.saleDate).getTime()
+    );
+    
+    setUnifiedSales(allSales);
   };
 
   const calculateProductProfit = (product: Product) => {
@@ -113,16 +214,15 @@ const SalesHistoryTab = () => {
   const handleCancelClick = (product: Product) => {
     setCancelingProduct(product);
     
-    // Verificar se tem pagamentos registrados
-    const hasPaidAmount = 
-      (product.paymentBreakdown?.cash || 0) > 0 ||
-      (product.paymentBreakdown?.pix || 0) > 0 ||
-      (product.paymentBreakdown?.card || 0) > 0;
+    // Verificar se tem valor de venda registrado E comprador com CPF
+    const hasSaleValue = (product.salePrice || 0) > 0;
+    const hasBuyer = product.buyerCpf && product.buyerCpf.trim() !== "";
     
-    if (hasPaidAmount) {
+    // Se tem valor de venda E comprador com CPF, mostrar opções de crédito
+    if (hasSaleValue && hasBuyer) {
       setShowRefundDialog(true);
     }
-    // Se não tem pagamento, usa o AlertDialog padrão (que já está configurado)
+    // Se não tem, usa o AlertDialog padrão (que já está configurado)
   };
 
   const handleRefundConfirm = async (keepAsCredit: boolean) => {
@@ -191,27 +291,33 @@ const SalesHistoryTab = () => {
     }
   };
 
-  const filteredProducts = soldProducts.filter(product => {
+  const filteredSales = unifiedSales.filter(sale => {
+    // Filtro de tipo
+    if (typeFilter !== "all" && sale.type !== typeFilter) {
+      return false;
+    }
+    
     // Filtro de busca
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim();
-      const matchesName = product.name.toLowerCase().includes(query);
-      const matchesBrand = product.brand.toLowerCase().includes(query);
-      const matchesBuyer = product.buyerName?.toLowerCase().includes(query);
-      const matchesCpf = product.buyerCpf?.toLowerCase().includes(query);
+      const matchesName = sale.productName.toLowerCase().includes(query);
+      const matchesBuyer = sale.buyerName?.toLowerCase().includes(query);
+      const matchesCpf = sale.buyerCpf?.toLowerCase().includes(query);
       
-      if (!matchesName && !matchesBrand && !matchesBuyer && !matchesCpf) {
+      if (!matchesName && !matchesBuyer && !matchesCpf) {
         return false;
       }
     }
     
-    // Filtro de garantia
-    if (warrantyFilter === "all") return true;
-    if (!product.saleDate) return false;
+    // Filtro de garantia (apenas para catálogo e quick sales)
+    if (warrantyFilter !== "all" && (sale.type === "catalog" || sale.type === "quick")) {
+      if (!sale.saleDate) return false;
+      
+      const warranty = calculateWarranty(sale.saleDate);
+      if (warrantyFilter === "active") return warranty.isActive;
+      if (warrantyFilter === "expired") return !warranty.isActive;
+    }
     
-    const warranty = calculateWarranty(product.saleDate);
-    if (warrantyFilter === "active") return warranty.isActive;
-    if (warrantyFilter === "expired") return !warranty.isActive;
     return true;
   });
 
@@ -234,6 +340,38 @@ const SalesHistoryTab = () => {
           onChange={(e) => setSearchQuery(e.target.value)}
           className="pl-10"
         />
+      </div>
+
+      {/* Filtros de tipo de venda */}
+      <div className="flex flex-wrap gap-2">
+        <Button
+          variant={typeFilter === "all" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setTypeFilter("all")}
+        >
+          📋 Todas
+        </Button>
+        <Button
+          variant={typeFilter === "catalog" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setTypeFilter("catalog")}
+        >
+          📦 Catálogo
+        </Button>
+        <Button
+          variant={typeFilter === "quick" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setTypeFilter("quick")}
+        >
+          ⚡ Vendas Rápidas
+        </Button>
+        <Button
+          variant={typeFilter === "receivable" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setTypeFilter("receivable")}
+        >
+          📒 Caderneta
+        </Button>
       </div>
 
       {/* Filtros de garantia */}
@@ -261,185 +399,241 @@ const SalesHistoryTab = () => {
         </Button>
       </div>
 
-      {/* Lista de vendas */}
+      {/* Lista de vendas unificadas */}
       <div className="space-y-4">
-        {soldProducts.length === 0 ? (
+        {unifiedSales.length === 0 ? (
           <Card>
             <CardHeader>
               <CardTitle>Nenhuma venda registrada ainda</CardTitle>
               <CardDescription>
-                Quando você vender um produto, ele aparecerá aqui no histórico.
+                Quando você realizar vendas, elas aparecerão aqui no histórico.
               </CardDescription>
             </CardHeader>
           </Card>
-        ) : filteredProducts.length === 0 ? (
+        ) : filteredSales.length === 0 ? (
           <Card>
             <CardHeader>
               <CardTitle>Nenhuma venda encontrada com esse filtro</CardTitle>
               <CardDescription>
-                Tente mudar o filtro de garantia para ver outras vendas.
+                Tente mudar os filtros para ver outras vendas.
               </CardDescription>
             </CardHeader>
           </Card>
         ) : (
-          filteredProducts.map((product) => {
-            const { profit, margin, totalExpenses } = calculateProductProfit(product);
-            const warranty = product.saleDate ? calculateWarranty(product.saleDate) : null;
+          filteredSales.map((sale) => {
+            const warranty = sale.saleDate ? calculateWarranty(sale.saleDate) : null;
+            const isEditableCatalog = sale.type === "catalog";
             
             return (
               <Card
-                key={product.id}
+                key={sale.id}
                 className={cn(
                   "transition-all",
                   warranty?.isActive && warranty.daysRemaining > 30 && "border-green-300 shadow-sm shadow-green-100",
                   warranty?.isActive && warranty.daysRemaining <= 30 && warranty.daysRemaining > 7 && "border-yellow-300 shadow-sm shadow-yellow-100",
                   warranty?.isActive && warranty.daysRemaining <= 7 && "border-orange-300 shadow-sm shadow-orange-100",
-                  !warranty?.isActive && "border-red-200 shadow-sm shadow-red-50 opacity-90"
+                  !warranty?.isActive && warranty && "border-red-200 shadow-sm shadow-red-50 opacity-90"
                 )}
               >
                 <CardContent className="p-6">
                   <div className="flex items-start gap-4">
-                    <img
-                      src={product.images[0]}
-                      alt={product.name}
-                      className="w-24 h-24 object-cover rounded border border-border"
-                    />
+                    {sale.type === "catalog" && (sale.originalData as Product).images?.[0] && (
+                      <img
+                        src={(sale.originalData as Product).images[0]}
+                        alt={sale.productName}
+                        className="w-24 h-24 object-cover rounded border border-border"
+                      />
+                    )}
                     <div className="flex-1 space-y-3">
-                      <div>
-                        <h3 className="font-semibold text-lg text-foreground">
-                          {product.name}
-                        </h3>
-                        <p className="text-sm text-muted-foreground">
-                          Marca: {product.brand}
-                        </p>
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Badge variant={
+                              sale.type === "catalog" ? "default" : 
+                              sale.type === "quick" ? "secondary" : 
+                              "outline"
+                            }>
+                              {sale.type === "catalog" ? "📦 Catálogo" : 
+                               sale.type === "quick" ? "⚡ Rápida" : 
+                               "📒 Caderneta"}
+                            </Badge>
+                            {sale.type === "receivable" && (
+                              <Badge variant={
+                                sale.status === "paid" ? "default" :
+                                sale.status === "partial" ? "secondary" :
+                                "outline"
+                              }>
+                                {sale.status === "paid" ? "Pago" :
+                                 sale.status === "partial" ? "Parcial" :
+                                 "Pendente"}
+                              </Badge>
+                            )}
+                          </div>
+                          <h3 className="font-semibold text-lg text-foreground">
+                            {sale.productName}
+                          </h3>
+                          {sale.type === "catalog" && (
+                            <p className="text-sm text-muted-foreground">
+                              Marca: {(sale.originalData as Product).brand}
+                            </p>
+                          )}
+                        </div>
                       </div>
 
                       <div className="space-y-1">
                         <p className="text-sm text-muted-foreground">
-                          Comprador: <span className="font-medium text-foreground">{product.buyerName || "Não informado"}</span>
-                          {product.buyerCpf && (
-                            <span className="text-muted-foreground"> ({product.buyerCpf})</span>
+                          Comprador: <span className="font-medium text-foreground">{sale.buyerName || "Não informado"}</span>
+                          {sale.buyerCpf && (
+                            <span className="text-muted-foreground"> ({sale.buyerCpf})</span>
                           )}
                         </p>
-                        {product.saleDate && <WarrantyBadge saleDate={product.saleDate} />}
+                        {sale.saleDate && (sale.type === "catalog" || sale.type === "quick") && (
+                          <WarrantyBadge saleDate={sale.saleDate} />
+                        )}
                       </div>
 
                       <div className="space-y-3">
                         <div>
                           <p className="text-sm text-muted-foreground mb-1">Data da venda</p>
                           <p className="font-semibold text-foreground">
-                            {product.saleDate
-                              ? format(new Date(product.saleDate), "dd 'de' MMM. yyyy", {
+                            {sale.saleDate
+                              ? format(new Date(sale.saleDate), "dd 'de' MMM. yyyy", {
                                   locale: ptBR,
                                 })
                               : "N/A"}
                           </p>
                         </div>
 
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm bg-muted/50 p-3 rounded">
-                          <div>
-                            <p className="text-muted-foreground">💰 Total</p>
-                            <p className="font-bold text-green-600">
-                              R$ {(product.salePrice || 0).toFixed(2)}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-muted-foreground">💵 Dinheiro</p>
-                            <p className="font-semibold">
-                              R$ {(product.paymentBreakdown?.cash || 0).toFixed(2)}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-muted-foreground">📱 PIX</p>
-                            <p className="font-semibold">
-                              R$ {(product.paymentBreakdown?.pix || 0).toFixed(2)}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-muted-foreground">💳 Cartão</p>
-                            <p className="font-semibold">
-                              R$ {(product.paymentBreakdown?.card || 0).toFixed(2)}
-                            </p>
-                          </div>
-                        </div>
+                        {sale.paymentBreakdown && (
+                          <>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm bg-muted/50 p-3 rounded">
+                              <div>
+                                <p className="text-muted-foreground">💰 Total</p>
+                                <p className="font-bold text-green-600">
+                                  R$ {sale.salePrice.toFixed(2)}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-muted-foreground">💵 Dinheiro</p>
+                                <p className="font-semibold">
+                                  R$ {(sale.paymentBreakdown.cash || 0).toFixed(2)}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-muted-foreground">📱 PIX</p>
+                                <p className="font-semibold">
+                                  R$ {(sale.paymentBreakdown.pix || 0).toFixed(2)}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-muted-foreground">💳 Cartão</p>
+                                <p className="font-semibold">
+                                  R$ {(sale.paymentBreakdown.card || 0).toFixed(2)}
+                                </p>
+                              </div>
+                            </div>
 
-                        {product.paymentBreakdown && (
-                          <div className="grid grid-cols-2 gap-3 text-sm">
-                            <div className="bg-blue-50 dark:bg-blue-950/20 p-2 rounded">
-                              <p className="text-muted-foreground">💻 Total Digital</p>
-                              <p className="font-semibold text-blue-600">
-                                R${" "}
-                                {(
-                                  (product.paymentBreakdown.pix || 0) +
-                                  (product.paymentBreakdown.card || 0)
-                                ).toFixed(2)}
-                              </p>
+                            <div className="grid grid-cols-2 gap-3 text-sm">
+                              <div className="bg-blue-50 dark:bg-blue-950/20 p-2 rounded">
+                                <p className="text-muted-foreground">💻 Total Digital</p>
+                                <p className="font-semibold text-blue-600">
+                                  R${" "}
+                                  {(
+                                    (sale.paymentBreakdown.pix || 0) +
+                                    (sale.paymentBreakdown.card || 0)
+                                  ).toFixed(2)}
+                                </p>
+                              </div>
+                              <div className="bg-orange-50 dark:bg-orange-950/20 p-2 rounded">
+                                <p className="text-muted-foreground">📊 Imposto 6%</p>
+                                <p className="font-semibold text-orange-600">
+                                  R$ {(sale.taxAmount || 0).toFixed(2)}
+                                </p>
+                              </div>
                             </div>
-                            <div className="bg-orange-50 dark:bg-orange-950/20 p-2 rounded">
-                              <p className="text-muted-foreground">📊 Imposto 6%</p>
-                              <p className="font-semibold text-orange-600">
-                                R$ {(product.taxAmount || 0).toFixed(2)}
-                              </p>
-                            </div>
+                          </>
+                        )}
+
+                        {!sale.paymentBreakdown && (
+                          <div className="bg-muted/50 p-3 rounded">
+                            <p className="text-muted-foreground text-sm">💰 Valor Total</p>
+                            <p className="font-bold text-green-600 text-lg">
+                              R$ {sale.salePrice.toFixed(2)}
+                            </p>
                           </div>
                         )}
 
-                        <div className="pt-2 border-t">
-                          <p className="text-sm text-muted-foreground">Gastos totais</p>
-                          <p className="font-semibold text-orange-600">
-                            R$ {totalExpenses.toFixed(2)}
-                          </p>
-                        </div>
+                        {sale.costPrice !== undefined && (
+                          <div className="pt-2 border-t">
+                            <p className="text-sm text-muted-foreground">Custo</p>
+                            <p className="font-semibold text-orange-600">
+                              R$ {sale.costPrice.toFixed(2)}
+                            </p>
+                          </div>
+                        )}
+
+                        {sale.notes && (
+                          <div className="text-sm">
+                            <p className="text-muted-foreground">📝 Observações:</p>
+                            <p className="text-foreground">{sale.notes}</p>
+                          </div>
+                        )}
                       </div>
 
-                      <div className="flex items-center gap-6 pt-2 border-t border-border">
-                        <div>
-                          <p className="text-sm text-muted-foreground">Lucro</p>
-                          <p
-                            className={`text-xl font-bold ${
-                              profit >= 0 ? "text-green-600" : "text-red-600"
-                            }`}
-                          >
-                            R$ {profit.toFixed(2)}
-                          </p>
+                      {sale.profit !== undefined && (
+                        <div className="flex items-center gap-6 pt-2 border-t border-border">
+                          <div>
+                            <p className="text-sm text-muted-foreground">Lucro</p>
+                            <p
+                              className={`text-xl font-bold ${
+                                sale.profit >= 0 ? "text-green-600" : "text-red-600"
+                              }`}
+                            >
+                              R$ {sale.profit.toFixed(2)}
+                            </p>
+                          </div>
+                          {sale.salePrice > 0 && (
+                            <div>
+                              <p className="text-sm text-muted-foreground">Margem</p>
+                              <p className="text-xl font-bold text-foreground">
+                                {((sale.profit / sale.salePrice) * 100).toFixed(1)}%
+                              </p>
+                            </div>
+                          )}
                         </div>
-                        <div>
-                          <p className="text-sm text-muted-foreground">Margem</p>
-                          <p className="text-xl font-bold text-foreground">
-                            {margin.toFixed(1)}%
-                          </p>
-                        </div>
-                      </div>
+                      )}
 
-                      <div className="flex gap-2 mt-4 flex-wrap">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEdit(product)}
-                        >
-                          <Pencil className="w-4 h-4 mr-2" />
-                          Editar
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleCancelClick(product)}
-                          className="text-destructive hover:text-destructive"
-                        >
-                          <XCircle className="w-4 h-4 mr-2" />
-                          Cancelar Venda
-                        </Button>
-                        {product.invoiceUrl && (
+                      {isEditableCatalog && (
+                        <div className="flex gap-2 mt-4 flex-wrap">
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => window.open(product.invoiceUrl, "_blank")}
+                            onClick={() => handleEdit(sale.originalData as Product)}
                           >
-                            <FileText className="w-4 h-4 mr-2" />
-                            Nota Fiscal
+                            <Pencil className="w-4 h-4 mr-2" />
+                            Editar
                           </Button>
-                        )}
-                      </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleCancelClick(sale.originalData as Product)}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <XCircle className="w-4 h-4 mr-2" />
+                            Cancelar Venda
+                          </Button>
+                          {(sale.originalData as Product).invoiceUrl && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => window.open((sale.originalData as Product).invoiceUrl, "_blank")}
+                            >
+                              <FileText className="w-4 h-4 mr-2" />
+                              Nota Fiscal
+                            </Button>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </CardContent>

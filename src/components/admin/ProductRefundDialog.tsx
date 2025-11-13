@@ -33,10 +33,12 @@ export const ProductRefundDialog = ({
     onOpenChange(false);
   };
 
-  const totalPaid = 
-    (product.paymentBreakdown?.cash || 0) +
-    (product.paymentBreakdown?.pix || 0) +
-    (product.paymentBreakdown?.card || 0);
+  // Calcular total pago - usar paymentBreakdown se disponível, senão usar salePrice
+  const totalPaid = product.paymentBreakdown
+    ? (product.paymentBreakdown.cash || 0) +
+      (product.paymentBreakdown.pix || 0) +
+      (product.paymentBreakdown.card || 0)
+    : (product.salePrice || 0);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

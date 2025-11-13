@@ -17,9 +17,19 @@ const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
     }, [value]);
 
     const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
-      // Selecionar todo o texto ao focar
-      e.target.select();
+      // Se o valor for "0", limpar o campo
+      if (internalValue === "0" || internalValue === "0.00") {
+        setInternalValue("");
+      } else {
+        // Selecionar todo o texto ao focar
+        e.target.select();
+      }
       onFocus?.(e);
+    };
+
+    const handleWheel = (e: React.WheelEvent<HTMLInputElement>) => {
+      // Desfocar o campo ao rolar para evitar mudanças acidentais
+      e.currentTarget.blur();
     };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -61,6 +71,7 @@ const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
         onChange={handleChange}
         onFocus={handleFocus}
         onBlur={onBlur}
+        onWheel={handleWheel}
         className={cn(
           "[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none",
           className
