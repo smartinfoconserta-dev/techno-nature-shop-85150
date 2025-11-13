@@ -12,6 +12,7 @@ import {
   Settings,
   Users,
   LogOut,
+  Notebook,
 } from "lucide-react";
 import {
   Sidebar,
@@ -35,6 +36,7 @@ const navItems: NavItem[] = [
   { title: "Produtos", value: "products", icon: Package },
   { title: "Vendas Rápidas", value: "quick-sales", icon: Zap },
   { title: "Caderneta", value: "receivables", icon: DollarSign },
+  { title: "Solicitações", value: "notebook", icon: Notebook },
   { title: "Clientes", value: "customers", icon: Users },
   { title: "Financeiro", value: "finance", icon: BarChart3 },
   { title: "Histórico", value: "history", icon: History },

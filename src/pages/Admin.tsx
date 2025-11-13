@@ -16,9 +16,11 @@ import SettingsTab from "@/components/admin/SettingsTab";
 import ReceivablesTab from "@/components/admin/ReceivablesTab";
 import QuickSalesTab from "@/components/admin/QuickSalesTab";
 import CustomersTab from "@/components/admin/CustomersTab";
+import NotebookRequestsTab from "@/components/admin/NotebookRequestsTab";
 import { productsStore } from "@/lib/productsStore";
 import { quickSalesStore } from "@/lib/quickSalesStore";
 import { receivablesStore } from "@/lib/receivablesStore";
+import { customerRequestsStore } from "@/lib/customerRequestsStore";
 
 const Admin = () => {
   const { user, logout } = useAuth();
@@ -27,6 +29,7 @@ const Admin = () => {
     return sessionStorage.getItem('admin.activeTab') || "dashboard";
   });
   const [productCount, setProductCount] = useState<number>(0);
+  const [pendingRequestsCount, setPendingRequestsCount] = useState<number>(0);
 
   // Refresh inicial dos dados em background quando a tela abre
   useEffect(() => {
@@ -35,6 +38,7 @@ const Admin = () => {
       await quickSalesStore.refreshFromBackend();
       await receivablesStore.refreshFromBackend();
       updateProductCount();
+      updatePendingRequestsCount();
     };
     loadData();
   }, []);
@@ -43,10 +47,20 @@ const Admin = () => {
     setProductCount(productsStore.getAllProducts().length);
   };
 
+  const updatePendingRequestsCount = async () => {
+    try {
+      const requests = await customerRequestsStore.getAllRequests();
+      setPendingRequestsCount(requests.filter(r => r.status === "pending").length);
+    } catch (error) {
+      console.error("Erro ao carregar solicitações:", error);
+    }
+  };
+
   // Atualizar contagem periodicamente (polling simples)
   useEffect(() => {
     const interval = setInterval(() => {
       updateProductCount();
+      updatePendingRequestsCount();
     }, 5000); // A cada 5 segundos
 
     return () => clearInterval(interval);
@@ -108,6 +122,7 @@ const Admin = () => {
                   { value: "products", label: "📦 Produtos" },
                   { value: "quick-sales", label: "⚡ Vendas Rápidas" },
                   { value: "receivables", label: "📒 Caderneta" },
+                  { value: "notebook", label: `📓 Solicitações${pendingRequestsCount > 0 ? ` (${pendingRequestsCount})` : ""}` },
                   { value: "customers", label: "👥 Clientes" },
                   { value: "finance", label: "💰 Financeiro" },
                   { value: "history", label: "📜 Histórico" },
@@ -136,6 +151,7 @@ const Admin = () => {
             {activeTab === "products" && <ProductsMainTab />}
             {activeTab === "quick-sales" && <QuickSalesTab />}
             {activeTab === "receivables" && <ReceivablesTab />}
+            {activeTab === "notebook" && <NotebookRequestsTab />}
             {activeTab === "customers" && <CustomersTab />}
             {activeTab === "finance" && <FinanceMainTab />}
             {activeTab === "history" && <SalesHistoryTab />}
