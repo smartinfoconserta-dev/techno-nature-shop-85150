@@ -12,6 +12,7 @@ export const categoriesStore = {
     const { data, error } = await supabase
       .from("categories")
       .select("*")
+      .is("deleted_at", null)
       .order("name");
 
     if (error) {
@@ -90,12 +91,59 @@ export const categoriesStore = {
   },
 
   async deleteCategory(id: string): Promise<void> {
+    // SOFT DELETE
+    const { error } = await supabase
+      .from("categories")
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("id", id);
+
+    if (error) {
+      console.error("Erro ao mover categoria para lixeira:", error);
+      throw error;
+    }
+  },
+
+  async restoreCategory(id: string): Promise<void> {
+    const { error } = await supabase
+      .from("categories")
+      .update({ deleted_at: null })
+      .eq("id", id);
+
+    if (error) {
+      console.error("Erro ao restaurar categoria:", error);
+      throw error;
+    }
+  },
+
+  async permanentlyDeleteCategory(id: string): Promise<void> {
     const { error } = await supabase.from("categories").delete().eq("id", id);
 
     if (error) {
-      console.error("Erro ao deletar categoria:", error);
+      console.error("Erro ao deletar categoria permanentemente:", error);
       throw error;
     }
+  },
+
+  async getDeletedCategories(): Promise<Category[]> {
+    const { data, error } = await supabase
+      .from("categories")
+      .select("*")
+      .not("deleted_at", "is", null)
+      .order("deleted_at", { ascending: false });
+
+    if (error) {
+      console.error("Erro ao buscar categorias deletadas:", error);
+      return [];
+    }
+
+    return (
+      data?.map((cat) => ({
+        id: cat.id,
+        name: cat.name,
+        icon: cat.icon,
+        createdAt: cat.created_at,
+      })) || []
+    );
   },
 
   async getCategoryIcon(categoryName: string): Promise<string> {

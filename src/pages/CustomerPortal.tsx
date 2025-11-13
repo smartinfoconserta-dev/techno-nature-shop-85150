@@ -4,6 +4,7 @@ import { useCustomerAuth } from "@/hooks/useCustomerAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { LogOut, ShoppingBag, DollarSign, Clock, Shield, Loader2, FileText, Notebook, Plus } from "lucide-react";
 import { calculateWarranty } from "@/lib/warrantyHelper";
 import { format } from "date-fns";

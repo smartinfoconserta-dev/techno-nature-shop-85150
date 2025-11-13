@@ -15,6 +15,7 @@ export const couponsStore = {
     const { data, error } = await supabase
       .from("coupons")
       .select("*")
+      .is("deleted_at", null)
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -187,11 +188,61 @@ export const couponsStore = {
   },
 
   async deleteCoupon(id: string): Promise<void> {
+    // SOFT DELETE
+    const { error } = await supabase
+      .from("coupons")
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("id", id);
+
+    if (error) {
+      console.error("Erro ao mover cupom para lixeira:", error);
+      throw error;
+    }
+  },
+
+  async restoreCoupon(id: string): Promise<void> {
+    const { error } = await supabase
+      .from("coupons")
+      .update({ deleted_at: null })
+      .eq("id", id);
+
+    if (error) {
+      console.error("Erro ao restaurar cupom:", error);
+      throw error;
+    }
+  },
+
+  async permanentlyDeleteCoupon(id: string): Promise<void> {
     const { error } = await supabase.from("coupons").delete().eq("id", id);
 
     if (error) {
-      console.error("Erro ao deletar cupom:", error);
+      console.error("Erro ao deletar cupom permanentemente:", error);
       throw error;
     }
+  },
+
+  async getDeletedCoupons(): Promise<Coupon[]> {
+    const { data, error } = await supabase
+      .from("coupons")
+      .select("*")
+      .not("deleted_at", "is", null)
+      .order("deleted_at", { ascending: false });
+
+    if (error) {
+      console.error("Erro ao buscar cupons deletados:", error);
+      return [];
+    }
+
+    return (
+      data?.map((coupon) => ({
+        id: coupon.id,
+        code: coupon.code,
+        active: coupon.active,
+        discountType: coupon.discount_type,
+        discountPercent: coupon.discount_percent,
+        createdAt: coupon.created_at,
+        updatedAt: coupon.updated_at,
+      })) || []
+    );
   },
 };

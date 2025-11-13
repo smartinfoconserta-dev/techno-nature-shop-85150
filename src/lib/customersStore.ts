@@ -29,6 +29,7 @@ export const customersStore = {
     const { data, error } = await supabase
       .from("customers")
       .select("*")
+      .is("deleted_at", null)
       .order("created_at", { ascending: false });
 
     if (error) {
