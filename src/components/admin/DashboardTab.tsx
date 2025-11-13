@@ -67,28 +67,26 @@ const DashboardTab = ({ onTabChange }: DashboardTabProps) => {
       includeCash: settings.includeCashInTax,
     });
     
-    // Dados do mês atual
-    const currentTotals = await productsStore.computeCurrentMonthTotals();
+    // Dados do mês atual (consolidados: catálogo + vendas rápidas + caderneta)
+    const current = await monthlyReportsStore.getCurrentMonthData();
     
-    // Busca vendas rápidas do mês atual
+    // Mantém o contador de Vendas Rápidas para o card específico
     const currentMonth = format(new Date(), "yyyy-MM");
     const quickSales = await quickSalesStore.getQuickSalesByMonth(currentMonth);
-    const quickSalesTotals = await quickSalesStore.getMonthlyTotals(currentMonth);
-    
     setQuickSalesCount(quickSales.length);
     
-    // Consolida totais (catálogo + vendas rápidas)
+    // Alimenta métricas principais com dados do relatório mensal
     setTotals({
-      totalGross: (currentTotals.totalGross || 0) + (quickSalesTotals.totalSales || 0),
-      totalCash: (currentTotals.totalCash || 0) + (quickSalesTotals.totalCash || 0),
-      totalPix: (currentTotals.totalPix || 0) + (quickSalesTotals.totalPix || 0),
-      totalCard: (currentTotals.totalCard || 0) + (quickSalesTotals.totalCard || 0),
-      totalDigital: (currentTotals.totalDigital || 0) + ((quickSalesTotals.totalPix || 0) + (quickSalesTotals.totalCard || 0)),
-      totalTax: (currentTotals.totalTax || 0) + (quickSalesTotals.totalTax || 0),
-      totalExpenses: (currentTotals.totalExpenses || 0) + (quickSalesTotals.totalCost || 0),
-      netProfit: (currentTotals.netProfit || 0) + (quickSalesTotals.totalProfit || 0),
-      averageMargin: currentTotals.averageMargin || 0,
-      soldCount: (currentTotals.soldCount || 0) + quickSales.length,
+      totalGross: current.totalSales,          // faturamento do mês
+      totalCash: 0,                            // não usado em cards principais
+      totalPix: 0,                             // não usado em cards principais
+      totalCard: 0,                            // não usado em cards principais
+      totalDigital: 0,                         // não usado em cards principais
+      totalTax: current.totalTax,              // impostos a pagar
+      totalExpenses: current.totalPurchases,   // custos (compras e proporcionais)
+      netProfit: current.netProfit,            // lucro líquido com impostos descontados
+      averageMargin: current.averageMargin,
+      soldCount: current.soldCount,
     });
 
     // Produtos em estoque
