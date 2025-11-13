@@ -310,16 +310,13 @@ export const productsStore = {
     if (idx === -1) throw new Error("Produto não encontrado");
 
     const salePrice = cash + pix + card;
-    const defaultTaxRate = 3.9; // fallback
-    const taxableAmount = pix + card; // fallback não inclui dinheiro
-    const taxAmount = taxableAmount * (defaultTaxRate / 100);
 
     const updated: Product = {
       ...list[idx],
       sold: true,
       salePrice,
       paymentBreakdown: { cash, pix, card },
-      taxAmount,
+      taxAmount: 0, // Será calculado e atualizado no backend
       saleDate: new Date().toISOString(),
       buyerName: buyerName.trim(),
       warranty,
@@ -331,8 +328,8 @@ export const productsStore = {
     (async () => {
       try {
         const { data: settings } = await supabase.from("settings").select("*").single();
-        const includeCash = settings?.include_cash_in_tax;
-        const rate = settings?.digital_tax_rate ?? defaultTaxRate;
+        const includeCash = settings?.include_cash_in_tax || false;
+        const rate = settings?.digital_tax_rate ?? 3.9;
         const taxable = includeCash ? salePrice : pix + card;
         const preciseTax = taxable * (Number(rate) / 100);
 
@@ -585,7 +582,7 @@ export const productsStore = {
       (sum, p) => sum + p.expenses.reduce((expSum, e) => expSum + e.value, 0),
       0
     );
-    const netProfit = totalGross - totalExpenses;
+    const netProfit = totalGross - totalExpenses - totalTax;
     const averageMargin = totalGross > 0 ? (netProfit / totalGross) * 100 : 0;
 
     return {
@@ -624,7 +621,7 @@ export const productsStore = {
       (sum, p) => sum + p.expenses.reduce((expSum, e) => expSum + e.value, 0),
       0
     );
-    const netProfit = totalGross - totalExpenses;
+    const netProfit = totalGross - totalExpenses - totalTax;
     const averageMargin = totalGross > 0 ? (netProfit / totalGross) * 100 : 0;
 
     return {
