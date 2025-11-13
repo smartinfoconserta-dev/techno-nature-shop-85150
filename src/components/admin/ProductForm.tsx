@@ -216,9 +216,9 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 bg-card p-6 rounded-lg border border-border">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-5">
-        <div className="space-y-2">
+    <form onSubmit={handleSubmit} className="space-y-6 bg-card p-3 md:p-6 rounded-lg border border-border">
+      <div className="flex flex-col md:grid md:grid-cols-2 gap-4 md:gap-x-4 md:gap-y-5">
+        <div className="space-y-2 w-full">
           <Label htmlFor="name">Nome do Produto *</Label>
           <Input
             id="name"
@@ -229,7 +229,7 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
           />
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-2 w-full">
           <Label htmlFor="category">Categoria *</Label>
           <Select value={category} onValueChange={setCategory}>
             <SelectTrigger>
@@ -245,7 +245,7 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
           </Select>
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-2 w-full">
           <Label htmlFor="brand">Marca *</Label>
           <Select value={brand} onValueChange={setBrand}>
             <SelectTrigger>
@@ -261,7 +261,7 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
           </Select>
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-2 w-full">
           <Label htmlFor="specs">Especificações</Label>
           <Input
             id="specs"
@@ -271,7 +271,7 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
           />
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-2 w-full">
           <Label htmlFor="price">Preço (R$) *</Label>
           <Input
             id="price"
@@ -284,7 +284,7 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
           />
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-2 w-full">
           <Label htmlFor="discountPrice">Preço com Desconto (Lojista B2B) - Opcional</Label>
           <Input
             id="discountPrice"
@@ -334,7 +334,7 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
         </div>
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-2 w-full">
         <Label htmlFor="description">Descrição</Label>
         <Textarea
           id="description"
@@ -369,7 +369,7 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
             <p className="text-sm text-muted-foreground">
               Arraste para reordenar. A primeira imagem será a principal.
             </p>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
               {images.map((img, index) => (
                 <div
                   key={index}
