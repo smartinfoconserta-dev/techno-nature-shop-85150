@@ -2,6 +2,7 @@ import { format, startOfMonth, endOfMonth } from "date-fns";
 import { productsStore } from "./productsStore";
 import { quickSalesStore } from "./quickSalesStore";
 import { receivablesStore } from "./receivablesStore";
+import { settingsStore } from "./settingsStore";
 
 export interface MonthlyReport {
   month: string; // "2025-11" (YYYY-MM)
@@ -53,7 +54,7 @@ export const monthlyReportsStore = {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(reports));
   },
 
-  generateReportForMonth(monthString: string): MonthlyReport {
+  async generateReportForMonth(monthString: string): Promise<MonthlyReport> {
     const [year, month] = monthString.split("-").map(Number);
     const monthDate = new Date(year, month - 1, 1);
     const monthStart = startOfMonth(monthDate);
@@ -143,7 +144,12 @@ export const monthlyReportsStore = {
     });
 
     totalDigital = totalPix + totalCard;
-    const totalTax = totalDigital * 0.06;
+    
+    // Calcula impostos com base nas configurações
+    const settings = await settingsStore.getSettings();
+    const taxableAmount = settings.includeCashInTax ? totalGross : totalDigital;
+    const totalTax = taxableAmount * (settings.digitalTaxRate / 100);
+    
     const netProfit = totalGross - totalExpenses - totalTax;
     const totalCount = soldProducts.length + quickSales.length;
     const averageMargin = totalCount > 0 ? totalMargins / totalCount : 0;
@@ -166,7 +172,7 @@ export const monthlyReportsStore = {
     return report;
   },
 
-  getCurrentMonthData(): MonthlyReport {
+  async getCurrentMonthData(): Promise<MonthlyReport> {
     const now = new Date();
     const currentMonth = format(now, "yyyy-MM");
     const [year, month] = currentMonth.split("-").map(Number);
@@ -252,7 +258,12 @@ export const monthlyReportsStore = {
     });
 
     totalDigital = totalPix + totalCard;
-    const totalTax = totalDigital * 0.06;
+    
+    // Calcula impostos com base nas configurações
+    const settings = await settingsStore.getSettings();
+    const taxableAmount = settings.includeCashInTax ? totalGross : totalDigital;
+    const totalTax = taxableAmount * (settings.digitalTaxRate / 100);
+    
     const netProfit = totalGross - totalExpenses - totalTax;
     const totalCount = soldProducts.length + quickSales.length;
     const averageMargin = totalCount > 0 ? totalMargins / totalCount : 0;

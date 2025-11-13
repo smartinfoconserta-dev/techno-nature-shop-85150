@@ -4,6 +4,7 @@ import { monthlyReportsStore } from "@/lib/monthlyReportsStore";
 import { quickSalesStore } from "@/lib/quickSalesStore";
 import { receivablesStore } from "@/lib/receivablesStore";
 import { categoriesStore } from "@/lib/categoriesStore";
+import { settingsStore } from "@/lib/settingsStore";
 import { MetricCard } from "./MetricCard";
 import { AlertsSection } from "./AlertsSection";
 import { SalesTrendChart } from "./SalesTrendChart";
@@ -49,12 +50,23 @@ const DashboardTab = ({ onTabChange }: DashboardTabProps) => {
     overdueTotal: 0,
     paymentsThisMonth: 0,
   });
+  const [taxSettings, setTaxSettings] = useState({
+    rate: 3.9,
+    includeCash: false,
+  });
 
   useEffect(() => {
     loadData();
   }, []);
 
   const loadData = async () => {
+    // Buscar configurações de imposto
+    const settings = await settingsStore.getSettings();
+    setTaxSettings({
+      rate: settings.digitalTaxRate,
+      includeCash: settings.includeCashInTax,
+    });
+    
     // Dados do mês atual
     const currentTotals = await productsStore.computeCurrentMonthTotals();
     
@@ -165,9 +177,9 @@ const DashboardTab = ({ onTabChange }: DashboardTabProps) => {
         />
 
         <MetricCard
-          title="Impostos Pagos"
+          title="Impostos a Pagar"
           value={formatCurrency(totals.totalTax)}
-          subtitle="6% das vendas digitais"
+          subtitle={`${taxSettings.rate.toFixed(2)}% sobre ${taxSettings.includeCash ? 'todas vendas' : 'vendas digitais'}`}
           icon={Receipt}
           variant="warning"
         />

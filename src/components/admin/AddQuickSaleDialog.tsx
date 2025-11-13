@@ -29,6 +29,7 @@ import { quickSalesStore } from "@/lib/quickSalesStore";
 import { useToast } from "@/hooks/use-toast";
 import WarrantySelector from "./WarrantySelector";
 import { InstallmentOption, getAllInstallmentOptions } from "@/lib/installmentHelper";
+import { settingsStore } from "@/lib/settingsStore";
 
 const formSchema = z.object({
   productName: z.string().min(1, "Nome do produto é obrigatório"),
@@ -60,6 +61,8 @@ export function AddQuickSaleDialog({
   const [card, setCard] = useState("");
   const [selectedInstallment, setSelectedInstallment] = useState<InstallmentOption | null>(null);
   const [installmentOptions, setInstallmentOptions] = useState<InstallmentOption[]>([]);
+  const [taxRate, setTaxRate] = useState(3.9);
+  const [includeCashInTax, setIncludeCashInTax] = useState(false);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -87,6 +90,15 @@ export function AddQuickSaleDialog({
   const remainingAmount = salePrice - cashValue - pixValue;
   
   useEffect(() => {
+    const loadSettings = async () => {
+      const settings = await settingsStore.getSettings();
+      setTaxRate(settings.digitalTaxRate);
+      setIncludeCashInTax(settings.includeCashInTax);
+    };
+    loadSettings();
+  }, []);
+
+  useEffect(() => {
     const loadOptions = async () => {
       if (remainingAmount > 0) {
         const options = await getAllInstallmentOptions(remainingAmount);
@@ -98,9 +110,12 @@ export function AddQuickSaleDialog({
     loadOptions();
   }, [remainingAmount]);
   
-  // Calcula taxa automaticamente (6% sobre pix + card)
+  // Calcula taxa com base nas configurações
   const getTaxAmount = () => {
-    return (pixValue + cardValue) * 0.06;
+    const taxableAmount = includeCashInTax 
+      ? cashValue + pixValue + cardValue 
+      : pixValue + cardValue;
+    return taxableAmount * (taxRate / 100);
   };
 
   const getProfit = () => {
