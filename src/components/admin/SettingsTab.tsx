@@ -38,6 +38,7 @@ const SettingsTab = () => {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [newInstallments, setNewInstallments] = useState("");
   const [newRate, setNewRate] = useState("");
+  const [editingRates, setEditingRates] = useState<Record<number, string>>({});
 
   useEffect(() => {
     loadSettings();
@@ -89,7 +90,9 @@ const SettingsTab = () => {
     try {
       settingsStore.updateSingleRate(installments, newRate);
       loadSettings();
-      toast.success(`Taxa de ${installments}x atualizada!`);
+      toast.success(`Taxa de ${installments}x atualizada!`, {
+        duration: 1000,
+      });
     } catch (error: any) {
       toast.error(error.message || "Erro ao atualizar taxa");
     }
@@ -292,10 +295,27 @@ const SettingsTab = () => {
                   min="0"
                   max="100"
                   step="0.01"
-                  value={rate.rate}
-                  onChange={(e) =>
-                    handleUpdateRate(rate.installments, parseFloat(e.target.value) || 0)
-                  }
+                  value={editingRates[rate.installments] ?? rate.rate}
+                  onChange={(e) => {
+                    setEditingRates({
+                      ...editingRates,
+                      [rate.installments]: e.target.value
+                    });
+                  }}
+                  onBlur={(e) => {
+                    const newRate = parseFloat(e.target.value);
+                    if (!isNaN(newRate)) {
+                      handleUpdateRate(rate.installments, newRate);
+                      const newEditing = { ...editingRates };
+                      delete newEditing[rate.installments];
+                      setEditingRates(newEditing);
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.currentTarget.blur();
+                    }
+                  }}
                   className="max-w-[120px]"
                 />
                 <span className="text-sm text-muted-foreground">%</span>
