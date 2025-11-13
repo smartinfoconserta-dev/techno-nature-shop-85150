@@ -146,7 +146,7 @@ export function AddQuickSaleDialog({
       }
 
       // Venda à vista com pagamento misto
-      quickSalesStore.addQuickSale({
+      await quickSalesStore.addQuickSale({
         productName: data.productName,
         customerName: data.customerName || undefined,
         customerCpf: data.customerCpf || undefined,

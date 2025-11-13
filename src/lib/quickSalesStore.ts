@@ -86,7 +86,7 @@ export const quickSalesStore = {
     return this.getAllQuickSales().find((s) => s.id === id);
   },
 
-  addQuickSale(data: Omit<QuickSale, "id" | "profit" | "createdAt" | "updatedAt">): QuickSale {
+  async addQuickSale(data: Omit<QuickSale, "id" | "profit" | "createdAt" | "updatedAt">): Promise<QuickSale> {
     const taxAmount = data.taxAmount ?? 0;
     const profit = data.salePrice - data.costPrice - taxAmount;
 
@@ -109,39 +109,38 @@ export const quickSalesStore = {
       updatedAt: new Date().toISOString(),
     };
 
+    const { error } = await supabase
+      .from("quick_sales")
+      .upsert({
+        id: newSale.id,
+        product_name: newSale.productName,
+        cost_price: newSale.costPrice,
+        sale_price: newSale.salePrice,
+        profit: newSale.profit,
+        margin: newSale.salePrice > 0 ? (newSale.profit / newSale.salePrice) * 100 : 0,
+        customer_name: newSale.customerName || "",
+        payment_breakdown: newSale.paymentBreakdown || null,
+        payment_method: newSale.paymentMethod || "cash",
+        digital_tax: newSale.taxAmount || 0,
+        warranty_months: newSale.warranty || 3,
+        notes: newSale.notes || null,
+        created_at: newSale.createdAt,
+        updated_at: newSale.updatedAt,
+      } as any);
+
+    if (error) {
+      console.error("Erro ao persistir venda rápida:", error);
+      throw new Error(error.message || "Erro ao salvar venda rápida");
+    }
+
     quickSalesCache = [newSale, ...quickSalesCache];
     saveQuickCache();
-
-    (async () => {
-      try {
-        await supabase
-          .from("quick_sales")
-          .upsert({
-            id: newSale.id,
-            product_name: newSale.productName,
-            cost_price: newSale.costPrice,
-            sale_price: newSale.salePrice,
-            profit: newSale.profit,
-            margin: newSale.salePrice > 0 ? (newSale.profit / newSale.salePrice) * 100 : 0,
-            customer_name: newSale.customerName || "",
-            payment_breakdown: newSale.paymentBreakdown || null,
-            payment_method: newSale.paymentMethod || "cash",
-            digital_tax: newSale.taxAmount || 0,
-            warranty_months: newSale.warranty || 3,
-            notes: newSale.notes || null,
-            created_at: newSale.createdAt,
-            updated_at: newSale.updatedAt,
-          } as any);
-        await this.refreshFromBackend();
-      } catch (e) {
-        console.error("Falha ao persistir venda rápida:", e);
-      }
-    })();
+    await this.refreshFromBackend();
 
     return newSale;
   },
 
-  updateQuickSale(id: string, data: Partial<Omit<QuickSale, "id" | "createdAt">>): QuickSale {
+  async updateQuickSale(id: string, data: Partial<Omit<QuickSale, "id" | "createdAt">>): Promise<QuickSale> {
     const list = this.getAllQuickSales();
     const idx = list.findIndex((s) => s.id === id);
     if (idx === -1) throw new Error("Venda rápida não encontrada");
@@ -159,47 +158,45 @@ export const quickSalesStore = {
       updatedAt: new Date().toISOString(),
     } as QuickSale;
 
+    const updateData: any = {};
+    if (data.productName !== undefined) updateData.product_name = data.productName;
+    if (data.customerName !== undefined) updateData.customer_name = data.customerName;
+    if (data.notes !== undefined) updateData.notes = data.notes;
+    if (data.costPrice !== undefined) updateData.cost_price = data.costPrice;
+    if (data.salePrice !== undefined) updateData.sale_price = data.salePrice;
+    if (data.paymentBreakdown !== undefined) updateData.payment_breakdown = data.paymentBreakdown;
+    if (data.paymentMethod !== undefined) updateData.payment_method = data.paymentMethod;
+    if (data.taxAmount !== undefined) updateData.digital_tax = data.taxAmount;
+    if (data.warranty !== undefined) updateData.warranty_months = data.warranty;
+    updateData.profit = profit;
+    updateData.margin = salePrice > 0 ? (profit / salePrice) * 100 : 0;
+
+    const { error } = await supabase.from("quick_sales").update(updateData).eq("id", id);
+
+    if (error) {
+      console.error("Erro ao atualizar venda rápida:", error);
+      throw new Error(error.message || "Erro ao atualizar venda rápida");
+    }
+
     quickSalesCache = list.map((s) => (s.id === id ? updated : s));
     saveQuickCache();
-
-    (async () => {
-      try {
-        const updateData: any = {};
-        if (data.productName !== undefined) updateData.product_name = data.productName;
-        if (data.customerName !== undefined) updateData.customer_name = data.customerName;
-        if (data.notes !== undefined) updateData.notes = data.notes;
-        if (data.costPrice !== undefined) updateData.cost_price = data.costPrice;
-        if (data.salePrice !== undefined) updateData.sale_price = data.salePrice;
-        if (data.paymentBreakdown !== undefined) updateData.payment_breakdown = data.paymentBreakdown;
-        if (data.paymentMethod !== undefined) updateData.payment_method = data.paymentMethod;
-        if (data.taxAmount !== undefined) updateData.digital_tax = data.taxAmount;
-        if (data.warranty !== undefined) updateData.warranty_months = data.warranty;
-        updateData.profit = profit;
-        updateData.margin = salePrice > 0 ? (profit / salePrice) * 100 : 0;
-
-        await supabase.from("quick_sales").update(updateData).eq("id", id);
-        await this.refreshFromBackend();
-      } catch (e) {
-        console.error("Falha ao atualizar venda rápida:", e);
-      }
-    })();
+    await this.refreshFromBackend();
 
     return updated;
   },
 
-  deleteQuickSale(id: string): void {
+  async deleteQuickSale(id: string): Promise<void> {
+    const { error } = await supabase.from("quick_sales").delete().eq("id", id);
+
+    if (error) {
+      console.error("Erro ao deletar venda rápida:", error);
+      throw new Error(error.message || "Erro ao deletar venda rápida");
+    }
+
     const list = this.getAllQuickSales();
     quickSalesCache = list.filter((s) => s.id !== id);
     saveQuickCache();
-
-    (async () => {
-      try {
-        await supabase.from("quick_sales").delete().eq("id", id);
-        await this.refreshFromBackend();
-      } catch (e) {
-        console.error("Falha ao deletar venda rápida:", e);
-      }
-    })();
+    await this.refreshFromBackend();
   },
 
   getMonthlyTotals(monthString: string) {

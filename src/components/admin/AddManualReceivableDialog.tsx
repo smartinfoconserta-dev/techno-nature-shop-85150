@@ -125,7 +125,7 @@ export function AddManualReceivableDialog({
       }
 
       // Cria conta a receber
-      const receivable = receivablesStore.addReceivable({
+      const receivable = await receivablesStore.addReceivable({
         customerId,
         customerCode: customer.code,
         customerName: customer.name,
@@ -145,7 +145,7 @@ export function AddManualReceivableDialog({
       // Adiciona pagamentos iniciais separados se houver
       const paymentDate = format(new Date(), "yyyy-MM-dd");
       if (data.initialCash && data.initialCash > 0) {
-        receivablesStore.addPayment(receivable.id, {
+        await receivablesStore.addPayment(receivable.id, {
           amount: data.initialCash,
           paymentDate,
           paymentMethod: "cash",
@@ -153,7 +153,7 @@ export function AddManualReceivableDialog({
         });
       }
       if (data.initialPix && data.initialPix > 0) {
-        receivablesStore.addPayment(receivable.id, {
+        await receivablesStore.addPayment(receivable.id, {
           amount: data.initialPix,
           paymentDate,
           paymentMethod: "pix",
@@ -161,7 +161,7 @@ export function AddManualReceivableDialog({
         });
       }
       if (data.initialCard && data.initialCard > 0) {
-        receivablesStore.addPayment(receivable.id, {
+        await receivablesStore.addPayment(receivable.id, {
           amount: data.initialCard,
           paymentDate,
           paymentMethod: "card",

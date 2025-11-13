@@ -130,9 +130,9 @@ export const receivablesStore = {
     });
   },
 
-  addReceivable(
+  async addReceivable(
     data: Omit<Receivable, "id" | "status" | "remainingAmount" | "profit" | "createdAt" | "updatedAt">
-  ): Receivable {
+  ): Promise<Receivable> {
     if (!data.customerId) throw new Error("Cliente é obrigatório");
     if (!data.productId) throw new Error("Produto é obrigatório");
     if (data.totalAmount <= 0) throw new Error("Valor total deve ser maior que zero");
@@ -175,42 +175,41 @@ export const receivablesStore = {
       updatedAt: new Date().toISOString(),
     };
 
+    const { error } = await supabase
+      .from("receivables")
+      .upsert({
+        id: receivable.id,
+        customer_id: receivable.customerId,
+        customer_name: receivable.customerName,
+        product_name: receivable.productName,
+        cost_price: receivable.costPrice || null,
+        sale_price: receivable.salePrice || null,
+        profit: receivable.profit || null,
+        total_amount: receivable.totalAmount,
+        paid_amount: receivable.paidAmount || 0,
+        remaining_amount: receivable.remainingAmount,
+        due_date: receivable.dueDate || null,
+        status: receivable.status,
+        payments: receivable.payments || [],
+        notes: receivable.notes || null,
+        archived: receivable.archived || false,
+        created_at: receivable.createdAt,
+        updated_at: receivable.updatedAt,
+      } as any);
+
+    if (error) {
+      console.error("Erro ao persistir recebível:", error);
+      throw new Error(error.message || "Erro ao salvar conta a receber");
+    }
+
     receivablesCache = [receivable, ...receivablesCache];
     saveReceivablesCache();
-
-    (async () => {
-      try {
-        await supabase
-          .from("receivables")
-          .upsert({
-            id: receivable.id,
-            customer_id: receivable.customerId,
-            customer_name: receivable.customerName,
-            product_name: receivable.productName,
-            cost_price: receivable.costPrice || null,
-            sale_price: receivable.salePrice || null,
-            profit: receivable.profit || null,
-            total_amount: receivable.totalAmount,
-            paid_amount: receivable.paidAmount || 0,
-            remaining_amount: receivable.remainingAmount,
-            due_date: receivable.dueDate || null,
-            status: receivable.status,
-            payments: receivable.payments || [],
-            notes: receivable.notes || null,
-            archived: receivable.archived || false,
-            created_at: receivable.createdAt,
-            updated_at: receivable.updatedAt,
-          } as any);
-        await this.refreshFromBackend();
-      } catch (e) {
-        console.error("Falha ao persistir recebível:", e);
-      }
-    })();
+    await this.refreshFromBackend();
 
     return receivable;
   },
 
-  addPayment(receivableId: string, payment: Omit<ReceivablePayment, "id">): Receivable {
+  async addPayment(receivableId: string, payment: Omit<ReceivablePayment, "id">): Promise<Receivable> {
     const list = this.getAllReceivables();
     const idx = list.findIndex((r) => r.id === receivableId);
     if (idx === -1) throw new Error("Conta a receber não encontrada");
@@ -236,33 +235,32 @@ export const receivablesStore = {
       updatedAt: new Date().toISOString(),
     };
 
+    const { error } = await supabase
+      .from("receivables")
+      .update({
+        payments: updatedPayments,
+        paid_amount: newPaidAmount,
+        remaining_amount: Math.max(0, newRemainingAmount),
+        status: newStatus,
+      })
+      .eq("id", receivableId);
+
+    if (error) {
+      console.error("Erro ao adicionar pagamento:", error);
+      throw new Error(error.message || "Erro ao adicionar pagamento");
+    }
+
     receivablesCache = list.map((r) => (r.id === receivableId ? updated : r));
     saveReceivablesCache();
-
-    (async () => {
-      try {
-        await supabase
-          .from("receivables")
-          .update({
-            payments: updatedPayments,
-            paid_amount: newPaidAmount,
-            remaining_amount: Math.max(0, newRemainingAmount),
-            status: newStatus,
-          })
-          .eq("id", receivableId);
-        await this.refreshFromBackend();
-      } catch (e) {
-        console.error("Falha ao adicionar pagamento:", e);
-      }
-    })();
+    await this.refreshFromBackend();
 
     return updated;
   },
 
-  updateReceivable(
+  async updateReceivable(
     id: string,
     data: Partial<Omit<Receivable, "id" | "createdAt" | "profit">>
-  ): Receivable {
+  ): Promise<Receivable> {
     const list = this.getAllReceivables();
     const idx = list.findIndex((r) => r.id === id);
     if (idx === -1) throw new Error("Conta a receber não encontrada");
@@ -290,87 +288,85 @@ export const receivablesStore = {
       updatedAt: new Date().toISOString(),
     } as Receivable;
 
+    const updateData: any = {};
+    if (data.productName !== undefined) updateData.product_name = data.productName;
+    if (data.customerName !== undefined) updateData.customer_name = data.customerName;
+    if (data.costPrice !== undefined) updateData.cost_price = data.costPrice;
+    if (data.salePrice !== undefined) updateData.sale_price = data.salePrice;
+    if (data.totalAmount !== undefined) updateData.total_amount = data.totalAmount;
+    if (data.paidAmount !== undefined) updateData.paid_amount = data.paidAmount;
+    if (data.dueDate !== undefined) updateData.due_date = data.dueDate;
+    if (data.notes !== undefined) updateData.notes = data.notes;
+    if (data.archived !== undefined) updateData.archived = data.archived;
+    updateData.remaining_amount = Math.max(0, remainingAmount);
+    updateData.status = status;
+
+    const { error } = await supabase.from("receivables").update(updateData).eq("id", id);
+
+    if (error) {
+      console.error("Erro ao atualizar recebível:", error);
+      throw new Error(error.message || "Erro ao atualizar conta a receber");
+    }
+
     receivablesCache = list.map((r) => (r.id === id ? updated : r));
     saveReceivablesCache();
-
-    (async () => {
-      try {
-        const updateData: any = {};
-        if (data.productName !== undefined) updateData.product_name = data.productName;
-        if (data.customerName !== undefined) updateData.customer_name = data.customerName;
-        if (data.costPrice !== undefined) updateData.cost_price = data.costPrice;
-        if (data.salePrice !== undefined) updateData.sale_price = data.salePrice;
-        if (data.totalAmount !== undefined) updateData.total_amount = data.totalAmount;
-        if (data.paidAmount !== undefined) updateData.paid_amount = data.paidAmount;
-        if (data.dueDate !== undefined) updateData.due_date = data.dueDate;
-        if (data.notes !== undefined) updateData.notes = data.notes;
-        if (data.archived !== undefined) updateData.archived = data.archived;
-        updateData.remaining_amount = Math.max(0, remainingAmount);
-        updateData.status = status;
-
-        await supabase.from("receivables").update(updateData).eq("id", id);
-        await this.refreshFromBackend();
-      } catch (e) {
-        console.error("Falha ao atualizar recebível:", e);
-      }
-    })();
+    await this.refreshFromBackend();
 
     return updated;
   },
 
-  deleteReceivable(id: string): void {
+  async deleteReceivable(id: string): Promise<void> {
+    const { error } = await supabase.from("receivables").delete().eq("id", id);
+
+    if (error) {
+      console.error("Erro ao deletar recebível:", error);
+      throw new Error(error.message || "Erro ao deletar conta a receber");
+    }
+
     const list = this.getAllReceivables();
     receivablesCache = list.filter((r) => r.id !== id);
     saveReceivablesCache();
-
-    (async () => {
-      try {
-        await supabase.from("receivables").delete().eq("id", id);
-        await this.refreshFromBackend();
-      } catch (e) {
-        console.error("Falha ao deletar recebível:", e);
-      }
-    })();
+    await this.refreshFromBackend();
   },
 
-  archiveReceivable(id: string): Receivable {
+  async archiveReceivable(id: string): Promise<Receivable> {
     const list = this.getAllReceivables();
     const idx = list.findIndex((r) => r.id === id);
     if (idx === -1) throw new Error("Recebível não encontrado");
 
     const updated: Receivable = { ...list[idx], archived: true, updatedAt: new Date().toISOString() };
+
+    const { error } = await supabase.from("receivables").update({ archived: true }).eq("id", id);
+
+    if (error) {
+      console.error("Erro ao arquivar recebível:", error);
+      throw new Error(error.message || "Erro ao arquivar conta a receber");
+    }
+
     receivablesCache = list.map((r) => (r.id === id ? updated : r));
     saveReceivablesCache();
-
-    (async () => {
-      try {
-        await supabase.from("receivables").update({ archived: true }).eq("id", id);
-        await this.refreshFromBackend();
-      } catch (e) {
-        console.error("Falha ao arquivar recebível:", e);
-      }
-    })();
+    await this.refreshFromBackend();
 
     return updated;
   },
 
-  unarchiveReceivable(id: string): Receivable {
+  async unarchiveReceivable(id: string): Promise<Receivable> {
     const list = this.getAllReceivables();
     const idx = list.findIndex((r) => r.id === id);
     if (idx === -1) throw new Error("Recebível não encontrado");
 
     const updated: Receivable = { ...list[idx], archived: false, updatedAt: new Date().toISOString() };
+
+    const { error } = await supabase.from("receivables").update({ archived: false }).eq("id", id);
+
+    if (error) {
+      console.error("Erro ao desarquivar recebível:", error);
+      throw new Error(error.message || "Erro ao desarquivar conta a receber");
+    }
+
     receivablesCache = list.map((r) => (r.id === id ? updated : r));
     saveReceivablesCache();
-
-    (async () => {
-      try {
-        await supabase.from("receivables").update({ archived: false }).eq("id", id);
-        await this.refreshFromBackend();
-      } catch (e) {
-        console.error("Falha ao desarquivar recebível:", e);
-      }
-    })();
+    await this.refreshFromBackend();
 
     return updated;
   },

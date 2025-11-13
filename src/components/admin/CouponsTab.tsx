@@ -45,30 +45,30 @@ const CouponsTab = () => {
     setFormOpen(true);
   };
 
-  const handleSubmit = (code: string, active: boolean) => {
+  const handleSubmit = async (code: string, active: boolean) => {
     try {
       if (editingCoupon) {
-        couponsStore.updateCoupon(editingCoupon.id, code, active);
+        await couponsStore.updateCoupon(editingCoupon.id, code, active);
         toast.success("Cupom atualizado com sucesso!");
       } else {
-        couponsStore.addCoupon(code);
+        await couponsStore.addCoupon(code);
         toast.success("Cupom criado com sucesso!");
       }
       setFormOpen(false);
       setEditingCoupon(null);
-      loadCoupons();
+      await loadCoupons();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Erro ao salvar cupom");
     }
   };
 
-  const handleToggleStatus = (coupon: Coupon) => {
+  const handleToggleStatus = async (coupon: Coupon) => {
     try {
-      couponsStore.toggleCouponStatus(coupon.id);
+      await couponsStore.toggleCouponStatus(coupon.id);
       toast.success(
         coupon.active ? "Cupom desativado com sucesso!" : "Cupom ativado com sucesso!"
       );
-      loadCoupons();
+      await loadCoupons();
     } catch (error) {
       toast.error("Erro ao alterar status do cupom");
     }
@@ -79,12 +79,12 @@ const CouponsTab = () => {
     setDeleteDialogOpen(true);
   };
 
-  const handleDeleteConfirm = () => {
+  const handleDeleteConfirm = async () => {
     if (couponToDelete) {
       try {
-        couponsStore.deleteCoupon(couponToDelete);
+        await couponsStore.deleteCoupon(couponToDelete);
         toast.success("Cupom excluído com sucesso!");
-        loadCoupons();
+        await loadCoupons();
       } catch (error) {
         toast.error("Erro ao excluir cupom");
       }

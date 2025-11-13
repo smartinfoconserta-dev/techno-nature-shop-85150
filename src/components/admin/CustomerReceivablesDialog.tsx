@@ -113,7 +113,7 @@ const CustomerReceivablesDialog = ({
     setShowPaymentDialog(true);
   };
 
-  const handleConfirmPayment = (
+  const handleConfirmPayment = async (
     payments: Array<{method: "cash" | "pix" | "card", amount: number}>, 
     date: string, 
     notes?: string
@@ -121,17 +121,15 @@ const CustomerReceivablesDialog = ({
     if (!selectedReceivable) return;
 
     try {
-      // Registrar cada pagamento
-      let updatedReceivable = selectedReceivable;
-      
-      payments.forEach(payment => {
-        updatedReceivable = receivablesStore.addPayment(updatedReceivable.id, {
+      // Registrar cada pagamento sequencialmente
+      for (const payment of payments) {
+        await receivablesStore.addPayment(selectedReceivable.id, {
           amount: payment.amount,
           paymentDate: date,
           paymentMethod: payment.method,
           notes: notes || `Pagamento via ${payment.method === "cash" ? "Dinheiro" : payment.method === "pix" ? "PIX" : "Cartão"}`,
         });
-      });
+      }
 
       const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
 

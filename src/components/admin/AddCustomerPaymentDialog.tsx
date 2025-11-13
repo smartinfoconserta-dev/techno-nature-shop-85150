@@ -174,7 +174,7 @@ export function AddCustomerPaymentDialog({
 
           const allocation = Math.min(currentRemaining, remaining);
 
-          receivablesStore.addPayment(receivable.id, {
+          await receivablesStore.addPayment(receivable.id, {
             amount: allocation,
             paymentMethod: method,
             paymentDate,

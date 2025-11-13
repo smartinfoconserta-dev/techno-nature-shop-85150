@@ -170,7 +170,7 @@ const MarkAsSoldDialog = ({
   const initialPaymentValue = parseFloat(initialPayment) || 0;
   const remainingAmount = finalPrice - initialPaymentValue;
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (saleType === "immediate") {
       const trimmedName = buyerName.trim();
       const trimmedCpf = buyerCpf.replace(/\D/g, '');
@@ -220,7 +220,7 @@ const MarkAsSoldDialog = ({
           ? new Date(Date.now() + warrantyDays * 24 * 60 * 60 * 1000).toISOString()
           : undefined;
 
-        const receivable = receivablesStore.addReceivable({
+        const receivable = await receivablesStore.addReceivable({
           customerId: selectedCustomer.id,
           customerCode: selectedCustomer.code,
           customerName: selectedCustomer.name,
@@ -239,7 +239,7 @@ const MarkAsSoldDialog = ({
 
         // Adicionar pagamentos iniciais (um para cada método)
         if (cashInitial > 0) {
-          receivablesStore.addPayment(receivable.id, {
+          await receivablesStore.addPayment(receivable.id, {
             amount: cashInitial,
             paymentDate: new Date().toISOString().split('T')[0],
             paymentMethod: "cash",
@@ -248,7 +248,7 @@ const MarkAsSoldDialog = ({
         }
         
         if (pixInitial > 0) {
-          receivablesStore.addPayment(receivable.id, {
+          await receivablesStore.addPayment(receivable.id, {
             amount: pixInitial,
             paymentDate: new Date().toISOString().split('T')[0],
             paymentMethod: "pix",
@@ -257,7 +257,7 @@ const MarkAsSoldDialog = ({
         }
         
         if (cardInitial > 0) {
-          receivablesStore.addPayment(receivable.id, {
+          await receivablesStore.addPayment(receivable.id, {
             amount: cardInitial,
             paymentDate: new Date().toISOString().split('T')[0],
             paymentMethod: "card",
