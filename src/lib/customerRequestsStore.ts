@@ -71,7 +71,7 @@ export const customerRequestsStore = {
 
   // ADMIN: Buscar todas solicitações
   async getAllRequests(): Promise<CustomerRequest[]> {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from("customer_requests")
       .select("*")
       .order("created_at", { ascending: false });
@@ -82,7 +82,7 @@ export const customerRequestsStore = {
 
   // ADMIN: Buscar por cliente
   async getRequestsByCustomer(customerId: string): Promise<CustomerRequest[]> {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from("customer_requests")
       .select("*")
       .eq("customer_id", customerId)
@@ -97,7 +97,7 @@ export const customerRequestsStore = {
     id: string,
     updates: Partial<CustomerRequest>
   ): Promise<CustomerRequest> {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from("customer_requests")
       .update(updates)
       .eq("id", id)
@@ -110,7 +110,7 @@ export const customerRequestsStore = {
 
   // ADMIN: Deletar solicitação
   async deleteRequest(id: string): Promise<void> {
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from("customer_requests")
       .delete()
       .eq("id", id);
@@ -120,7 +120,7 @@ export const customerRequestsStore = {
 
   // ADMIN: Confirmar e converter em venda
   async confirmAndConvert(requestId: string, receivableId: string): Promise<void> {
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from("customer_requests")
       .update({
         status: "confirmed",
@@ -134,7 +134,7 @@ export const customerRequestsStore = {
 
   // ADMIN: Rejeitar solicitação
   async rejectRequest(id: string, reason?: string): Promise<void> {
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from("customer_requests")
       .update({
         status: "rejected",
