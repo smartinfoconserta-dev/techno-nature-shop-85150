@@ -73,7 +73,8 @@ export const monthlyReportsStore = {
     let totalPix = 0;
     let totalCard = 0;
     let totalDigital = 0;
-    let totalExpenses = 0;
+    let totalExpenses = 0; // TODAS as compras do mês (para exibir em "Compras")
+    let totalCOGS = 0; // Custo dos Produtos Vendidos (para calcular Lucro Líquido)
     let totalMargins = 0;
 
     // Soma TODAS as despesas do mês (de todos os produtos, vendidos ou não)
@@ -96,6 +97,7 @@ export const monthlyReportsStore = {
       const expenses = p.expenses?.reduce((sum, e) => sum + e.value, 0) || 0;
       
       totalGross += salePrice;
+      totalCOGS += expenses; // Adiciona custo apenas dos produtos vendidos
       
       if (p.paymentBreakdown) {
         totalCash += p.paymentBreakdown.cash || 0;
@@ -111,7 +113,8 @@ export const monthlyReportsStore = {
     const quickSales = quickSalesStore.getQuickSalesByMonth(monthString);
     quickSales.forEach((qs) => {
       totalGross += qs.salePrice;
-      totalExpenses += qs.costPrice;
+      totalExpenses += qs.costPrice; // Para "Compras"
+      totalCOGS += qs.costPrice; // Para Lucro Líquido
       
       // Suporta pagamento misto e método único
       if (qs.paymentBreakdown) {
@@ -139,6 +142,13 @@ export const monthlyReportsStore = {
           // Adiciona o valor pago ao total
           totalGross += payment.amount;
           
+          // Adiciona custo proporcional ao CPV
+          if (receivable.costPrice && receivable.salePrice) {
+            const costRatio = receivable.costPrice / receivable.salePrice;
+            const costPortion = payment.amount * costRatio;
+            totalCOGS += costPortion;
+          }
+          
           // Contabiliza a forma de pagamento
           if (payment.paymentMethod === "cash") totalCash += payment.amount;
           if (payment.paymentMethod === "pix") totalPix += payment.amount;
@@ -154,7 +164,8 @@ export const monthlyReportsStore = {
     const taxableAmount = settings.includeCashInTax ? totalGross : totalDigital;
     const totalTax = taxableAmount * (settings.digitalTaxRate / 100);
     
-    const netProfit = totalGross - totalExpenses - totalTax;
+    // Lucro Líquido = Vendas - Custo dos Produtos Vendidos - Impostos
+    const netProfit = totalGross - totalCOGS - totalTax;
     const totalCount = soldProducts.length + quickSales.length;
     const averageMargin = totalCount > 0 ? totalMargins / totalCount : 0;
 
@@ -194,7 +205,8 @@ export const monthlyReportsStore = {
     let totalPix = 0;
     let totalCard = 0;
     let totalDigital = 0;
-    let totalExpenses = 0;
+    let totalExpenses = 0; // TODAS as compras do mês (para exibir em "Compras")
+    let totalCOGS = 0; // Custo dos Produtos Vendidos (para calcular Lucro Líquido)
     let totalMargins = 0;
 
     // Soma TODAS as despesas do mês atual (de todos os produtos, vendidos ou não)
@@ -217,6 +229,7 @@ export const monthlyReportsStore = {
       const expenses = p.expenses?.reduce((sum, e) => sum + e.value, 0) || 0;
       
       totalGross += salePrice;
+      totalCOGS += expenses; // Adiciona custo apenas dos produtos vendidos
       
       if (p.paymentBreakdown) {
         totalCash += p.paymentBreakdown.cash || 0;
@@ -233,7 +246,8 @@ export const monthlyReportsStore = {
     const quickSales = quickSalesStore.getQuickSalesByMonth(currentMonthStr);
     quickSales.forEach((qs) => {
       totalGross += qs.salePrice;
-      totalExpenses += qs.costPrice;
+      totalExpenses += qs.costPrice; // Para "Compras"
+      totalCOGS += qs.costPrice; // Para Lucro Líquido
       
       // Suporta pagamento misto e método único
       if (qs.paymentBreakdown) {
@@ -259,6 +273,13 @@ export const monthlyReportsStore = {
         if (paymentDate >= monthStart) {
           totalGross += payment.amount;
           
+          // Adiciona custo proporcional ao CPV
+          if (receivable.costPrice && receivable.salePrice) {
+            const costRatio = receivable.costPrice / receivable.salePrice;
+            const costPortion = payment.amount * costRatio;
+            totalCOGS += costPortion;
+          }
+          
           if (payment.paymentMethod === "cash") totalCash += payment.amount;
           if (payment.paymentMethod === "pix") totalPix += payment.amount;
           if (payment.paymentMethod === "card") totalCard += payment.amount;
@@ -273,7 +294,8 @@ export const monthlyReportsStore = {
     const taxableAmount = settings.includeCashInTax ? totalGross : totalDigital;
     const totalTax = taxableAmount * (settings.digitalTaxRate / 100);
     
-    const netProfit = totalGross - totalExpenses - totalTax;
+    // Lucro Líquido = Vendas - Custo dos Produtos Vendidos - Impostos
+    const netProfit = totalGross - totalCOGS - totalTax;
     const totalCount = soldProducts.length + quickSales.length;
     const averageMargin = totalCount > 0 ? totalMargins / totalCount : 0;
 
