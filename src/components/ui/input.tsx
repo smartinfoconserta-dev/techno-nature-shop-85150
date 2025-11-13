@@ -32,10 +32,17 @@ const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
       onChange?.(e);
     };
 
+    const handleNumberWheelCapture = (e: React.WheelEvent<HTMLInputElement>) => {
+      if (type === "number") {
+        // Desfoca o input antes do evento de rolagem processar, evitando alteração de valor
+        (e.currentTarget as HTMLInputElement).blur();
+      }
+    };
+
     const handleNumberWheel = (e: React.WheelEvent<HTMLInputElement>) => {
       if (type === "number") {
-        e.preventDefault();
-        e.stopPropagation();
+        // Garantia extra: desfoca caso o capture não tenha funcionado
+        (e.currentTarget as HTMLInputElement).blur();
       }
       onWheel?.(e);
     };
@@ -70,6 +77,7 @@ const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
         inputMode={type === "number" && !inputMode ? "decimal" : inputMode}
         ref={ref}
         onChange={handleNumberChange}
+        onWheelCapture={handleNumberWheelCapture}
         onWheel={handleNumberWheel}
         onKeyDown={handleNumberKeyDown}
         onFocus={handleNumberFocus}
