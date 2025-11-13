@@ -112,10 +112,7 @@ export const EditCustomerRequestDialog = ({ request, open, onOpenChange, onSucce
       toast.error("Categoria é obrigatória");
       return;
     }
-    if (!formData.paymentMethod) {
-      toast.error("Forma de pagamento é obrigatória");
-      return;
-    }
+    // Forma de pagamento é opcional - pode ser definida depois
 
     const salePrice = parseFloat(formData.salePrice);
     const costPrice = parseFloat(formData.costPrice);
@@ -279,7 +276,7 @@ export const EditCustomerRequestDialog = ({ request, open, onOpenChange, onSucce
                 onValueChange={(value) => setFormData({ ...formData, paymentMethod: value })}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione" />
+                  <SelectValue placeholder="Definir depois (opcional)" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="cash">À Vista</SelectItem>
