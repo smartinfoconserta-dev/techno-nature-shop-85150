@@ -11,6 +11,7 @@ import { receivablesStore } from "@/lib/receivablesStore";
 import { categoriesStore } from "@/lib/categoriesStore";
 import { brandsStore } from "@/lib/brandsStore";
 import { Loader2, CheckCircle2, XCircle, Check } from "lucide-react";
+import WarrantySelector from "./WarrantySelector";
 
 interface Props {
   request: CustomerRequest;
@@ -31,7 +32,7 @@ export const EditCustomerRequestDialog = ({ request, open, onOpenChange, onSucce
     costPrice: request.cost_price?.toString() || "",
     brand: request.brand || "",
     category: request.category || "",
-    warrantyMonths: request.warranty_months?.toString() || "3",
+    warrantyMonths: request.warranty_months?.toString() || "90",
     paymentMethod: request.payment_method || "",
     installments: request.installments?.toString() || "1",
     adminNotes: request.admin_notes || "",
@@ -224,12 +225,11 @@ export const EditCustomerRequestDialog = ({ request, open, onOpenChange, onSucce
             </div>
 
             <div>
-              <Label htmlFor="warrantyMonths">Garantia (meses)</Label>
-              <Input
-                id="warrantyMonths"
-                type="number"
-                value={formData.warrantyMonths}
-                onChange={(e) => setFormData({ ...formData, warrantyMonths: e.target.value })}
+              <WarrantySelector
+                value={parseInt(formData.warrantyMonths) || 90}
+                onChange={(days) => {
+                  setFormData({ ...formData, warrantyMonths: days.toString() });
+                }}
               />
             </div>
           </div>
