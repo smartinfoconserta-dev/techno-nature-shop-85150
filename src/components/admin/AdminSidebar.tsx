@@ -13,6 +13,7 @@ import {
   Users,
   LogOut,
   Notebook,
+  Trash2,
 } from "lucide-react";
 import {
   Sidebar,
@@ -41,6 +42,7 @@ const navItems: NavItem[] = [
   { title: "Financeiro", value: "finance", icon: BarChart3 },
   { title: "Histórico", value: "history", icon: History },
   { title: "Cupons", value: "coupons", icon: Ticket },
+  { title: "Lixeira", value: "recycle-bin", icon: Trash2 },
   { title: "Configurações", value: "settings", icon: Settings },
 ];
 

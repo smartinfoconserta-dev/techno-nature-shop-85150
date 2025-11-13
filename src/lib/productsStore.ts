@@ -108,6 +108,7 @@ export const productsStore = {
     const { data, error } = await supabase
       .from("products")
       .select("*")
+      .is("deleted_at", null)
       .order("product_order", { ascending: true });
     if (error) {
       console.error("Erro ao carregar produtos do backend:", error);
@@ -258,21 +259,56 @@ export const productsStore = {
   },
 
   async deleteProduct(id: string): Promise<void> {
-    const list = this.getAllProducts();
-    const backup = [...productsCache];
-    productsCache = list.filter((p) => p.id !== id);
-    saveProductsCache();
+    // SOFT DELETE
+    const { error } = await supabase
+      .from("products")
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("id", id);
 
-    const { error } = await supabase.from("products").delete().eq("id", id);
-    
     if (error) {
-      console.error("Falha ao deletar produto:", error);
-      // Reverter no cache em caso de erro
-      productsCache = backup;
-      throw new Error(`Erro ao deletar produto: ${error.message}`);
+      console.error("Erro ao mover produto para lixeira:", error);
+      throw error;
     }
 
     await this.refreshFromBackend();
+  },
+
+  async restoreProduct(id: string): Promise<void> {
+    const { error } = await supabase
+      .from("products")
+      .update({ deleted_at: null })
+      .eq("id", id);
+
+    if (error) {
+      console.error("Erro ao restaurar produto:", error);
+      throw error;
+    }
+
+    await this.refreshFromBackend();
+  },
+
+  async permanentlyDeleteProduct(id: string): Promise<void> {
+    const { error } = await supabase.from("products").delete().eq("id", id);
+
+    if (error) {
+      console.error("Erro ao deletar produto permanentemente:", error);
+      throw error;
+    }
+  },
+
+  async getDeletedProducts(): Promise<Product[]> {
+    const { data, error } = await supabase
+      .from("products")
+      .select("*")
+      .not("deleted_at", "is", null)
+      .order("deleted_at", { ascending: false });
+
+    if (error) {
+      console.error("Erro ao buscar produtos deletados:", error);
+      return [];
+    }
+
+    return data?.map(mapRowToProduct) || [];
   },
 
   reorderProducts(reorderedList: Product[]): void {

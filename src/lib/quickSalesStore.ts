@@ -46,6 +46,7 @@ export const quickSalesStore = {
     const { data, error } = await supabase
       .from("quick_sales")
       .select("*")
+      .is("deleted_at", null)
       .order("created_at", { ascending: false });
     if (error) {
       console.error("Erro ao carregar vendas rápidas:", error);
@@ -191,17 +192,81 @@ export const quickSalesStore = {
   },
 
   async deleteQuickSale(id: string): Promise<void> {
-    const { error } = await supabase.from("quick_sales").delete().eq("id", id);
+    // SOFT DELETE
+    const { error } = await supabase
+      .from("quick_sales")
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("id", id);
 
     if (error) {
-      console.error("Erro ao deletar venda rápida:", error);
-      throw new Error(error.message || "Erro ao deletar venda rápida");
+      console.error("Erro ao mover venda rápida para lixeira:", error);
+      throw error;
     }
 
-    const list = this.getAllQuickSales();
-    quickSalesCache = list.filter((s) => s.id !== id);
-    saveQuickCache();
     await this.refreshFromBackend();
+  },
+
+  async restoreQuickSale(id: string): Promise<void> {
+    const { error } = await supabase
+      .from("quick_sales")
+      .update({ deleted_at: null })
+      .eq("id", id);
+
+    if (error) {
+      console.error("Erro ao restaurar venda rápida:", error);
+      throw error;
+    }
+
+    await this.refreshFromBackend();
+  },
+
+  async permanentlyDeleteQuickSale(id: string): Promise<void> {
+    const { error} = await supabase
+      .from("quick_sales")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      console.error("Erro ao deletar venda rápida permanentemente:", error);
+      throw error;
+    }
+  },
+
+  async getDeletedQuickSales(): Promise<QuickSale[]> {
+    const { data, error } = await supabase
+      .from("quick_sales")
+      .select("*")
+      .not("deleted_at", "is", null)
+      .order("deleted_at", { ascending: false });
+
+    if (error) {
+      console.error("Erro ao buscar vendas rápidas deletadas:", error);
+      return [];
+    }
+
+    return data?.map((row: any) => ({
+      id: row.id,
+      productName: row.product_name,
+      brand: row.brand,
+      category: row.category,
+      customerName: row.customer_name,
+      customerId: row.customer_id,
+      costPrice: row.cost_price,
+      salePrice: row.sale_price,
+      profit: row.profit,
+      margin: row.margin,
+      paymentMethod: row.payment_method,
+      installments: row.installments,
+      installmentRate: row.installment_rate,
+      paymentBreakdown: row.payment_breakdown,
+      digitalTax: row.digital_tax,
+      taxAmount: row.digital_tax,
+      warrantyMonths: row.warranty_months,
+      notes: row.notes,
+      saleDate: row.created_at,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    })) || [];
   },
 
   getMonthlyTotals(monthString: string) {

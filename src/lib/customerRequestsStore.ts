@@ -108,14 +108,79 @@ export const customerRequestsStore = {
     return data as CustomerRequest;
   },
 
-  // ADMIN: Deletar solicitação
   async deleteRequest(id: string): Promise<void> {
-    const { error } = await (supabase as any)
+    // SOFT DELETE
+    const { error } = await supabase
+      .from("customer_requests")
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("id", id);
+
+    if (error) {
+      console.error("Erro ao mover solicitação para lixeira:", error);
+      throw error;
+    }
+  },
+
+  async restoreRequest(id: string): Promise<void> {
+    const { error } = await supabase
+      .from("customer_requests")
+      .update({ deleted_at: null })
+      .eq("id", id);
+
+    if (error) {
+      console.error("Erro ao restaurar solicitação:", error);
+      throw error;
+    }
+  },
+
+  async permanentlyDeleteRequest(id: string): Promise<void> {
+    const { error } = await supabase
       .from("customer_requests")
       .delete()
       .eq("id", id);
 
-    if (error) throw error;
+    if (error) {
+      console.error("Erro ao deletar solicitação permanentemente:", error);
+      throw error;
+    }
+  },
+
+  async getDeletedRequests(): Promise<CustomerRequest[]> {
+    const { data, error } = await supabase
+      .from("customer_requests")
+      .select("*")
+      .not("deleted_at", "is", null)
+      .order("deleted_at", { ascending: false });
+
+    if (error) {
+      console.error("Erro ao buscar solicitações deletadas:", error);
+      return [];
+    }
+
+    return (
+      data?.map((row) => ({
+        id: row.id,
+        customer_id: row.customer_id,
+        customer_name: row.customer_name,
+        product_name: row.product_name,
+        brand: row.brand,
+        category: row.category,
+        cost_price: row.cost_price,
+        sale_price: row.sale_price,
+        payment_method: row.payment_method,
+        installments: row.installments,
+        installment_rate: row.installment_rate,
+        warranty_months: row.warranty_months,
+        notes: row.notes,
+        admin_notes: row.admin_notes,
+        status: row.status as "pending" | "confirmed" | "rejected",
+        converted_to_receivable_id: row.converted_to_receivable_id,
+        confirmed_by: row.confirmed_by,
+        confirmed_at: row.confirmed_at,
+        created_at: row.created_at,
+        updated_at: row.updated_at,
+      })) || []
+    );
   },
 
   // ADMIN: Confirmar e converter em venda

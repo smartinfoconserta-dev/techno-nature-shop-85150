@@ -95,6 +95,7 @@ export const receivablesStore = {
     const { data, error } = await supabase
       .from("receivables")
       .select("*")
+      .is("deleted_at", null)
       .order("created_at", { ascending: false });
     if (error) {
       console.error("Erro ao carregar recebíveis:", error);
@@ -326,17 +327,59 @@ export const receivablesStore = {
   },
 
   async deleteReceivable(id: string): Promise<void> {
-    const { error } = await supabase.from("receivables").delete().eq("id", id);
+    // SOFT DELETE
+    const { error } = await supabase
+      .from("receivables")
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("id", id);
 
     if (error) {
-      console.error("Erro ao deletar recebível:", error);
-      throw new Error(error.message || "Erro ao deletar conta a receber");
+      console.error("Erro ao mover recebível para lixeira:", error);
+      throw error;
     }
 
-    const list = this.getAllReceivables();
-    receivablesCache = list.filter((r) => r.id !== id);
-    saveReceivablesCache();
     await this.refreshFromBackend();
+  },
+
+  async restoreReceivable(id: string): Promise<void> {
+    const { error } = await supabase
+      .from("receivables")
+      .update({ deleted_at: null })
+      .eq("id", id);
+
+    if (error) {
+      console.error("Erro ao restaurar recebível:", error);
+      throw error;
+    }
+
+    await this.refreshFromBackend();
+  },
+
+  async permanentlyDeleteReceivable(id: string): Promise<void> {
+    const { error } = await supabase
+      .from("receivables")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      console.error("Erro ao deletar recebível permanentemente:", error);
+      throw error;
+    }
+  },
+
+  async getDeletedReceivables(): Promise<Receivable[]> {
+    const { data, error } = await supabase
+      .from("receivables")
+      .select("*")
+      .not("deleted_at", "is", null)
+      .order("deleted_at", { ascending: false });
+
+    if (error) {
+      console.error("Erro ao buscar recebíveis deletados:", error);
+      return [];
+    }
+
+    return data?.map(mapRowToReceivable) || [];
   },
 
   async archiveReceivable(id: string): Promise<Receivable> {
