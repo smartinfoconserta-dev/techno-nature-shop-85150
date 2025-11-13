@@ -214,41 +214,59 @@ const SalesHistoryTab = () => {
   const handleCancelClick = (product: Product) => {
     setCancelingProduct(product);
     
-    // Verificar se tem valor de venda registrado E comprador com CPF
-    const hasSaleValue = (product.salePrice || 0) > 0;
-    const hasBuyer = product.buyerCpf && product.buyerCpf.trim() !== "";
+    // Verificar se tem pagamento registrado (paymentBreakdown OU salePrice)
+    const hasPayment = product.paymentBreakdown
+      ? ((product.paymentBreakdown.cash || 0) +
+         (product.paymentBreakdown.pix || 0) +
+         (product.paymentBreakdown.card || 0)) > 0
+      : (product.salePrice || 0) > 0;
     
-    // Se tem valor de venda E comprador com CPF, mostrar opções de crédito
-    if (hasSaleValue && hasBuyer) {
+    // Verificar se tem comprador identificado (nome OU CPF)
+    const hasBuyer = 
+      (product.buyerName && product.buyerName.trim() !== "") ||
+      (product.buyerCpf && product.buyerCpf.trim() !== "");
+    
+    // Se tem pagamento E comprador, mostrar opções de crédito
+    if (hasPayment && hasBuyer) {
       setShowRefundDialog(true);
     }
-    // Se não tem, usa o AlertDialog padrão (que já está configurado)
+    // Se não tem, usa o AlertDialog padrão (cancelamento simples)
   };
 
   const handleRefundConfirm = async (keepAsCredit: boolean) => {
     if (!cancelingProduct) return;
 
     try {
-      // Se deve gerar crédito, adicionar ao cliente
-      if (keepAsCredit && cancelingProduct.buyerCpf) {
-        const totalPaid = 
-          (cancelingProduct.paymentBreakdown?.cash || 0) +
-          (cancelingProduct.paymentBreakdown?.pix || 0) +
-          (cancelingProduct.paymentBreakdown?.card || 0);
+      // Se deve gerar crédito, tentar encontrar o cliente
+      if (keepAsCredit) {
+        const totalPaid = cancelingProduct.paymentBreakdown
+          ? (cancelingProduct.paymentBreakdown.cash || 0) +
+            (cancelingProduct.paymentBreakdown.pix || 0) +
+            (cancelingProduct.paymentBreakdown.card || 0)
+          : (cancelingProduct.salePrice || 0);
 
-        // Buscar cliente pelo CPF
         const customers = await customersStore.getAllCustomers();
-        const customer = customers.find(c => 
-          c.cpfCnpj?.replace(/\D/g, '') === cancelingProduct.buyerCpf?.replace(/\D/g, '')
-        );
+        let customer;
+
+        // Tentar buscar por CPF primeiro (mais confiável)
+        if (cancelingProduct.buyerCpf) {
+          customer = customers.find(c => 
+            c.cpfCnpj?.replace(/\D/g, '') === cancelingProduct.buyerCpf?.replace(/\D/g, '')
+          );
+        }
+        
+        // Se não encontrou por CPF, tentar por nome exato
+        if (!customer && cancelingProduct.buyerName) {
+          customer = customers.find(c => 
+            c.name.toLowerCase().trim() === cancelingProduct.buyerName?.toLowerCase().trim()
+          );
+        }
 
         if (customer) {
           const description = `Crédito gerado pela devolução do produto: ${cancelingProduct.name}`;
           
-          // Adicionar crédito ao cliente
           await customersStore.addCredit(customer.id, totalPaid, description);
           
-          // Registrar no histórico de crédito
           await creditHistoryStore.addTransaction({
             customerId: customer.id,
             type: "add",
@@ -258,7 +276,15 @@ const SalesHistoryTab = () => {
           
           toast.success(`Crédito de R$ ${totalPaid.toFixed(2)} adicionado ao cliente ${customer.name}`);
         } else {
-          toast.error("Cliente não encontrado no sistema. Venda cancelada sem gerar crédito.");
+          // Cliente não encontrado no cadastro
+          const buyerInfo = cancelingProduct.buyerCpf 
+            ? `CPF ${cancelingProduct.buyerCpf}`
+            : `nome "${cancelingProduct.buyerName}"`;
+          
+          toast.warning(
+            `Cliente (${buyerInfo}) não encontrado no cadastro. Venda cancelada sem gerar crédito.`,
+            { duration: 5000 }
+          );
         }
       }
 
