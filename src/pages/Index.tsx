@@ -29,7 +29,6 @@ const Index = () => {
       const names = await categoriesStore.getCategoryNames();
       const sortedNames = names.sort();
       setCategories(sortedNames);
-      
       if (sortedNames.length > 0 && selectedCategory === "") {
         setSelectedCategory(sortedNames[0]);
       }
@@ -47,7 +46,6 @@ const Index = () => {
     if (products.length === 0) return 50000;
     return Math.max(...products.map(p => p.price));
   }, [products]);
-
   useEffect(() => {
     const init = async () => {
       setIsLoading(true);
@@ -101,22 +99,11 @@ const Index = () => {
     let filtered = products.filter(product => {
       const categoryMatch = product.category === selectedCategory;
       const brandMatch = selectedBrand === "all" || product.brand === selectedBrand;
-      
       const searchLower = searchQuery.toLowerCase();
-      const globalSearchMatch = searchQuery === "" || 
-        product.name.toLowerCase().includes(searchLower) || 
-        product.brand.toLowerCase().includes(searchLower) || 
-        product.specs.toLowerCase().includes(searchLower);
-      
+      const globalSearchMatch = searchQuery === "" || product.name.toLowerCase().includes(searchLower) || product.brand.toLowerCase().includes(searchLower) || product.specs.toLowerCase().includes(searchLower);
       const filterSearchLower = filterSearch.toLowerCase();
-      const filterSearchMatch = filterSearch === "" ||
-        product.name.toLowerCase().includes(filterSearchLower) ||
-        product.brand.toLowerCase().includes(filterSearchLower) ||
-        product.specs.toLowerCase().includes(filterSearchLower) ||
-        product.description.toLowerCase().includes(filterSearchLower);
-      
+      const filterSearchMatch = filterSearch === "" || product.name.toLowerCase().includes(filterSearchLower) || product.brand.toLowerCase().includes(filterSearchLower) || product.specs.toLowerCase().includes(filterSearchLower) || product.description.toLowerCase().includes(filterSearchLower);
       const priceMatch = product.price >= priceRange[0] && product.price <= priceRange[1];
-      
       return categoryMatch && brandMatch && globalSearchMatch && filterSearchMatch && priceMatch;
     });
 
@@ -126,7 +113,6 @@ const Index = () => {
     } else if (priceSort === "desc") {
       filtered.sort((a, b) => b.price - a.price);
     }
-
     return filtered;
   }, [products, selectedCategory, selectedBrand, searchQuery, filterSearch, priceRange, priceSort]);
   const scrollToTop = () => {
@@ -135,7 +121,6 @@ const Index = () => {
       behavior: "smooth"
     });
   };
-
   const handleResetFilters = () => {
     if (categories.length > 0) {
       setSelectedCategory(categories[0]);
@@ -154,11 +139,7 @@ const Index = () => {
       <section className="relative h-[30vh] min-h-[250px] max-h-[320px] overflow-hidden animate-fade-in">
         {/* Background com imagem */}
         <div className="absolute inset-0">
-          <img 
-            src={heroImage}
-            alt="Tecnologia" 
-            className="w-full h-full object-cover"
-          />
+          <img src={heroImage} alt="Tecnologia" className="w-full h-full object-cover" />
           {/* Overlay escuro para melhorar legibilidade do texto */}
           <div className="absolute inset-0 bg-gradient-to-br from-black/30 via-black/20 to-black/30" />
         </div>
@@ -166,10 +147,10 @@ const Index = () => {
         {/* Conteúdo (texto) por cima */}
         <div className="relative z-10 h-full flex items-center justify-center">
           <div className="text-center space-y-3 px-4">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground drop-shadow-2xl">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold drop-shadow-2xl text-gray-50 mx-[12px]">
               Ramon Tech Solutions
             </h1>
-            <p className="text-lg md:text-xl text-muted-foreground drop-shadow-lg">
+            <p className="text-lg md:text-xl drop-shadow-lg text-slate-50">
               Catálogo Digital de Tecnologia
             </p>
           </div>
@@ -179,88 +160,38 @@ const Index = () => {
       <main className="container mx-auto px-4 py-6">
         <div className="mb-6 space-y-4">
           <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-            {categories.map(categoryName => (
-              <Button 
-                key={categoryName} 
-                variant={selectedCategory === categoryName ? "default" : "outline"} 
-                size="sm" 
-                onClick={() => setSelectedCategory(categoryName)} 
-                className="whitespace-nowrap"
-              >
+            {categories.map(categoryName => <Button key={categoryName} variant={selectedCategory === categoryName ? "default" : "outline"} size="sm" onClick={() => setSelectedCategory(categoryName)} className="whitespace-nowrap">
                 {categoryName}
-              </Button>
-            ))}
+              </Button>)}
           </div>
           
           <div className="flex items-center gap-3">
-            <ProductFilters 
-              selectedCategory={selectedCategory} 
-              onCategoryChange={setSelectedCategory} 
-              selectedBrand={selectedBrand} 
-              onBrandChange={setSelectedBrand} 
-              brands={brands} 
-              categories={categories}
-              priceRange={priceRange}
-              onPriceRangeChange={setPriceRange}
-              maxPrice={maxProductPrice}
-              filterSearch={filterSearch}
-              onFilterSearchChange={setFilterSearch}
-              priceSort={priceSort}
-              onPriceSortChange={setPriceSort}
-            />
+            <ProductFilters selectedCategory={selectedCategory} onCategoryChange={setSelectedCategory} selectedBrand={selectedBrand} onBrandChange={setSelectedBrand} brands={brands} categories={categories} priceRange={priceRange} onPriceRangeChange={setPriceRange} maxPrice={maxProductPrice} filterSearch={filterSearch} onFilterSearchChange={setFilterSearch} priceSort={priceSort} onPriceSortChange={setPriceSort} />
             <p className="text-sm text-muted-foreground">
               {filteredProducts.length} {filteredProducts.length === 1 ? 'produto' : 'produtos'}
             </p>
           </div>
         </div>
         
-        {isLoading ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4 pb-20">
-            {[1, 2, 3, 4, 5, 6].map(i => (
-              <div key={i} className="space-y-3">
+        {isLoading ? <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4 pb-20">
+            {[1, 2, 3, 4, 5, 6].map(i => <div key={i} className="space-y-3">
                 <Skeleton className="h-48 w-full" />
                 <Skeleton className="h-4 w-3/4" />
                 <Skeleton className="h-4 w-1/2" />
-              </div>
-            ))}
-          </div>
-        ) : filteredProducts.length === 0 ? (
-          <div className="text-center py-20">
+              </div>)}
+          </div> : filteredProducts.length === 0 ? <div className="text-center py-20">
             <p className="text-muted-foreground text-lg">
               Nenhum produto encontrado
             </p>
             <p className="text-sm text-muted-foreground mt-2">
-              {products.length === 0 
-                ? "Catálogo em breve. Novos produtos serão adicionados em breve."
-                : "Tente ajustar os filtros ou buscar por outro termo"
-              }
+              {products.length === 0 ? "Catálogo em breve. Novos produtos serão adicionados em breve." : "Tente ajustar os filtros ou buscar por outro termo"}
             </p>
-            {products.length === 0 && (
-              <Button onClick={handleRefreshCatalog} disabled={isRefreshing} className="mt-4">
+            {products.length === 0 && <Button onClick={handleRefreshCatalog} disabled={isRefreshing} className="mt-4">
                 {isRefreshing ? "Atualizando..." : "Atualizar catálogo"}
-              </Button>
-            )}
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4 pb-20">
-            {filteredProducts.map(product => (
-              <ProductCard 
-                key={product.id} 
-                id={product.id} 
-                images={product.images} 
-                name={product.name} 
-                brand={product.brand} 
-                category={product.category} 
-                specs={product.specs} 
-                description={product.description} 
-                price={product.price} 
-                costPrice={product.costPrice} 
-                discountPrice={product.discountPrice} 
-                passOnCashDiscount={product.passOnCashDiscount} 
-              />
-            ))}
-          </div>
-        )}
+              </Button>}
+          </div> : <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4 pb-20">
+            {filteredProducts.map(product => <ProductCard key={product.id} id={product.id} images={product.images} name={product.name} brand={product.brand} category={product.category} specs={product.specs} description={product.description} price={product.price} costPrice={product.costPrice} discountPrice={product.discountPrice} passOnCashDiscount={product.passOnCashDiscount} />)}
+          </div>}
       </main>
       
       <footer className="bg-muted py-6 mt-8">
@@ -278,32 +209,16 @@ const Index = () => {
 
       {/* Dialog para Deep Link */}
       {deepLinkProductId && (() => {
-        const product = products.find(p => p.id === deepLinkProductId);
-        if (!product) return null;
-        
-        return (
-          <ProductDetailsDialog
-            open={!!deepLinkProductId}
-            onOpenChange={(open) => {
-              if (!open) {
-                setDeepLinkProductId(null);
-                // Limpar parâmetro da URL
-                window.history.replaceState({}, '', window.location.pathname);
-              }
-            }}
-            id={product.id}
-            images={product.images}
-            name={product.name}
-            brand={product.brand}
-            specs={product.specs}
-            description={product.description}
-            price={product.price}
-            costPrice={product.costPrice}
-            discountPrice={product.discountPrice}
-            passOnCashDiscount={product.passOnCashDiscount}
-          />
-        );
-      })()}
+      const product = products.find(p => p.id === deepLinkProductId);
+      if (!product) return null;
+      return <ProductDetailsDialog open={!!deepLinkProductId} onOpenChange={open => {
+        if (!open) {
+          setDeepLinkProductId(null);
+          // Limpar parâmetro da URL
+          window.history.replaceState({}, '', window.location.pathname);
+        }
+      }} id={product.id} images={product.images} name={product.name} brand={product.brand} specs={product.specs} description={product.description} price={product.price} costPrice={product.costPrice} discountPrice={product.discountPrice} passOnCashDiscount={product.passOnCashDiscount} />;
+    })()}
     </div>;
 };
 export default Index;
