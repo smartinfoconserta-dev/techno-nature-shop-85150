@@ -149,6 +149,31 @@ const Index = () => {
   return <div className="min-h-screen bg-background">
       <Header searchValue={searchQuery} onSearchChange={setSearchQuery} onReset={handleResetFilters} />
       
+      {/* Hero Banner Minimalista */}
+      <section className="relative h-[40vh] min-h-[300px] max-h-[400px] overflow-hidden bg-gradient-to-br from-primary/20 via-background to-background">
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="relative z-10 text-center space-y-3 px-4">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground drop-shadow-lg">
+              Ramon Tech Solutions
+            </h1>
+            <p className="text-lg md:text-xl text-muted-foreground">
+              Catálogo Digital de Tecnologia
+            </p>
+          </div>
+          <div className="absolute right-[5%] md:right-[10%] bottom-0 w-[200px] md:w-[280px] lg:w-[350px] opacity-90">
+            <img 
+              src="/tech-background.jpg" 
+              alt="Tecnologia" 
+              className="w-full h-auto object-contain drop-shadow-2xl"
+              style={{ 
+                maskImage: 'linear-gradient(to top, transparent, black 20%)',
+                WebkitMaskImage: 'linear-gradient(to top, transparent, black 20%)'
+              }}
+            />
+          </div>
+        </div>
+      </section>
+      
       <main className="container mx-auto px-4 py-6">
         <div className="mb-6 space-y-4">
           <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
