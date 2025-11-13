@@ -1,24 +1,56 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCustomerAuth } from "@/hooks/useCustomerAuth";
-import { receivablesStore, Receivable } from "@/lib/receivablesStore";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { LogOut, ShoppingBag, DollarSign, Clock, Shield } from "lucide-react";
+import { LogOut, ShoppingBag, DollarSign, Clock, Shield, Loader2 } from "lucide-react";
 import { calculateWarranty } from "@/lib/warrantyHelper";
 import { format } from "date-fns";
 import { CustomerStatsChart } from "@/components/customer/CustomerStatsChart";
 import { SummaryCard } from "@/components/customer/SummaryCard";
 import { PurchaseFilters } from "@/components/customer/PurchaseFilters";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+
+interface Receivable {
+  id: string;
+  customerId: string;
+  customerCode: string;
+  customerName: string;
+  productId: string;
+  productName: string;
+  brand?: string;
+  category?: string;
+  costPrice?: number;
+  basePrice?: number;
+  salePrice?: number;
+  profit?: number;
+  totalAmount: number;
+  paidAmount: number;
+  remainingAmount: number;
+  installments: number;
+  installmentRate: number;
+  dueDate?: string;
+  status: "pending" | "partial" | "paid";
+  payments: any[];
+  warranty?: number;
+  warrantyExpiresAt?: string;
+  notes?: string;
+  archived: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
 
 const CustomerPortal = () => {
   const navigate = useNavigate();
   const { customer, logout } = useCustomerAuth();
+  const { toast } = useToast();
   const [receivables, setReceivables] = useState<Receivable[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [periodFilter, setPeriodFilter] = useState("all");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!customer) {
@@ -26,10 +58,67 @@ const CustomerPortal = () => {
       return;
     }
 
-    // Carregar compras do cliente
-    const customerReceivables = receivablesStore.getReceivablesByCustomer(customer.id);
-    setReceivables(customerReceivables);
+    // Carregar compras do cliente via backend
+    loadReceivables();
   }, [customer, navigate]);
+
+  const loadReceivables = async () => {
+    try {
+      setLoading(true);
+      
+      // Obter token do localStorage
+      const token = localStorage.getItem("customer_token");
+      
+      if (!token) {
+        toast({
+          title: "Sessão expirada",
+          description: "Faça login novamente para acessar seu histórico.",
+          variant: "destructive",
+        });
+        logout();
+        navigate("/login");
+        return;
+      }
+
+      // Chamar função de backend portal-get-receivables
+      const { data, error } = await supabase.functions.invoke('portal-get-receivables', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (!data.success) {
+        throw new Error(data.error || 'FETCH_FAILED');
+      }
+
+      setReceivables(data.receivables || []);
+
+    } catch (error: any) {
+      const errorCode = error?.message || error?.error || 'UNKNOWN_ERROR';
+      
+      if (errorCode === 'TOKEN_EXPIRED' || errorCode === 'UNAUTHORIZED' || errorCode === 'INVALID_TOKEN') {
+        toast({
+          title: "Sessão expirada",
+          description: "Sua sessão expirou. Faça login novamente.",
+          variant: "destructive",
+        });
+        logout();
+        navigate("/login");
+      } else {
+        toast({
+          title: "Erro ao carregar histórico",
+          description: "Não foi possível carregar suas compras. Tente novamente mais tarde.",
+          variant: "destructive",
+        });
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLogout = () => {
     logout();
@@ -87,6 +176,17 @@ const CustomerPortal = () => {
     const config = variants[status];
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+          <p className="text-muted-foreground">Carregando seu histórico...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">

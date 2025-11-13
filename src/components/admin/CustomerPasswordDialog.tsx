@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,6 +13,14 @@ import {
 import { customersStore, Customer } from "@/lib/customersStore";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, RefreshCw } from "lucide-react";
+import { z } from "zod";
+
+// Schema de validação para nickname
+const nicknameSchema = z.string()
+  .trim()
+  .min(3, "Nickname deve ter pelo menos 3 caracteres")
+  .max(30, "Nickname deve ter no máximo 30 caracteres")
+  .regex(/^[a-zA-Z0-9._]+$/, "Use apenas letras, números, ponto e underline");
 
 interface CustomerPasswordDialogProps {
   open: boolean;
@@ -28,10 +36,18 @@ const CustomerPasswordDialog = ({
   onSuccess,
 }: CustomerPasswordDialogProps) => {
   const { toast } = useToast();
+  const [nickname, setNickname] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Carregar nickname existente quando abrir o dialog
+  useEffect(() => {
+    if (customer && open) {
+      setNickname(customer.username || "");
+    }
+  }, [customer, open]);
 
   const generateRandomPassword = () => {
     const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -52,39 +68,43 @@ const CustomerPasswordDialog = ({
   const handleSubmit = async () => {
     if (!customer) return;
 
-    // Validações
-    if (!newPassword.trim()) {
+    // Validar nickname
+    const nicknameValidation = nicknameSchema.safeParse(nickname);
+    if (!nicknameValidation.success) {
       toast({
-        title: "Erro",
-        description: "Digite uma nova senha",
+        title: "Nickname inválido",
+        description: nicknameValidation.error.errors[0].message,
         variant: "destructive",
       });
       return;
     }
 
-    if (newPassword.length < 4) {
-      toast({
-        title: "Erro",
-        description: "A senha deve ter pelo menos 4 caracteres",
-        variant: "destructive",
-      });
-      return;
+    // Validações de senha (se fornecida)
+    if (newPassword.trim()) {
+      if (newPassword.length < 4) {
+        toast({
+          title: "Erro",
+          description: "A senha deve ter pelo menos 4 caracteres",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (newPassword !== confirmPassword) {
+        toast({
+          title: "Erro",
+          description: "As senhas não coincidem",
+          variant: "destructive",
+        });
+        return;
+      }
     }
 
-    if (newPassword !== confirmPassword) {
+    // Se não tem senha configurada, exigir nova senha
+    if (!customer.password && !newPassword.trim()) {
       toast({
-        title: "Erro",
-        description: "As senhas não coincidem",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Se o cliente não tem username, precisa definir um
-    if (!customer.username) {
-      toast({
-        title: "Username não configurado",
-        description: "Este cliente precisa ter um username configurado primeiro. Use o botão 🔑 para configurar.",
+        title: "Senha obrigatória",
+        description: "Configure uma senha para o primeiro acesso do cliente",
         variant: "destructive",
       });
       return;
@@ -93,22 +113,44 @@ const CustomerPasswordDialog = ({
     setIsLoading(true);
 
     try {
-      // Usar o username existente e atualizar apenas a senha
-      await customersStore.setPassword(customer.id, customer.username, newPassword);
+      const normalizedNickname = nickname.toLowerCase();
+
+      // Verificar se nickname está disponível (exceto para o próprio cliente)
+      const isAvailable = await customersStore.isUsernameAvailable(normalizedNickname, customer.id);
+      if (!isAvailable) {
+        toast({
+          title: "Nickname já em uso",
+          description: "Escolha outro nickname para este cliente",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      // Atualizar nickname e senha (se fornecida)
+      if (newPassword.trim()) {
+        await customersStore.setPassword(customer.id, normalizedNickname, newPassword);
+      } else {
+        // Apenas atualizar o nickname sem mudar a senha
+        await customersStore.updateCustomer(customer.id, {
+          username: normalizedNickname,
+        });
+      }
       
       toast({
-        title: "✅ Senha redefinida!",
+        title: "✅ Configurações atualizadas!",
         description: (
           <div className="space-y-1">
             <p><strong>Cliente:</strong> {customer.name}</p>
-            <p><strong>Username:</strong> {customer.username}</p>
-            <p><strong>Nova senha:</strong> {newPassword}</p>
+            <p><strong>Nickname:</strong> {normalizedNickname}</p>
+            {newPassword && <p><strong>Nova senha:</strong> {newPassword}</p>}
           </div>
         ),
         duration: 8000,
       });
 
       // Resetar formulário
+      setNickname("");
       setNewPassword("");
       setConfirmPassword("");
       setShowPassword(false);
@@ -120,7 +162,7 @@ const CustomerPasswordDialog = ({
       onSuccess?.();
     } catch (error: any) {
       toast({
-        title: "Erro ao redefinir senha",
+        title: "Erro ao atualizar configurações",
         description: error.message || "Tente novamente",
         variant: "destructive",
       });
@@ -130,6 +172,7 @@ const CustomerPasswordDialog = ({
   };
 
   const handleClose = () => {
+    setNickname("");
     setNewPassword("");
     setConfirmPassword("");
     setShowPassword(false);
