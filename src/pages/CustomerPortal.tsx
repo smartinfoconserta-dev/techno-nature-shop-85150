@@ -4,7 +4,7 @@ import { useCustomerAuth } from "@/hooks/useCustomerAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { LogOut, ShoppingBag, DollarSign, Clock, Shield, Loader2 } from "lucide-react";
+import { LogOut, ShoppingBag, DollarSign, Clock, Shield, Loader2, FileText } from "lucide-react";
 import { calculateWarranty } from "@/lib/warrantyHelper";
 import { format } from "date-fns";
 import { CustomerStatsChart } from "@/components/customer/CustomerStatsChart";
@@ -12,6 +12,7 @@ import { SummaryCard } from "@/components/customer/SummaryCard";
 import { PurchaseFilters } from "@/components/customer/PurchaseFilters";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { generateCustomerPortalPDF } from "@/lib/generateCustomerPortalPDF";
 
 interface Receivable {
   id: string;
@@ -125,6 +126,50 @@ const CustomerPortal = () => {
     navigate("/login");
   };
 
+  const handlePrintPDF = () => {
+    if (filteredReceivables.length === 0) {
+      toast({
+        title: "Nenhuma compra para imprimir",
+        description: "Nenhuma compra encontrada para o período selecionado.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Mapear valor do filtro para texto legível
+    const periodLabels: Record<string, string> = {
+      all: "Todos os períodos",
+      "30days": "Último mês",
+      "90days": "Últimos 3 meses",
+      "180days": "Últimos 6 meses",
+    };
+
+    const periodLabel = periodLabels[periodFilter] || "Todos os períodos";
+
+    // Calcular totais baseados nos filtros
+    const pdfTotals = {
+      totalComprado: filteredReceivables.reduce((sum, r) => sum + r.totalAmount, 0),
+      totalPago: filteredReceivables.reduce((sum, r) => sum + r.paidAmount, 0),
+      totalDevedor: filteredReceivables.reduce((sum, r) => sum + r.remainingAmount, 0),
+    };
+
+    generateCustomerPortalPDF(
+      {
+        code: customer.code,
+        name: customer.name,
+        cpfCnpj: customer.cpfCnpj,
+        phone: customer.phone,
+      },
+      filteredReceivables,
+      periodLabel
+    );
+
+    toast({
+      title: "PDF gerado com sucesso",
+      description: "O extrato foi baixado para seu computador.",
+    });
+  };
+
   if (!customer) return null;
 
   const totalComprado = receivables.reduce((sum, r) => sum + r.totalAmount, 0);
@@ -197,10 +242,16 @@ const CustomerPortal = () => {
             <h1 className="text-2xl font-bold">Portal do Cliente</h1>
             <p className="text-sm text-muted-foreground">{customer.name}</p>
           </div>
-          <Button variant="outline" onClick={handleLogout} size="sm">
-            <LogOut className="h-4 w-4 mr-2" />
-            Sair
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handlePrintPDF} size="sm">
+              <FileText className="h-4 w-4 mr-2" />
+              Imprimir PDF
+            </Button>
+            <Button variant="outline" onClick={handleLogout} size="sm">
+              <LogOut className="h-4 w-4 mr-2" />
+              Sair
+            </Button>
+          </div>
         </div>
       </header>
 
