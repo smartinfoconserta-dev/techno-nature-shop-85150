@@ -129,10 +129,25 @@ const SalesHistoryTab = () => {
       });
     });
     
-    // 3. Caderneta (apenas pagas e parciais com valor pago > 0, excluindo produtos do catálogo para evitar duplicação)
+    // 3. Caderneta (apenas pagas e parciais com valor pago > 0)
     const receivables = receivablesStore.getAllReceivables();
+    const soldProductIds = new Set(soldProducts.map(p => p.id));
+    
     receivables
-      .filter(r => !r.archived && r.paidAmount > 0 && !r.productId)
+      .filter(r => {
+        // Excluir arquivados
+        if (r.archived) return false;
+        
+        // Só incluir se tiver algum valor pago
+        if (r.paidAmount <= 0) return false;
+        
+        // Se tem productId, verificar se não é um produto do catálogo (evitar duplicação)
+        if (r.productId && soldProductIds.has(r.productId)) {
+          return false; // É um produto do catálogo, já está na lista
+        }
+        
+        return true; // Incluir vendas da caderneta
+      })
       .forEach(r => {
         allSales.push({
           id: r.id,
