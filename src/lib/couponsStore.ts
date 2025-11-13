@@ -238,7 +238,7 @@ export const couponsStore = {
         id: coupon.id,
         code: coupon.code,
         active: coupon.active,
-        discountType: coupon.discount_type,
+        discountType: (coupon.discount_type || "fixed") as "fixed",
         discountPercent: coupon.discount_percent,
         createdAt: coupon.created_at,
         updatedAt: coupon.updated_at,

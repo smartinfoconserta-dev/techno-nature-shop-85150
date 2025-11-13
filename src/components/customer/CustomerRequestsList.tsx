@@ -4,7 +4,8 @@ import { customerRequestsStore, CustomerRequest } from "@/lib/customerRequestsSt
 import { RequestStatusBadge } from "./RequestStatusBadge";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Loader2, Package } from "lucide-react";
+import { Loader2, Package, Shield } from "lucide-react";
+import { calculateWarranty } from "@/lib/warrantyHelper";
 
 interface Props {
   refreshKey?: number;
@@ -84,6 +85,25 @@ export const CustomerRequestsList = ({ refreshKey }: Props) => {
               <div className="pt-2 border-t bg-muted/50 p-2 rounded">
                 <p className="text-sm text-muted-foreground font-medium">Resposta do Administrador:</p>
                 <p className="text-sm mt-1">{request.admin_notes}</p>
+              </div>
+            )}
+
+            {/* Garantia */}
+            {request.warranty_months && request.warranty_months > 0 && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground mt-2 pt-2 border-t">
+                <Shield className="h-4 w-4" />
+                <span>
+                  {(() => {
+                    const days = request.warranty_months * 30;
+                    if (request.status === 'confirmed' && request.confirmed_at) {
+                      const warranty = calculateWarranty(request.confirmed_at, days);
+                      return warranty.isActive 
+                        ? `Garantia: ${warranty.daysRemaining} dias restantes`
+                        : `Garantia expirada`;
+                    }
+                    return `Garantia: ${request.warranty_months} ${request.warranty_months === 1 ? 'mês' : 'meses'}`;
+                  })()}
+                </span>
               </div>
             )}
           </CardContent>

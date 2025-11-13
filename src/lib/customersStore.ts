@@ -519,4 +519,58 @@ export const customersStore = {
     const customer = await this.getCustomerById(customerId);
     return customer?.creditBalance || 0;
   },
+
+  async getDeletedCustomers(): Promise<Customer[]> {
+    const { data, error } = await supabase
+      .from("customers")
+      .select("*")
+      .not("deleted_at", "is", null)
+      .order("deleted_at", { ascending: false});
+
+    if (error) {
+      console.error("Erro ao buscar clientes deletados:", error);
+      return [];
+    }
+
+    return data?.map((c) => ({
+      id: c.id,
+      code: c.code,
+      name: c.name,
+      cpfCnpj: c.cpf_cnpj || undefined,
+      phone: c.phone || undefined,
+      email: c.email || undefined,
+      address: c.address || undefined,
+      city: c.city || undefined,
+      state: c.state || undefined,
+      zipCode: c.zip_code || undefined,
+      type: c.customer_type as "lojista" | "cliente",
+      creditLimit: c.credit_limit ? Number(c.credit_limit) : undefined,
+      creditBalance: c.credit_balance ? Number(c.credit_balance) : undefined,
+      notes: c.notes || undefined,
+      username: c.portal_username || undefined,
+      password: c.portal_password || undefined,
+      hasPortalAccess: c.has_portal_access ?? false,
+      active: c.active,
+      createdAt: c.created_at,
+      updatedAt: c.updated_at,
+    })) || [];
+  },
+
+  async restoreCustomer(id: string): Promise<void> {
+    const { error } = await supabase
+      .from("customers")
+      .update({ deleted_at: null })
+      .eq("id", id);
+
+    if (error) throw error;
+  },
+
+  async permanentlyDeleteCustomer(id: string): Promise<void> {
+    const { error } = await supabase
+      .from("customers")
+      .delete()
+      .eq("id", id);
+
+    if (error) throw error;
+  },
 };
