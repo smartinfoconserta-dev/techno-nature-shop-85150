@@ -54,6 +54,7 @@ const NewCustomerDialog = ({ open, onOpenChange, onCustomerCreated }: NewCustome
         address: address || undefined,
         creditLimit: creditLimit ? parseFloat(creditLimit) : 0,
         notes: notes || undefined,
+        hasPortalAccess: false,
       });
 
       toast({

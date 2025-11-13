@@ -76,14 +76,24 @@ const CustomerLogin = () => {
           });
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       clearTimeout(timeoutId);
-      console.error("Erro detalhado no login:", error);
-      toast({
-        title: "Erro",
-        description: "Ocorreu um erro ao fazer login. Verifique sua conexão.",
-        variant: "destructive",
-      });
+      
+      if (error.message === "PORTAL_BLOCKED") {
+        toast({
+          title: "🔒 Acesso bloqueado",
+          description: "Seu acesso ao portal foi temporariamente bloqueado. Entre em contato com o administrador.",
+          variant: "destructive",
+          duration: 6000,
+        });
+      } else {
+        console.error("Erro detalhado no login:", error);
+        toast({
+          title: "Erro",
+          description: "Ocorreu um erro ao fazer login. Verifique sua conexão.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoading(false);
     }

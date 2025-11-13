@@ -133,6 +133,7 @@ export type Database = {
           credit_limit: number
           customer_type: string
           email: string | null
+          has_portal_access: boolean | null
           id: string
           name: string
           notes: string | null
@@ -154,6 +155,7 @@ export type Database = {
           credit_limit?: number
           customer_type: string
           email?: string | null
+          has_portal_access?: boolean | null
           id?: string
           name: string
           notes?: string | null
@@ -175,6 +177,7 @@ export type Database = {
           credit_limit?: number
           customer_type?: string
           email?: string | null
+          has_portal_access?: boolean | null
           id?: string
           name?: string
           notes?: string | null

@@ -18,7 +18,7 @@ export interface Customer {
   notes?: string;
   username?: string;
   password?: string;
-  hasPortalAccess?: boolean;
+  hasPortalAccess: boolean;
   active: boolean;
   createdAt: string;
   updatedAt: string;
@@ -53,7 +53,7 @@ export const customersStore = {
       notes: c.notes || undefined,
       username: c.portal_username || undefined,
       password: c.portal_password || undefined,
-      hasPortalAccess: !!c.portal_username,
+      hasPortalAccess: c.has_portal_access ?? false,
       active: c.active,
       createdAt: c.created_at,
       updatedAt: c.updated_at,
@@ -91,7 +91,7 @@ export const customersStore = {
       notes: data.notes || undefined,
       username: data.portal_username || undefined,
       password: data.portal_password || undefined,
-      hasPortalAccess: !!data.portal_username,
+      hasPortalAccess: data.has_portal_access ?? false,
       active: data.active,
       createdAt: data.created_at,
       updatedAt: data.updated_at,
@@ -124,7 +124,7 @@ export const customersStore = {
       notes: data.notes || undefined,
       username: data.portal_username || undefined,
       password: data.portal_password || undefined,
-      hasPortalAccess: !!data.portal_username,
+      hasPortalAccess: data.has_portal_access ?? false,
       active: data.active,
       createdAt: data.created_at,
       updatedAt: data.updated_at,
@@ -214,7 +214,7 @@ export const customersStore = {
       notes: inserted.notes || undefined,
       username: inserted.portal_username || undefined,
       password: inserted.portal_password || undefined,
-      hasPortalAccess: !!inserted.portal_username,
+      hasPortalAccess: inserted.has_portal_access ?? false,
       active: inserted.active,
       createdAt: inserted.created_at,
       updatedAt: inserted.updated_at,
@@ -255,6 +255,7 @@ export const customersStore = {
       // Hash password if being updated
       updateData.portal_password = data.password ? await bcrypt.hash(data.password, 10) : null;
     }
+    if (data.hasPortalAccess !== undefined) updateData.has_portal_access = data.hasPortalAccess;
     if (data.active !== undefined) updateData.active = data.active;
 
     const { data: updated, error } = await supabase
@@ -283,7 +284,7 @@ export const customersStore = {
       notes: updated.notes || undefined,
       username: updated.portal_username || undefined,
       password: updated.portal_password || undefined,
-      hasPortalAccess: !!updated.portal_username,
+      hasPortalAccess: updated.has_portal_access ?? false,
       active: updated.active,
       createdAt: updated.created_at,
       updatedAt: updated.updated_at,
@@ -355,7 +356,7 @@ export const customersStore = {
       notes: updated.notes || undefined,
       username: updated.portal_username || undefined,
       password: updated.portal_password || undefined,
-      hasPortalAccess: !!updated.portal_username,
+      hasPortalAccess: updated.has_portal_access ?? false,
       active: updated.active,
       createdAt: updated.created_at,
       updatedAt: updated.updated_at,
@@ -372,6 +373,11 @@ export const customersStore = {
       .single();
 
     if (!data || !data.portal_password) return null;
+
+    // Check if portal access is blocked
+    if (!data.has_portal_access) {
+      throw new Error("PORTAL_BLOCKED");
+    }
 
     // Verify password using bcrypt
     const isValid = await bcrypt.compare(password, data.portal_password);
@@ -394,7 +400,7 @@ export const customersStore = {
       notes: data.notes || undefined,
       username: data.portal_username || undefined,
       password: data.portal_password || undefined,
-      hasPortalAccess: !!data.portal_username,
+      hasPortalAccess: data.has_portal_access ?? false,
       active: data.active,
       createdAt: data.created_at,
       updatedAt: data.updated_at,
@@ -417,6 +423,11 @@ export const customersStore = {
 
     if (!data || !data.portal_password) return null;
 
+    // Check if portal access is blocked BEFORE validating password
+    if (!data.has_portal_access) {
+      throw new Error("PORTAL_BLOCKED");
+    }
+
     // Verify password using bcrypt
     const isValid = await bcrypt.compare(password, data.portal_password);
     if (!isValid) return null;
@@ -438,7 +449,7 @@ export const customersStore = {
       notes: data.notes || undefined,
       username: data.portal_username || undefined,
       password: data.portal_password || undefined,
-      hasPortalAccess: !!data.portal_username,
+      hasPortalAccess: data.has_portal_access ?? false,
       active: data.active,
       createdAt: data.created_at,
       updatedAt: data.updated_at,
@@ -473,7 +484,7 @@ export const customersStore = {
       notes: data.notes || undefined,
       username: data.portal_username || undefined,
       password: data.portal_password || undefined,
-      hasPortalAccess: !!data.portal_username,
+      hasPortalAccess: data.has_portal_access ?? false,
       active: data.active,
       createdAt: data.created_at,
       updatedAt: data.updated_at,

@@ -141,12 +141,22 @@ const CustomersTab = () => {
 
   const handleTogglePortalAccess = async (customer: Customer) => {
     try {
+      // Check if username is configured
+      if (!customer.username) {
+        toast({
+          title: "Username não configurado",
+          description: "Configure o username primeiro usando o botão 🔑",
+          variant: "destructive",
+        });
+        return;
+      }
+
       await customersStore.updateCustomer(customer.id, {
         hasPortalAccess: !customer.hasPortalAccess,
       });
       
       toast({
-        title: customer.hasPortalAccess ? "Acesso bloqueado" : "Acesso liberado",
+        title: customer.hasPortalAccess ? "🔒 Acesso bloqueado" : "🔓 Acesso liberado",
         description: `Portal ${customer.hasPortalAccess ? "bloqueado" : "liberado"} para ${customer.name}`,
       });
       setRefreshKey(prev => prev + 1);
@@ -261,13 +271,18 @@ const CustomersTab = () => {
                       )}
                     </TableCell>
                     <TableCell>
-                      {customer.hasPortalAccess ? (
-                        <Badge variant="default" className="gap-1">
+                      {!customer.username ? (
+                        <Badge variant="outline" className="gap-1">
+                          <Key className="h-3 w-3" />
+                          Não configurado
+                        </Badge>
+                      ) : customer.hasPortalAccess ? (
+                        <Badge variant="default" className="gap-1 bg-green-600">
                           <Eye className="h-3 w-3" />
-                          Ativo
+                          Liberado
                         </Badge>
                       ) : (
-                        <Badge variant="secondary" className="gap-1">
+                        <Badge variant="destructive" className="gap-1">
                           <EyeOff className="h-3 w-3" />
                           Bloqueado
                         </Badge>
@@ -292,7 +307,7 @@ const CustomersTab = () => {
                             setNewPassword("");
                             setShowPasswordDialog(true);
                           }}
-                          title="Configurar username e senha"
+                          title={customer.username ? "Editar username e senha" : "🔑 Configurar Login"}
                         >
                           <Key className="h-4 w-4" />
                         </Button>
