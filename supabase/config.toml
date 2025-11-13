@@ -11,3 +11,9 @@ verify_jwt = false
 
 [functions.portal-get-receivables]
 verify_jwt = false
+
+[functions.customer-create-request]
+verify_jwt = false
+
+[functions.customer-get-requests]
+verify_jwt = false
