@@ -59,12 +59,23 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Buscar recebíveis do cliente
-    const { data: receivables, error } = await supabase
+    // Extrair query params
+    const url = new URL(req.url);
+    const view = url.searchParams.get('view') || 'all';
+
+    // Buscar recebíveis do cliente com filtro de view
+    let query = supabase
       .from('receivables')
       .select('*')
-      .eq('customer_id', customerId)
-      .order('created_at', { ascending: false });
+      .eq('customer_id', customerId);
+
+    if (view === 'active') {
+      query = query.or('archived.is.false,archived.is.null');
+    } else if (view === 'archived') {
+      query = query.eq('archived', true);
+    }
+
+    const { data: receivables, error } = await query.order('created_at', { ascending: false });
 
     if (error) {
       console.error('Database error:', error);
