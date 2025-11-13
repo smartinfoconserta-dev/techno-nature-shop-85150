@@ -134,7 +134,7 @@ export function AddManualReceivableDialog({
         costPrice: data.costPrice || 0,
         salePrice: data.salePrice,
         totalAmount: data.salePrice,
-        paidAmount: totalInitial,
+        paidAmount: 0,
         dueDate: data.dueDate ? format(data.dueDate, "yyyy-MM-dd") : undefined,
         payments: [],
         source: productSource === "catalog" ? "catalog" : "manual",

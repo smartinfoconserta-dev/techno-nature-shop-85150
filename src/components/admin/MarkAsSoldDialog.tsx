@@ -227,7 +227,7 @@ const MarkAsSoldDialog = ({
           productId: product.id,
           productName: product.name,
           totalAmount: finalPrice,
-          paidAmount: totalInitial,
+          paidAmount: 0,
           couponCode: couponValidated ? couponCode.trim().toUpperCase() : undefined,
           couponDiscount: couponValidated ? couponDiscount : undefined,
           dueDate: dueDate || undefined,
