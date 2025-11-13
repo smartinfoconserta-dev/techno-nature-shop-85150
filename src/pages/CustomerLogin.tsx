@@ -5,9 +5,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCustomerAuth } from "@/hooks/useCustomerAuth";
-import { customersStore } from "@/lib/customersStore";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { z } from "zod";
+
+// Schema de validação
+const loginSchema = z.object({
+  identifier: z.string().trim().min(3, "Usuário deve ter pelo menos 3 caracteres").max(50),
+  password: z.string().min(4, "Senha deve ter pelo menos 4 caracteres").max(100),
+});
 
 const CustomerLogin = () => {
   const navigate = useNavigate();
@@ -20,6 +27,17 @@ const CustomerLogin = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validação com zod
+    const validation = loginSchema.safeParse({ identifier, password });
+    if (!validation.success) {
+      toast({
+        title: "Dados inválidos",
+        description: validation.error.errors[0].message,
+        variant: "destructive",
+      });
+      return;
+    }
     
     // Verificar se localStorage está disponível
     try {
@@ -36,64 +54,84 @@ const CustomerLogin = () => {
     
     setLoading(true);
 
-    // Timeout de segurança: 5 segundos
-    const timeoutId = setTimeout(() => {
-      setLoading(false);
-      toast({
-        title: "Tempo esgotado",
-        description: "O login demorou muito. Tente novamente.",
-        variant: "destructive",
-      });
-    }, 5000);
-
     try {
-      const customer = await customersStore.authenticateCustomerByIdentifier(identifier, password);
-      
-      clearTimeout(timeoutId);
-      
-      if (customer) {
-        login(customer);
-        navigate("/portal");
-        toast({
-          title: "Login realizado!",
-          description: `Bem-vindo(a), ${customer.name}!`,
-        });
-      } else {
-        // Verificar se o usuário existe
-        const customerExists = await customersStore.getCustomerByIdentifier(identifier);
-        
-        if (customerExists) {
-          toast({
-            title: "Senha incorreta",
-            description: "A senha digitada está incorreta. Tente novamente ou recupere sua senha.",
-            variant: "destructive",
-          });
-        } else {
-          toast({
-            title: "Usuário não encontrado",
-            description: "Código, CPF/CNPJ ou username não cadastrado no sistema.",
-            variant: "destructive",
-          });
-        }
+      // Chamar função de backend portal-login
+      const { data, error } = await supabase.functions.invoke('portal-login', {
+        body: { 
+          identifier: identifier.trim(), 
+          password 
+        },
+      });
+
+      if (error) {
+        throw error;
       }
-    } catch (error: any) {
-      clearTimeout(timeoutId);
+
+      if (!data.success) {
+        throw new Error(data.error || 'LOGIN_FAILED');
+      }
+
+      // Salvar sessão e token
+      const customerData = data.customer;
+      localStorage.setItem("customer_session", JSON.stringify(customerData));
+      localStorage.setItem("customer_token", data.token);
+
+      // Atualizar estado de autenticação
+      login(customerData);
       
-      if (error.message === "PORTAL_BLOCKED") {
-        toast({
+      toast({
+        title: "Login realizado!",
+        description: `Bem-vindo(a), ${customerData.name}!`,
+      });
+
+      navigate("/portal");
+
+    } catch (error: any) {
+      const errorCode = error?.message || error?.error || 'UNKNOWN_ERROR';
+      
+      // Mapear erros para mensagens amigáveis
+      const errorMessages: Record<string, { title: string; description: string }> = {
+        USER_NOT_FOUND: {
+          title: "Usuário não encontrado",
+          description: "Código, CPF/CNPJ ou nickname não cadastrado no sistema.",
+        },
+        INVALID_PASSWORD: {
+          title: "Senha incorreta",
+          description: "A senha digitada está incorreta. Tente novamente ou recupere sua senha.",
+        },
+        PORTAL_BLOCKED: {
           title: "🔒 Acesso bloqueado",
           description: "Seu acesso ao portal foi temporariamente bloqueado. Entre em contato com o administrador.",
-          variant: "destructive",
-          duration: 6000,
-        });
-      } else {
-        console.error("Erro detalhado no login:", error);
-        toast({
-          title: "Erro",
-          description: "Ocorreu um erro ao fazer login. Verifique sua conexão.",
-          variant: "destructive",
-        });
-      }
+        },
+        ACCOUNT_INACTIVE: {
+          title: "Conta inativa",
+          description: "Sua conta está inativa. Entre em contato com o administrador.",
+        },
+        NO_PASSWORD: {
+          title: "Senha não configurada",
+          description: "Senha não configurada. Entre em contato com o administrador para configurar seu acesso.",
+        },
+        MISSING_CREDENTIALS: {
+          title: "Dados incompletos",
+          description: "Preencha usuário e senha para continuar.",
+        },
+        TOKEN_EXPIRED: {
+          title: "Sessão expirada",
+          description: "Sua sessão expirou. Faça login novamente.",
+        },
+      };
+
+      const errorInfo = errorMessages[errorCode] || {
+        title: "Erro ao fazer login",
+        description: "Ocorreu um erro. Verifique sua conexão e tente novamente.",
+      };
+
+      toast({
+        title: errorInfo.title,
+        description: errorInfo.description,
+        variant: "destructive",
+        duration: 6000,
+      });
     } finally {
       setLoading(false);
     }
@@ -138,7 +176,7 @@ const CustomerLogin = () => {
                 required
               />
               <p className="text-xs text-muted-foreground">
-                Use seu código (LOJ###), CPF/CNPJ ou username
+                Use seu código (LOJ###), CPF/CNPJ ou nickname
               </p>
             </div>
             
