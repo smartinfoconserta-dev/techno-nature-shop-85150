@@ -36,6 +36,7 @@ interface ProductDetailsDialogProps {
 const ProductDetailsDialog = ({ 
   open, 
   onOpenChange, 
+  id,
   images, 
   name, 
   brand, 
@@ -159,7 +160,7 @@ const ProductDetailsDialog = ({
   };
 
   const handleWhatsAppClick = () => {
-    const imageLink = images[0] || "";
+    const productLink = `https://www.ramontech.com.br/?produto=${id}`;
     
     let messageLines = [
       "🛒 *INTERESSE EM PRODUTO*",
@@ -218,10 +219,8 @@ const ProductDetailsDialog = ({
       messageLines.push(`📋 *Preço de tabela:* R$ ${price.toFixed(2)}`);
     }
 
-    if (imageLink) {
-      messageLines.push("");
-      messageLines.push(`🖼️ *Imagem:* ${imageLink}`);
-    }
+    messageLines.push("");
+    messageLines.push(`🔗 *Ver no site:* ${productLink}`);
 
     const message = encodeURIComponent(messageLines.join("\n"));
     window.open(`https://wa.me/5548991027363?text=${message}`, "_blank");
