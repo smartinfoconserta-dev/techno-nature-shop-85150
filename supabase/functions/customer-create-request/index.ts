@@ -22,10 +22,9 @@ serve(async (req) => {
     }
 
     const token = authHeader.replace("Bearer ", "");
-    const [, payloadB64] = token.split(".");
-    const payload = JSON.parse(atob(payloadB64));
+    const payload = JSON.parse(atob(token));
     
-    if (payload.exp && payload.exp * 1000 < Date.now()) {
+    if (payload.exp && payload.exp < Date.now()) {
       console.error("Token expired");
       return new Response(
         JSON.stringify({ success: false, error: "TOKEN_EXPIRED" }),
