@@ -4,12 +4,14 @@ import { useCustomerAuth } from "@/hooks/useCustomerAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { LogOut, ShoppingBag, DollarSign, Clock, Shield, Loader2, FileText } from "lucide-react";
+import { LogOut, ShoppingBag, DollarSign, Clock, Shield, Loader2, FileText, Notebook, Plus } from "lucide-react";
 import { calculateWarranty } from "@/lib/warrantyHelper";
 import { format } from "date-fns";
 import { CustomerStatsChart } from "@/components/customer/CustomerStatsChart";
 import { SummaryCard } from "@/components/customer/SummaryCard";
 import { PurchaseFilters } from "@/components/customer/PurchaseFilters";
+import { AddNotebookItemDialog } from "@/components/customer/AddNotebookItemDialog";
+import { CustomerRequestsList } from "@/components/customer/CustomerRequestsList";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { generateCustomerPortalPDF } from "@/lib/generateCustomerPortalPDF";
@@ -52,6 +54,8 @@ const CustomerPortal = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [periodFilter, setPeriodFilter] = useState("all");
   const [loading, setLoading] = useState(true);
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     if (!customer) {
@@ -315,6 +319,25 @@ const CustomerPortal = () => {
           </Card>
         )}
 
+        {/* Minha Caderneta */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <Notebook className="w-5 h-5" />
+                Minha Caderneta
+              </CardTitle>
+              <Button onClick={() => setShowAddDialog(true)}>
+                <Plus className="w-4 h-4 mr-2" />
+                Adicionar Item
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <CustomerRequestsList key={refreshKey} refreshKey={refreshKey} />
+          </CardContent>
+        </Card>
+
         {/* Lista de Compras */}
         <Card>
           <CardHeader>
@@ -424,6 +447,12 @@ const CustomerPortal = () => {
           </CardContent>
         </Card>
       </main>
+
+      <AddNotebookItemDialog
+        open={showAddDialog}
+        onOpenChange={setShowAddDialog}
+        onSuccess={() => setRefreshKey(prev => prev + 1)}
+      />
     </div>
   );
 };
