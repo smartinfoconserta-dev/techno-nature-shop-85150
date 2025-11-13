@@ -9,6 +9,7 @@ import { ArrowUp } from "lucide-react";
 import { brandsStore } from "@/lib/brandsStore";
 import { productsStore } from "@/lib/productsStore";
 import { categoriesStore } from "@/lib/categoriesStore";
+import heroImage from "@/assets/hero-banner.jpg";
 const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedBrand, setSelectedBrand] = useState("all");
@@ -150,7 +151,7 @@ const Index = () => {
       <Header searchValue={searchQuery} onSearchChange={setSearchQuery} onReset={handleResetFilters} />
       
       {/* Hero Banner Minimalista */}
-      <section className="relative h-[40vh] min-h-[300px] max-h-[400px] overflow-hidden bg-gradient-to-br from-primary/20 via-background to-background">
+      <section className="relative h-[40vh] min-h-[300px] max-h-[400px] overflow-hidden bg-gradient-to-br from-primary/20 via-background to-background animate-fade-in">
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="relative z-10 text-center space-y-3 px-4">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground drop-shadow-lg">
@@ -162,7 +163,7 @@ const Index = () => {
           </div>
           <div className="absolute right-[5%] md:right-[10%] bottom-0 w-[200px] md:w-[280px] lg:w-[350px] opacity-90">
             <img 
-              src="/tech-background.jpg" 
+              src={heroImage}
               alt="Tecnologia" 
               className="w-full h-auto object-contain drop-shadow-2xl"
               style={{ 
