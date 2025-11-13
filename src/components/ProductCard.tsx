@@ -118,75 +118,71 @@ const ProductCard = ({ id, images, name, brand, category, specs, description, pr
   }
 
   const handleWhatsAppClick = () => {
+    const formatBR = (n: number) => n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const productLink = `https://www.ramontech.com.br/?produto=${id}`;
     
     let messageLines = [
-      "🛒 *INTERESSE EM PRODUTO*",
+      "✅ INTERESSE EM PRODUTO",
       "",
-      `📦 *Produto:* ${sanitizeForWhatsApp(name)} - ${sanitizeForWhatsApp(brand)}`,
-      "",
-      "📋 *Especificações:*",
-      sanitizeForWhatsApp(specs),
-      "",
-      "📝 *Descrição:*",
-      sanitizeForWhatsApp(description),
-      "",
-      "💰 *Valores:*",
+      `💻 Produto: ${sanitizeForWhatsApp(name)} - ${sanitizeForWhatsApp(brand)}`,
+      ""
     ];
 
-    // Adicionar informações de pagamento selecionado
-    if (displayMode === 'cash') {
-      messageLines.push(`💰 *Pagamento à vista (5% desconto)*`);
-      messageLines.push(`• Valor final: R$ ${finalPrice.toFixed(2)}`);
-      if (passOnCashDiscount) {
-        messageLines.push(`• Preço de tabela: R$ ${displayPrice.toFixed(2)}`);
-      }
-    } else if (displayMode === 'coupon-installment' && paymentDetails.installments) {
-      messageLines.push(`🎟️ *Com cupom + Parcelado:*`);
-      messageLines.push(`• ${paymentDetails.installments}x de R$ ${paymentDetails.installmentValue?.toFixed(2)}`);
-      messageLines.push(`• Total: R$ ${paymentDetails.totalAmount?.toFixed(2)}`);
-      messageLines.push(`• 💳 Visa/Mastercard`);
-      messageLines.push(`• ✅ Cupom de desconto aplicado!`);
-    } else if (displayMode === 'installment' && paymentDetails.installments) {
-      messageLines.push(`• *Parcelado:* ${paymentDetails.installments}x de R$ ${paymentDetails.installmentValue?.toFixed(2)}`);
-      messageLines.push(`• Total: R$ ${paymentDetails.totalAmount?.toFixed(2)}`);
-      messageLines.push(`• 💳 Visa/Mastercard`);
-    } else if (displayMode === 'coupon') {
-      messageLines.push(`• *Com cupom:* R$ ${finalPrice.toFixed(2)}`);
-      messageLines.push(`• Valor original: R$ ${displayPrice.toFixed(2)}`);
-    } else {
-      // Cliente não selecionou forma de pagamento - mostrar todas as opções
-      messageLines.push("");
+    // Especificações com bullets
+    messageLines.push("🧾 Especificações:");
+    const specsLines = specs.includes('\n') 
+      ? specs.split('\n').filter(s => s.trim())
+      : specs.split(',').filter(s => s.trim());
+    
+    specsLines.forEach(spec => {
+      messageLines.push(`• ${sanitizeForWhatsApp(spec.trim())}`);
+    });
+    messageLines.push("");
+
+    // Descrição com bullets se existir
+    if (description && description.trim()) {
+      const descLines = description.includes('\n')
+        ? description.split('\n').filter(d => d.trim())
+        : [description];
       
-      // 1. Opção à vista
-      const cashPrice = calculateCashPriceWithPassOn(displayPrice, passOnCashDiscount || false, price);
-      messageLines.push(`💵 *À Vista (5% desconto):*`);
-      messageLines.push(`• R$ ${cashPrice.toFixed(2)}`);
-      messageLines.push("");
-      
-      // 2. Opções de parcelamento
-      messageLines.push(`💳 *Parcelado (Visa/Mastercard):*`);
-      installmentOptions.forEach(option => {
-        messageLines.push(
-          `• ${option.installments}x de R$ ${option.installmentValue.toFixed(2)} ` +
-          `(Total: R$ ${option.totalAmount.toFixed(2)})`
-        );
+      descLines.forEach(desc => {
+        messageLines.push(`• ${sanitizeForWhatsApp(desc.trim())}`);
       });
       messageLines.push("");
-      
-      // 3. Lembrar do cupom
-      messageLines.push(`🎟️ *Possui cupom de desconto?*`);
-      messageLines.push(`Insira no site para ver o preço especial!`);
-      messageLines.push("");
-      
-      // 4. Preço de referência
-      messageLines.push(`📋 *Preço de tabela:* R$ ${displayPrice.toFixed(2)}`);
     }
 
-
-    // Adicionar link do produto
+    // Valores
+    messageLines.push("💰 Valores:");
     messageLines.push("");
-    messageLines.push(`🔗 *Ver no site:* ${productLink}`);
+    
+    // À vista
+    const cashPrice = calculateCashPriceWithPassOn(displayPrice, passOnCashDiscount || false, price);
+    messageLines.push("💵 À Vista (5% de desconto):");
+    messageLines.push(`R$ ${formatBR(cashPrice)}`);
+    messageLines.push("");
+    
+    // Parcelado
+    messageLines.push("💳 Parcelado (Visa/Mastercard):");
+    messageLines.push("");
+    installmentOptions.forEach(option => {
+      messageLines.push(
+        `${option.installments}x de R$ ${formatBR(option.installmentValue)} (Total: R$ ${formatBR(option.totalAmount)})*`
+      );
+      messageLines.push("");
+    });
+    
+    // Cupom
+    messageLines.push("🎟️ Possui cupom de desconto?");
+    messageLines.push("Insira no site para ver o preço especial!");
+    messageLines.push("");
+    
+    // Preço de tabela
+    messageLines.push(`🏷️ Preço de tabela: R$ ${formatBR(displayPrice)}`);
+    messageLines.push("");
+    
+    // Link do produto
+    messageLines.push("🔗 Ver no site:");
+    messageLines.push(productLink);
 
     const message = encodeURIComponent(messageLines.join("\n"));
     window.open(`https://wa.me/5548991027363?text=${message}`, "_blank");
