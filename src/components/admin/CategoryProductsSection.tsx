@@ -4,7 +4,7 @@ import { categoriesStore } from "@/lib/categoriesStore";
 import ProductQuickCard from "./ProductQuickCard";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Package } from "lucide-react";
+import { Package, Laptop, Smartphone, Tablet, Watch, Headphones } from "lucide-react";
 import { Card } from "@/components/ui/card";
 
 interface CategoryProductsSectionProps {
@@ -29,17 +29,15 @@ const CategoryProductsSection = ({ categoryName, onViewMore }: CategoryProductsS
     });
   }, [categoryName]);
 
-  // Mapeamento de ícones para emojis
-  const iconMap: Record<string, string> = {
-    Laptop: "💻",
-    Smartphone: "📱",
-    Tablet: "📱",
-    Watch: "⌚",
-    Headphones: "🎧",
-    Package: "📦",
-  };
-
-  const emoji = iconMap[categoryIcon] || "📦";
+  // Mapeamento de ícones para componentes Lucide
+  const IconComponent = {
+    Laptop: Laptop,
+    Smartphone: Smartphone,
+    Tablet: Tablet,
+    Watch: Watch,
+    Headphones: Headphones,
+    Package: Package,
+  }[categoryIcon] || Package;
 
   if (products.length === 0) {
     return null; // Não renderiza seção vazia
@@ -50,7 +48,7 @@ const CategoryProductsSection = ({ categoryName, onViewMore }: CategoryProductsS
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <span className="text-3xl">{emoji}</span>
+          <IconComponent className="w-8 h-8 text-primary" />
           <div>
             <h3 className="text-xl font-bold text-foreground">{categoryName}</h3>
             <p className="text-sm text-muted-foreground">

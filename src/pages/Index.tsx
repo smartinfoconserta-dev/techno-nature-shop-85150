@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import Header from "@/components/Header";
 import ProductFilters from "@/components/ProductFilters";
 import ProductCard from "@/components/ProductCard";
+import ProductDetailsDialog from "@/components/ProductDetailsDialog";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowUp } from "lucide-react";
@@ -21,6 +22,7 @@ const Index = () => {
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 50000]);
   const [filterSearch, setFilterSearch] = useState("");
   const [priceSort, setPriceSort] = useState<"none" | "asc" | "desc">("none");
+  const [deepLinkProductId, setDeepLinkProductId] = useState<string | null>(null);
   useEffect(() => {
     const initCategories = async () => {
       const names = await categoriesStore.getCategoryNames();
@@ -32,6 +34,13 @@ const Index = () => {
       }
     };
     initCategories();
+
+    // Deep linking: detectar parâmetro ?produto=ID na URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const productId = urlParams.get('produto');
+    if (productId) {
+      setDeepLinkProductId(productId);
+    }
   }, []);
   const maxProductPrice = useMemo(() => {
     if (products.length === 0) return 50000;
@@ -56,6 +65,19 @@ const Index = () => {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  // Abrir dialog automaticamente quando produto deep link é detectado
+  useEffect(() => {
+    if (deepLinkProductId && products.length > 0) {
+      const product = products.find(p => p.id === deepLinkProductId);
+      if (product) {
+        // Dar um pequeno delay para garantir que a página carregou
+        setTimeout(() => {
+          setDeepLinkProductId(product.id);
+        }, 300);
+      }
+    }
+  }, [deepLinkProductId, products]);
   const loadBrands = async () => {
     if (selectedCategory) {
       const categoryBrands = await brandsStore.getBrandsByCategory(selectedCategory);
@@ -226,6 +248,35 @@ const Index = () => {
       {showScrollTop && <Button onClick={scrollToTop} size="icon" className="fixed bottom-24 right-4 z-50 shadow-lg" aria-label="Voltar ao topo">
           <ArrowUp className="h-5 w-5" />
         </Button>}
+
+      {/* Dialog para Deep Link */}
+      {deepLinkProductId && (() => {
+        const product = products.find(p => p.id === deepLinkProductId);
+        if (!product) return null;
+        
+        return (
+          <ProductDetailsDialog
+            open={!!deepLinkProductId}
+            onOpenChange={(open) => {
+              if (!open) {
+                setDeepLinkProductId(null);
+                // Limpar parâmetro da URL
+                window.history.replaceState({}, '', window.location.pathname);
+              }
+            }}
+            id={product.id}
+            images={product.images}
+            name={product.name}
+            brand={product.brand}
+            specs={product.specs}
+            description={product.description}
+            price={product.price}
+            costPrice={product.costPrice}
+            discountPrice={product.discountPrice}
+            passOnCashDiscount={product.passOnCashDiscount}
+          />
+        );
+      })()}
     </div>;
 };
 export default Index;

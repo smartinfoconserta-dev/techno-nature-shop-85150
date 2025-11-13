@@ -118,7 +118,7 @@ const ProductCard = ({ id, images, name, brand, category, specs, description, pr
   }
 
   const handleWhatsAppClick = () => {
-    const imageLink = images[0] || "";
+    const productLink = `https://www.ramontech.com.br/?produto=${id}`;
     
     let messageLines = [
       "🛒 *INTERESSE EM PRODUTO*",
@@ -184,11 +184,9 @@ const ProductCard = ({ id, images, name, brand, category, specs, description, pr
     }
 
 
-    // Adicionar link da imagem
-    if (imageLink) {
-      messageLines.push("");
-      messageLines.push(`🖼️ *Imagem:* ${imageLink}`);
-    }
+    // Adicionar link do produto
+    messageLines.push("");
+    messageLines.push(`🔗 *Ver no site:* ${productLink}`);
 
     const message = encodeURIComponent(messageLines.join("\n"));
     window.open(`https://wa.me/5548991027363?text=${message}`, "_blank");
