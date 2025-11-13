@@ -129,10 +129,10 @@ const SalesHistoryTab = () => {
       });
     });
     
-    // 3. Caderneta (apenas pagas e parciais com valor pago > 0)
+    // 3. Caderneta (apenas pagas e parciais com valor pago > 0, excluindo produtos do catálogo para evitar duplicação)
     const receivables = receivablesStore.getAllReceivables();
     receivables
-      .filter(r => !r.archived && r.paidAmount > 0)
+      .filter(r => !r.archived && r.paidAmount > 0 && !r.productId)
       .forEach(r => {
         allSales.push({
           id: r.id,
@@ -298,6 +298,16 @@ const SalesHistoryTab = () => {
         } catch (err) {
           console.error("Erro ao deletar recebível:", err);
         }
+      } else {
+        // Fallback: try to find receivable by productId
+        const linkedReceivable = receivablesStore.getReceivableByProductId(cancelingProduct.id);
+        if (linkedReceivable) {
+          try {
+            await receivablesStore.deleteReceivable(linkedReceivable.id);
+          } catch (err) {
+            console.error("Erro ao deletar recebível:", err);
+          }
+        }
       }
       
       setCancelingProduct(null);
@@ -326,6 +336,16 @@ const SalesHistoryTab = () => {
           await receivablesStore.deleteReceivable(cancelingProduct.receivableId);
         } catch (err) {
           console.error("Erro ao deletar recebível:", err);
+        }
+      } else {
+        // Fallback: try to find receivable by productId
+        const linkedReceivable = receivablesStore.getReceivableByProductId(cancelingProduct.id);
+        if (linkedReceivable) {
+          try {
+            await receivablesStore.deleteReceivable(linkedReceivable.id);
+          } catch (err) {
+            console.error("Erro ao deletar recebível:", err);
+          }
         }
       }
       

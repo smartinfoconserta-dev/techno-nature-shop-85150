@@ -33,6 +33,7 @@ import { cn } from "@/lib/utils";
 import { receivablesStore } from "@/lib/receivablesStore";
 import { customersStore } from "@/lib/customersStore";
 import { productsStore } from "@/lib/productsStore";
+import { couponsStore } from "@/lib/couponsStore";
 import { useToast } from "@/hooks/use-toast";
 import WarrantySelector from "./WarrantySelector";
 
@@ -67,6 +68,10 @@ export function AddManualReceivableDialog({
   const [isLoading, setIsLoading] = useState(false);
   const [productSource, setProductSource] = useState<"manual" | "catalog">("manual");
   const [selectedProductId, setSelectedProductId] = useState<string>("");
+  const [couponCode, setCouponCode] = useState("");
+  const [couponValidated, setCouponValidated] = useState(false);
+  const [couponDiscount, setCouponDiscount] = useState(0);
+  const [couponError, setCouponError] = useState("");
   
   const catalogProducts = productsStore.getAvailableProducts();
 
@@ -89,9 +94,41 @@ export function AddManualReceivableDialog({
     if (!open) {
       setProductSource("manual");
       setSelectedProductId("");
+      setCouponCode("");
+      setCouponValidated(false);
+      setCouponDiscount(0);
+      setCouponError("");
       form.reset();
     }
   }, [open, form]);
+
+  const handleValidateCoupon = async () => {
+    if (!couponCode.trim()) {
+      setCouponError("Digite um código de cupom");
+      return;
+    }
+
+    const result = await couponsStore.validateCoupon(couponCode);
+    if (result.valid && result.coupon) {
+      const discount = result.coupon.discountPercent || 0;
+      setCouponValidated(true);
+      setCouponDiscount(discount);
+      setCouponError("");
+      toast({
+        title: "Cupom válido",
+        description: `${discount}% de desconto aplicado`,
+      });
+    } else {
+      setCouponValidated(false);
+      setCouponDiscount(0);
+      setCouponError("Cupom inválido");
+      toast({
+        title: "Cupom inválido",
+        description: "Cupom inválido ou expirado",
+        variant: "destructive",
+      });
+    }
+  };
 
   const onSubmit = async (data: FormData) => {
     if (!customerId) return;
@@ -368,6 +405,72 @@ export function AddManualReceivableDialog({
                 </FormItem>
               )}
             />
+
+            {/* Cupom de Desconto (apenas para produtos do catálogo) */}
+            {productSource === "catalog" && (
+              <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">🎟️</span>
+                  <Label className="text-base font-semibold">Cupom de Desconto</Label>
+                </div>
+                
+                <div className="flex gap-2">
+                  <div className="flex-1">
+                    <Input
+                      placeholder="Código do cupom"
+                      value={couponCode}
+                      onChange={(e) => {
+                        setCouponCode(e.target.value.toUpperCase());
+                        setCouponValidated(false);
+                        setCouponError("");
+                      }}
+                      disabled={isLoading}
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={handleValidateCoupon}
+                    disabled={isLoading || !couponCode.trim()}
+                  >
+                    Validar
+                  </Button>
+                </div>
+
+                {couponError && (
+                  <p className="text-sm text-destructive">{couponError}</p>
+                )}
+
+                {couponValidated && (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
+                      <Check className="h-4 w-4" />
+                      <span>Cupom válido! {couponDiscount}% de desconto aplicado</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-muted-foreground">Preço Base:</span>
+                        <p className="font-medium">
+                          {form.watch("salePrice")?.toLocaleString("pt-BR", {
+                            style: "currency",
+                            currency: "BRL",
+                          })}
+                        </p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Novo Valor:</span>
+                        <p className="font-semibold text-green-600 dark:text-green-400">
+                          {(form.watch("salePrice") * (1 - couponDiscount / 100)).toLocaleString("pt-BR", {
+                            style: "currency",
+                            currency: "BRL",
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Mostrar lucro em tempo real */}
             {form.watch("costPrice") > 0 && form.watch("salePrice") > 0 && (

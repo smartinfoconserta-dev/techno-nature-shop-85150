@@ -200,7 +200,7 @@ const CustomerReceivablesDialog = ({
       }
       
       // Se for produto do catálogo, devolve ao estoque
-      if (receivable.source === "catalog" && receivable.productId) {
+      if (receivable.productId) {
         const product = productsStore.getAllProducts().find(p => p.id === receivable.productId);
         if (product?.soldOnCredit) {
           productsStore.cancelSale(receivable.productId);
