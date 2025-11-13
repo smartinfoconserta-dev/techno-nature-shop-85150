@@ -76,12 +76,26 @@ export const monthlyReportsStore = {
     let totalExpenses = 0;
     let totalMargins = 0;
 
+    // Soma TODAS as despesas do mês (de todos os produtos, vendidos ou não)
+    const allProducts = productsStore.getAllProducts();
+    allProducts.forEach(product => {
+      if (product.expenses && Array.isArray(product.expenses)) {
+        product.expenses.forEach(expense => {
+          if (expense.createdAt) {
+            const expenseDate = new Date(expense.createdAt);
+            if (expenseDate >= monthStart && expenseDate <= monthEnd) {
+              totalExpenses += expense.value;
+            }
+          }
+        });
+      }
+    });
+
     soldProducts.forEach((p) => {
       const salePrice = p.salePrice || p.price;
       const expenses = p.expenses?.reduce((sum, e) => sum + e.value, 0) || 0;
       
       totalGross += salePrice;
-      totalExpenses += expenses;
       
       if (p.paymentBreakdown) {
         totalCash += p.paymentBreakdown.cash || 0;
@@ -129,16 +143,6 @@ export const monthlyReportsStore = {
           if (payment.paymentMethod === "cash") totalCash += payment.amount;
           if (payment.paymentMethod === "pix") totalPix += payment.amount;
           if (payment.paymentMethod === "card") totalCard += payment.amount;
-          
-          // Adiciona custos proporcionais (se existirem)
-          if (receivable.costPrice && receivable.salePrice) {
-            const costRatio = receivable.costPrice / receivable.salePrice;
-            const costPortion = payment.amount * costRatio;
-            totalExpenses += costPortion;
-            
-            const margin = payment.amount > 0 ? ((payment.amount - costPortion) / payment.amount) * 100 : 0;
-            totalMargins += margin;
-          }
         }
       });
     });
@@ -193,12 +197,26 @@ export const monthlyReportsStore = {
     let totalExpenses = 0;
     let totalMargins = 0;
 
+    // Soma TODAS as despesas do mês atual (de todos os produtos, vendidos ou não)
+    const allProducts = productsStore.getAllProducts();
+    allProducts.forEach(product => {
+      if (product.expenses && Array.isArray(product.expenses)) {
+        product.expenses.forEach(expense => {
+          if (expense.createdAt) {
+            const expenseDate = new Date(expense.createdAt);
+            if (expenseDate >= monthStart) {
+              totalExpenses += expense.value;
+            }
+          }
+        });
+      }
+    });
+
     soldProducts.forEach((p) => {
       const salePrice = p.salePrice || p.price;
       const expenses = p.expenses?.reduce((sum, e) => sum + e.value, 0) || 0;
       
       totalGross += salePrice;
-      totalExpenses += expenses;
       
       if (p.paymentBreakdown) {
         totalCash += p.paymentBreakdown.cash || 0;
@@ -244,15 +262,6 @@ export const monthlyReportsStore = {
           if (payment.paymentMethod === "cash") totalCash += payment.amount;
           if (payment.paymentMethod === "pix") totalPix += payment.amount;
           if (payment.paymentMethod === "card") totalCard += payment.amount;
-          
-          if (receivable.costPrice && receivable.salePrice) {
-            const costRatio = receivable.costPrice / receivable.salePrice;
-            const costPortion = payment.amount * costRatio;
-            totalExpenses += costPortion;
-            
-            const margin = payment.amount > 0 ? ((payment.amount - costPortion) / payment.amount) * 100 : 0;
-            totalMargins += margin;
-          }
         }
       });
     });
