@@ -74,8 +74,8 @@ function mapRowToProduct(row: any): Product {
     description: row.description || "",
     price: Number(row.base_price),
     costPrice: row.base_price ? Number(row.base_price) : undefined,
-    discountPrice: undefined,
-    passOnCashDiscount: false,
+    discountPrice: row.discount_price ? Number(row.discount_price) : undefined,
+    passOnCashDiscount: row.pass_on_cash_discount || false,
     order: row.product_order || 0,
     sold: row.sold || false,
     salePrice: row.sale_price ? Number(row.sale_price) : undefined,
@@ -164,8 +164,8 @@ export const productsStore = {
       description: data.description || "",
       price: data.price,
       costPrice: data.price,
-      discountPrice: undefined,
-      passOnCashDiscount: false,
+      discountPrice: data.discountPrice,
+      passOnCashDiscount: data.passOnCashDiscount || false,
       order: maxOrder + 1,
       sold: false,
       salePrice: undefined,
@@ -196,6 +196,8 @@ export const productsStore = {
       specifications: product.specs,
       description: product.description,
       base_price: product.price,
+      discount_price: product.discountPrice || null,
+      pass_on_cash_discount: product.passOnCashDiscount || false,
       product_order: product.order,
       sold: false,
       expenses: [],
@@ -230,6 +232,8 @@ export const productsStore = {
     if (data.specs !== undefined) updateData.specifications = data.specs;
     if (data.description !== undefined) updateData.description = data.description;
     if (data.price !== undefined) updateData.base_price = data.price;
+    if (data.discountPrice !== undefined) updateData.discount_price = data.discountPrice || null;
+    if (data.passOnCashDiscount !== undefined) updateData.pass_on_cash_discount = data.passOnCashDiscount;
     if (data.order !== undefined) updateData.product_order = data.order;
     if (data.sold !== undefined) updateData.sold = data.sold;
     if (data.salePrice !== undefined) updateData.sale_price = data.salePrice;

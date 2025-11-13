@@ -233,6 +233,7 @@ export type Database = {
           customer_name: string | null
           description: string | null
           digital_tax: number | null
+          discount_price: number | null
           expenses: Json | null
           id: string
           images: string[] | null
@@ -241,6 +242,7 @@ export type Database = {
           margin: number | null
           name: string
           notes: string | null
+          pass_on_cash_discount: boolean | null
           payment_breakdown: Json | null
           payment_method: string | null
           product_order: number | null
@@ -260,6 +262,7 @@ export type Database = {
           customer_name?: string | null
           description?: string | null
           digital_tax?: number | null
+          discount_price?: number | null
           expenses?: Json | null
           id?: string
           images?: string[] | null
@@ -268,6 +271,7 @@ export type Database = {
           margin?: number | null
           name: string
           notes?: string | null
+          pass_on_cash_discount?: boolean | null
           payment_breakdown?: Json | null
           payment_method?: string | null
           product_order?: number | null
@@ -287,6 +291,7 @@ export type Database = {
           customer_name?: string | null
           description?: string | null
           digital_tax?: number | null
+          discount_price?: number | null
           expenses?: Json | null
           id?: string
           images?: string[] | null
@@ -295,6 +300,7 @@ export type Database = {
           margin?: number | null
           name?: string
           notes?: string | null
+          pass_on_cash_discount?: boolean | null
           payment_breakdown?: Json | null
           payment_method?: string | null
           product_order?: number | null

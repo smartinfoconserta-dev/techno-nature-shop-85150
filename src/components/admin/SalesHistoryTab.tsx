@@ -21,6 +21,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { ProductRefundDialog } from "./ProductRefundDialog";
+import { customersStore } from "@/lib/customersStore";
+import { creditHistoryStore } from "@/lib/creditHistoryStore";
 
 const SalesHistoryTab = () => {
   const [soldProducts, setSoldProducts] = useState<Product[]>([]);
@@ -41,6 +44,7 @@ const SalesHistoryTab = () => {
   const [warrantyFilter, setWarrantyFilter] = useState<"all" | "active" | "expired">("all");
   const [cancelingProduct, setCancelingProduct] = useState<Product | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [showRefundDialog, setShowRefundDialog] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -106,7 +110,75 @@ const SalesHistoryTab = () => {
     }
   };
 
-  const handleCancelSale = () => {
+  const handleCancelClick = (product: Product) => {
+    setCancelingProduct(product);
+    
+    // Verificar se tem pagamentos registrados
+    const hasPaidAmount = 
+      (product.paymentBreakdown?.cash || 0) > 0 ||
+      (product.paymentBreakdown?.pix || 0) > 0 ||
+      (product.paymentBreakdown?.card || 0) > 0;
+    
+    if (hasPaidAmount) {
+      setShowRefundDialog(true);
+    }
+    // Se não tem pagamento, usa o AlertDialog padrão (que já está configurado)
+  };
+
+  const handleRefundConfirm = async (keepAsCredit: boolean) => {
+    if (!cancelingProduct) return;
+
+    try {
+      // Se deve gerar crédito, adicionar ao cliente
+      if (keepAsCredit && cancelingProduct.buyerCpf) {
+        const totalPaid = 
+          (cancelingProduct.paymentBreakdown?.cash || 0) +
+          (cancelingProduct.paymentBreakdown?.pix || 0) +
+          (cancelingProduct.paymentBreakdown?.card || 0);
+
+        // Buscar cliente pelo CPF
+        const customers = await customersStore.getAllCustomers();
+        const customer = customers.find(c => 
+          c.cpfCnpj?.replace(/\D/g, '') === cancelingProduct.buyerCpf?.replace(/\D/g, '')
+        );
+
+        if (customer) {
+          const description = `Crédito gerado pela devolução do produto: ${cancelingProduct.name}`;
+          
+          // Adicionar crédito ao cliente
+          await customersStore.addCredit(customer.id, totalPaid, description);
+          
+          // Registrar no histórico de crédito
+          await creditHistoryStore.addTransaction({
+            customerId: customer.id,
+            type: "add",
+            amount: totalPaid,
+            description,
+          });
+          
+          toast.success(`Crédito de R$ ${totalPaid.toFixed(2)} adicionado ao cliente ${customer.name}`);
+        } else {
+          toast.error("Cliente não encontrado no sistema. Venda cancelada sem gerar crédito.");
+        }
+      }
+
+      // Cancelar a venda e retornar ao estoque
+      productsStore.cancelSale(cancelingProduct.id);
+      setCancelingProduct(null);
+      setShowRefundDialog(false);
+      loadData();
+      
+      if (keepAsCredit) {
+        toast.success("Venda cancelada! Produto retornou ao estoque e crédito foi gerado.");
+      } else {
+        toast.success("Venda cancelada! Produto retornou ao estoque.");
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Erro ao cancelar venda");
+    }
+  };
+
+  const handleCancelSaleWithoutCredit = () => {
     if (!cancelingProduct) return;
 
     try {
@@ -351,7 +423,7 @@ const SalesHistoryTab = () => {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => setCancelingProduct(product)}
+                          onClick={() => handleCancelClick(product)}
                           className="text-destructive hover:text-destructive"
                         >
                           <XCircle className="w-4 h-4 mr-2" />
@@ -386,7 +458,13 @@ const SalesHistoryTab = () => {
         />
       )}
 
-      <AlertDialog open={!!cancelingProduct} onOpenChange={() => setCancelingProduct(null)}>
+      {/* AlertDialog para produtos SEM pagamento */}
+      <AlertDialog 
+        open={!!cancelingProduct && !showRefundDialog} 
+        onOpenChange={(open) => {
+          if (!open) setCancelingProduct(null);
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Cancelar Venda</AlertDialogTitle>
@@ -399,12 +477,25 @@ const SalesHistoryTab = () => {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Não, manter venda</AlertDialogCancel>
-            <AlertDialogAction onClick={handleCancelSale} className="bg-destructive hover:bg-destructive/90">
+            <AlertDialogAction onClick={handleCancelSaleWithoutCredit} className="bg-destructive hover:bg-destructive/90">
               Sim, cancelar venda
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* RefundDialog para produtos COM pagamento */}
+      {cancelingProduct && (
+        <ProductRefundDialog
+          open={showRefundDialog}
+          onOpenChange={(open) => {
+            setShowRefundDialog(open);
+            if (!open) setCancelingProduct(null);
+          }}
+          product={cancelingProduct}
+          onConfirm={handleRefundConfirm}
+        />
+      )}
     </div>
   );
 };
