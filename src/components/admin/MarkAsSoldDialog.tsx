@@ -220,6 +220,40 @@ const MarkAsSoldDialog = ({
           ? new Date(Date.now() + warrantyDays * 24 * 60 * 60 * 1000).toISOString()
           : undefined;
 
+        // Criar array de pagamentos iniciais
+        const initialPayments: any[] = [];
+        const now = new Date().toISOString().split('T')[0];
+
+        if (cashInitial > 0) {
+          initialPayments.push({
+            id: `${Date.now()}-cash`,
+            amount: cashInitial,
+            paymentDate: now,
+            paymentMethod: "cash",
+            notes: "Pagamento inicial - Dinheiro",
+          });
+        }
+
+        if (pixInitial > 0) {
+          initialPayments.push({
+            id: `${Date.now()}-pix`,
+            amount: pixInitial,
+            paymentDate: now,
+            paymentMethod: "pix",
+            notes: "Pagamento inicial - PIX",
+          });
+        }
+
+        if (cardInitial > 0) {
+          initialPayments.push({
+            id: `${Date.now()}-card`,
+            amount: cardInitial,
+            paymentDate: now,
+            paymentMethod: "card",
+            notes: "Pagamento inicial - Cartão",
+          });
+        }
+
         const receivable = await receivablesStore.addReceivable({
           customerId: selectedCustomer.id,
           customerCode: selectedCustomer.code,
@@ -227,43 +261,15 @@ const MarkAsSoldDialog = ({
           productId: product.id,
           productName: product.name,
           totalAmount: finalPrice,
-          paidAmount: 0,
+          paidAmount: totalInitial,
           couponCode: couponValidated ? couponCode.trim().toUpperCase() : undefined,
           couponDiscount: couponValidated ? couponDiscount : undefined,
           dueDate: dueDate || undefined,
           notes: notes || undefined,
           warranty: warrantyDays,
           warrantyExpiresAt: warrantyExpires,
-          payments: [],
+          payments: initialPayments,
         });
-
-        // Adicionar pagamentos iniciais (um para cada método)
-        if (cashInitial > 0) {
-          await receivablesStore.addPayment(receivable.id, {
-            amount: cashInitial,
-            paymentDate: new Date().toISOString().split('T')[0],
-            paymentMethod: "cash",
-            notes: "Pagamento inicial - Dinheiro",
-          });
-        }
-        
-        if (pixInitial > 0) {
-          await receivablesStore.addPayment(receivable.id, {
-            amount: pixInitial,
-            paymentDate: new Date().toISOString().split('T')[0],
-            paymentMethod: "pix",
-            notes: "Pagamento inicial - PIX",
-          });
-        }
-        
-        if (cardInitial > 0) {
-          await receivablesStore.addPayment(receivable.id, {
-            amount: cardInitial,
-            paymentDate: new Date().toISOString().split('T')[0],
-            paymentMethod: "card",
-            notes: "Pagamento inicial - Cartão",
-          });
-        }
 
         productsStore.markAsSoldOnCredit(product.id, selectedCustomer.name, selectedCustomer.cpfCnpj, finalPrice, receivable.id, warrantyDays, warrantyExpires);
 

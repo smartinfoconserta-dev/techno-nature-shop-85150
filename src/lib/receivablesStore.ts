@@ -212,7 +212,6 @@ export const receivablesStore = {
 
     receivablesCache = [receivable, ...receivablesCache];
     saveReceivablesCache();
-    await this.refreshFromBackend();
 
     return receivable;
   },
