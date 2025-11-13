@@ -17,19 +17,21 @@ const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
     }, [value]);
 
     const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
-      // Se o valor for "0", limpar o campo
-      if (internalValue === "0" || internalValue === "0.00") {
+      // Se o valor for "0" ou vazio, limpar o campo
+      if (internalValue === "0" || internalValue === "0.00" || internalValue === "") {
         setInternalValue("");
+        onChange?.(undefined);
       } else {
-        // Selecionar todo o texto ao focar
-        e.target.select();
+        // Selecionar todo o texto ao focar para fácil substituição
+        setTimeout(() => e.target.select(), 0);
       }
       onFocus?.(e);
     };
 
     const handleWheel = (e: React.WheelEvent<HTMLInputElement>) => {
-      // Desfocar o campo ao rolar para evitar mudanças acidentais
-      e.currentTarget.blur();
+      // Prevenir o comportamento padrão do scroll no input
+      e.preventDefault();
+      e.stopPropagation();
     };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -40,6 +42,11 @@ const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
 
       // Substituir vírgula por ponto
       inputValue = inputValue.replace(",", ".");
+
+      // Remover zeros à esquerda, EXCETO se for "0" sozinho ou "0."
+      if (inputValue.length > 1 && inputValue[0] === "0" && inputValue[1] !== ".") {
+        inputValue = inputValue.replace(/^0+/, "");
+      }
 
       // Permitir apenas um ponto decimal
       const parts = inputValue.split(".");
