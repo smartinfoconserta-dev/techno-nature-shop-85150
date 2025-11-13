@@ -160,7 +160,7 @@ const Index = () => {
             className="w-full h-full object-cover"
           />
           {/* Overlay escuro para melhorar legibilidade do texto */}
-          <div className="absolute inset-0 bg-gradient-to-br from-background/80 via-background/60 to-background/80" />
+          <div className="absolute inset-0 bg-gradient-to-br from-black/30 via-black/20 to-black/30" />
         </div>
         
         {/* Conteúdo (texto) por cima */}
