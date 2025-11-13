@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { receivablesStore, Receivable } from "@/lib/receivablesStore";
 import { customersStore, Customer } from "@/lib/customersStore";
+import { productsStore } from "@/lib/productsStore";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -148,14 +149,27 @@ const ReceivablesTab = () => {
     setShowCustomerDialog(true);
   };
 
-  const handleDeleteReceivable = () => {
+  const handleDeleteReceivable = async () => {
     if (!receivableToDelete) return;
 
     try {
-      receivablesStore.deleteReceivable(receivableToDelete);
+      // Buscar o recebível para verificar se está vinculado a um produto
+      const receivable = receivablesStore.getReceivableById(receivableToDelete);
+      
+      // Se tiver productId, cancelar a venda do produto também
+      if (receivable?.productId) {
+        try {
+          await productsStore.cancelSale(receivable.productId);
+        } catch (err) {
+          console.error("Erro ao cancelar venda do produto:", err);
+        }
+      }
+      
+      // Deletar o recebível
+      await receivablesStore.deleteReceivable(receivableToDelete);
       toast({
         title: "Conta removida",
-        description: "Conta a receber removida com sucesso",
+        description: "Conta a receber removida com sucesso e produto devolvido ao estoque",
       });
       loadReceivables();
     } catch (error: any) {
