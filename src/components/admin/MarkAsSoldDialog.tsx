@@ -220,6 +220,9 @@ const MarkAsSoldDialog = ({
           ? new Date(Date.now() + warrantyDays * 24 * 60 * 60 * 1000).toISOString()
           : undefined;
 
+        // Calcular custo total do produto (soma das despesas)
+        const totalCost = product.expenses.reduce((sum, expense) => sum + expense.value, 0);
+
         // Criar array de pagamentos iniciais
         const initialPayments: any[] = [];
         const now = new Date().toISOString().split('T')[0];
@@ -260,6 +263,8 @@ const MarkAsSoldDialog = ({
           customerName: selectedCustomer.name,
           productId: product.id,
           productName: product.name,
+          costPrice: totalCost,
+          salePrice: finalPrice,
           totalAmount: finalPrice,
           paidAmount: totalInitial,
           couponCode: couponValidated ? couponCode.trim().toUpperCase() : undefined,
