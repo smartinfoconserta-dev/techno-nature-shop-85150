@@ -150,27 +150,28 @@ const Index = () => {
   return <div className="min-h-screen bg-background">
       <Header searchValue={searchQuery} onSearchChange={setSearchQuery} onReset={handleResetFilters} />
       
-      {/* Hero Banner Minimalista */}
-      <section className="relative h-[30vh] min-h-[250px] max-h-[320px] overflow-hidden bg-gradient-to-br from-primary/20 via-background to-background animate-fade-in">
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="relative z-10 text-center space-y-3 px-4">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground drop-shadow-lg">
+      {/* Hero Banner com Background Completo */}
+      <section className="relative h-[30vh] min-h-[250px] max-h-[320px] overflow-hidden animate-fade-in">
+        {/* Background com imagem */}
+        <div className="absolute inset-0">
+          <img 
+            src={heroImage}
+            alt="Tecnologia" 
+            className="w-full h-full object-cover"
+          />
+          {/* Overlay escuro para melhorar legibilidade do texto */}
+          <div className="absolute inset-0 bg-gradient-to-br from-background/80 via-background/60 to-background/80" />
+        </div>
+        
+        {/* Conteúdo (texto) por cima */}
+        <div className="relative z-10 h-full flex items-center justify-center">
+          <div className="text-center space-y-3 px-4">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground drop-shadow-2xl">
               Ramon Tech Solutions
             </h1>
-            <p className="text-lg md:text-xl text-muted-foreground">
+            <p className="text-lg md:text-xl text-muted-foreground drop-shadow-lg">
               Catálogo Digital de Tecnologia
             </p>
-          </div>
-          <div className="absolute right-[5%] md:right-[10%] bottom-0 w-[180px] md:w-[240px] lg:w-[300px] opacity-80">
-            <img 
-              src={heroImage}
-              alt="Tecnologia" 
-              className="w-full h-auto object-contain drop-shadow-2xl"
-              style={{ 
-                maskImage: 'linear-gradient(to top, transparent, black 20%)',
-                WebkitMaskImage: 'linear-gradient(to top, transparent, black 20%)'
-              }}
-            />
           </div>
         </div>
       </section>
