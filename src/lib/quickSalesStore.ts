@@ -109,6 +109,11 @@ export const quickSalesStore = {
       updatedAt: new Date().toISOString(),
     };
 
+    // Garantir defaults para campos NOT NULL
+    const paymentBreakdown = newSale.paymentBreakdown || { cash: 0, pix: 0, card: 0 };
+    const paymentMethod = newSale.paymentMethod || "cash";
+    const customerName = newSale.customerName || "";
+
     const { error } = await supabase
       .from("quick_sales")
       .upsert({
@@ -118,9 +123,9 @@ export const quickSalesStore = {
         sale_price: newSale.salePrice,
         profit: newSale.profit,
         margin: newSale.salePrice > 0 ? (newSale.profit / newSale.salePrice) * 100 : 0,
-        customer_name: newSale.customerName || "",
-        payment_breakdown: newSale.paymentBreakdown || null,
-        payment_method: newSale.paymentMethod || "cash",
+        customer_name: customerName,
+        payment_breakdown: paymentBreakdown,
+        payment_method: paymentMethod,
         digital_tax: newSale.taxAmount || 0,
         warranty_months: newSale.warranty || 3,
         notes: newSale.notes || null,

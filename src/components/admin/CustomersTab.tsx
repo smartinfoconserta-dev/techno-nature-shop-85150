@@ -22,8 +22,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
-import { Copy, Eye, EyeOff, Key, ShoppingBag } from "lucide-react";
+import { Copy, Eye, EyeOff, Key, ShoppingBag, Trash2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import CustomerReceivablesDialog from "./CustomerReceivablesDialog";
 
@@ -39,9 +49,13 @@ const CustomersTab = () => {
   const [refreshKey, setRefreshKey] = useState(0);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [filteredCustomers, setFilteredCustomers] = useState<Customer[]>([]);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(null);
 
   useEffect(() => {
     const loadCustomers = async () => {
+      // Garantir que receivables estão carregados antes de calcular débitos
+      await receivablesStore.refreshFromBackend();
       const allCustomers = await customersStore.getAllCustomers();
       setCustomers(allCustomers);
     };
@@ -122,9 +136,9 @@ const CustomersTab = () => {
     }
   };
 
-  const handleTogglePortalAccess = (customer: Customer) => {
+  const handleTogglePortalAccess = async (customer: Customer) => {
     try {
-      customersStore.updateCustomer(customer.id, {
+      await customersStore.updateCustomer(customer.id, {
         hasPortalAccess: !customer.hasPortalAccess,
       });
       
@@ -139,6 +153,28 @@ const CustomersTab = () => {
         description: error.message,
         variant: "destructive",
       });
+    }
+  };
+
+  const handleDeleteCustomer = async () => {
+    if (!customerToDelete) return;
+
+    try {
+      await customersStore.deleteCustomer(customerToDelete.id);
+      toast({
+        title: "Cliente excluído",
+        description: "Cliente foi removido com sucesso",
+      });
+      setRefreshKey((prev) => prev + 1);
+    } catch (error) {
+      toast({
+        title: "Erro ao excluir",
+        description: error instanceof Error ? error.message : "Tente novamente",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleteDialogOpen(false);
+      setCustomerToDelete(null);
     }
   };
 
@@ -276,6 +312,17 @@ const CustomersTab = () => {
                         >
                           <ShoppingBag className="h-4 w-4" />
                         </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => {
+                            setCustomerToDelete(customer);
+                            setDeleteDialogOpen(true);
+                          }}
+                          title="Excluir cliente"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -341,6 +388,28 @@ const CustomersTab = () => {
           customerId={selectedCustomer.id}
         />
       )}
+
+      {/* Dialog: Confirmar Exclusão */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir o cliente {customerToDelete?.name}?
+              Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteCustomer}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

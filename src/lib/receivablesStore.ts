@@ -147,6 +147,9 @@ export const receivablesStore = {
     else if (data.paidAmount >= data.totalAmount) status = "paid";
     else status = "partial";
 
+    // Garantir que campos NOT NULL nunca sejam null/undefined
+    const dueDate = data.dueDate || new Date().toISOString().split('T')[0];
+
     const receivable: Receivable = {
       id: genIdR(),
       customerId: data.customerId,
@@ -162,7 +165,7 @@ export const receivablesStore = {
       remainingAmount,
       couponCode: data.couponCode,
       couponDiscount: data.couponDiscount,
-      dueDate: data.dueDate,
+      dueDate,
       status,
       payments: data.payments || [],
       source: data.source,
@@ -182,13 +185,14 @@ export const receivablesStore = {
         customer_id: receivable.customerId,
         customer_name: receivable.customerName,
         product_name: receivable.productName,
+        base_price: receivable.salePrice || 0,
         cost_price: receivable.costPrice || null,
         sale_price: receivable.salePrice || null,
         profit: receivable.profit || null,
         total_amount: receivable.totalAmount,
         paid_amount: receivable.paidAmount || 0,
         remaining_amount: receivable.remainingAmount,
-        due_date: receivable.dueDate || null,
+        due_date: receivable.dueDate,
         status: receivable.status,
         payments: receivable.payments || [],
         notes: receivable.notes || null,

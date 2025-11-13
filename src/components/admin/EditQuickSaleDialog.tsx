@@ -93,7 +93,7 @@ export function EditQuickSaleDialog({
 
     setIsLoading(true);
     try {
-      quickSalesStore.updateQuickSale(saleId, {
+      await quickSalesStore.updateQuickSale(saleId, {
         productName: data.productName,
         customerName: data.customerName || undefined,
         customerCpf: data.customerCpf || undefined,
@@ -118,12 +118,12 @@ export function EditQuickSaleDialog({
     }
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!saleId || !sale) return;
 
     try {
       // Remove a venda rápida
-      quickSalesStore.deleteQuickSale(saleId);
+      await quickSalesStore.deleteQuickSale(saleId);
       
       toast({
         title: "Venda excluída",

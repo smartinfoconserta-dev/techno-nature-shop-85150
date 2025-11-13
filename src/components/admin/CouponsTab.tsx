@@ -70,7 +70,7 @@ const CouponsTab = () => {
       );
       await loadCoupons();
     } catch (error) {
-      toast.error("Erro ao alterar status do cupom");
+      toast.error(error instanceof Error ? error.message : "Erro ao alterar status");
     }
   };
 
@@ -86,7 +86,7 @@ const CouponsTab = () => {
         toast.success("Cupom excluído com sucesso!");
         await loadCoupons();
       } catch (error) {
-        toast.error("Erro ao excluir cupom");
+        toast.error(error instanceof Error ? error.message : "Erro ao excluir cupom");
       }
     }
     setDeleteDialogOpen(false);

@@ -100,10 +100,14 @@ export const couponsStore = {
       .single();
 
     if (error) {
+      console.error("Erro ao adicionar cupom:", error);
       if (error.code === "23505") {
         throw new Error("Já existe um cupom com este código");
       }
-      throw error;
+      if (error.code === "42501" || error.message?.includes("permission denied") || error.message?.includes("row-level security")) {
+        throw new Error("Você precisa estar logado como administrador para criar cupons");
+      }
+      throw new Error(error.message || "Erro ao adicionar cupom");
     }
 
     return {
@@ -141,10 +145,14 @@ export const couponsStore = {
       .single();
 
     if (error) {
+      console.error("Erro ao atualizar cupom:", error);
       if (error.code === "23505") {
         throw new Error("Já existe um cupom com este código");
       }
-      throw error;
+      if (error.code === "42501" || error.message?.includes("permission denied") || error.message?.includes("row-level security")) {
+        throw new Error("Você precisa estar logado como administrador para atualizar cupons");
+      }
+      throw new Error(error.message || "Erro ao atualizar cupom");
     }
 
     return {

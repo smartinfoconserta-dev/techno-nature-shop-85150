@@ -70,8 +70,13 @@ const CustomerReceivablesDialog = ({
 
   useEffect(() => {
     if (open && customerId) {
-      loadCustomerData();
-      loadCustomerReceivables();
+      const loadData = async () => {
+        // Garantir que receivables estão atualizados do backend
+        await receivablesStore.refreshFromBackend();
+        loadCustomerData();
+        loadCustomerReceivables();
+      };
+      loadData();
     }
   }, [open, customerId, activeTab]);
 

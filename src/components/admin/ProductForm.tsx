@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { NumberInput } from "@/components/ui/number-input";
 import {
   Select,
   SelectContent,
@@ -273,12 +274,10 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
 
         <div className="space-y-2 w-full">
           <Label htmlFor="price">Preço (R$) *</Label>
-          <Input
+          <NumberInput
             id="price"
-            type="number"
-            step="0.01"
             value={price}
-            onChange={(e) => setPrice(e.target.value)}
+            onChange={(val) => setPrice(val?.toString() || "")}
             placeholder="0.00"
             required
           />
@@ -286,12 +285,10 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
 
         <div className="space-y-2 w-full">
           <Label htmlFor="discountPrice">Preço com Desconto (Lojista B2B) - Opcional</Label>
-          <Input
+          <NumberInput
             id="discountPrice"
-            type="number"
-            step="0.01"
             value={discountPrice}
-            onChange={(e) => setDiscountPrice(e.target.value)}
+            onChange={(val) => setDiscountPrice(val?.toString() || "")}
             placeholder="0.00"
           />
           <p className="text-xs text-muted-foreground leading-relaxed">
