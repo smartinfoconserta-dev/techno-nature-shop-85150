@@ -113,9 +113,6 @@ export function AddManualReceivableDialog({
         ? selectedProductId 
         : `manual_${Date.now()}`;
 
-      // Calcula total de entrada
-      const totalInitial = (data.initialCash || 0) + (data.initialPix || 0) + (data.initialCard || 0);
-
       // Calcula data de expiração da garantia
       let warrantyExpiresAt: string | undefined;
       if (data.warranty > 0) {
@@ -124,7 +121,45 @@ export function AddManualReceivableDialog({
         warrantyExpiresAt = expirationDate.toISOString();
       }
 
-      // Cria conta a receber
+      // Criar array de pagamentos iniciais
+      const paymentDate = format(new Date(), "yyyy-MM-dd");
+      const initialPayments: any[] = [];
+      let totalInitial = 0;
+
+      if (data.initialCash && data.initialCash > 0) {
+        initialPayments.push({
+          id: `${Date.now()}-cash`,
+          amount: data.initialCash,
+          paymentDate,
+          paymentMethod: "cash",
+          notes: data.notes || "Pagamento inicial - Dinheiro",
+        });
+        totalInitial += data.initialCash;
+      }
+
+      if (data.initialPix && data.initialPix > 0) {
+        initialPayments.push({
+          id: `${Date.now()}-pix`,
+          amount: data.initialPix,
+          paymentDate,
+          paymentMethod: "pix",
+          notes: data.notes || "Pagamento inicial - PIX",
+        });
+        totalInitial += data.initialPix;
+      }
+
+      if (data.initialCard && data.initialCard > 0) {
+        initialPayments.push({
+          id: `${Date.now()}-card`,
+          amount: data.initialCard,
+          paymentDate,
+          paymentMethod: "card",
+          notes: data.notes || "Pagamento inicial - Cartão",
+        });
+        totalInitial += data.initialCard;
+      }
+
+      // Cria conta a receber com todos os pagamentos iniciais
       const receivable = await receivablesStore.addReceivable({
         customerId,
         customerCode: customer.code,
@@ -134,40 +169,13 @@ export function AddManualReceivableDialog({
         costPrice: data.costPrice || 0,
         salePrice: data.salePrice,
         totalAmount: data.salePrice,
-        paidAmount: 0,
+        paidAmount: totalInitial,
         dueDate: data.dueDate ? format(data.dueDate, "yyyy-MM-dd") : undefined,
-        payments: [],
+        payments: initialPayments,
         source: productSource === "catalog" ? "catalog" : "manual",
         warranty: data.warranty,
         warrantyExpiresAt,
       });
-
-      // Adiciona pagamentos iniciais separados se houver
-      const paymentDate = format(new Date(), "yyyy-MM-dd");
-      if (data.initialCash && data.initialCash > 0) {
-        await receivablesStore.addPayment(receivable.id, {
-          amount: data.initialCash,
-          paymentDate,
-          paymentMethod: "cash",
-          notes: data.notes || "Pagamento inicial - Dinheiro",
-        });
-      }
-      if (data.initialPix && data.initialPix > 0) {
-        await receivablesStore.addPayment(receivable.id, {
-          amount: data.initialPix,
-          paymentDate,
-          paymentMethod: "pix",
-          notes: data.notes || "Pagamento inicial - PIX",
-        });
-      }
-      if (data.initialCard && data.initialCard > 0) {
-        await receivablesStore.addPayment(receivable.id, {
-          amount: data.initialCard,
-          paymentDate,
-          paymentMethod: "card",
-          notes: data.notes || "Pagamento inicial - Cartão",
-        });
-      }
 
       // Se for do catálogo, marca produto como vendido
       if (productSource === "catalog") {
