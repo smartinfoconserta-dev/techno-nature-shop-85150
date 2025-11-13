@@ -385,4 +385,12 @@ export const receivablesStore = {
   getArchivedReceivables(): Receivable[] {
     return this.getAllReceivables().filter((r) => r.archived);
   },
+
+  getReceivableById(id: string): Receivable | undefined {
+    return this.getAllReceivables().find((r) => r.id === id);
+  },
+
+  getReceivableByProductId(productId: string): Receivable | undefined {
+    return this.getAllReceivables().find((r) => r.productId === productId);
+  },
 };

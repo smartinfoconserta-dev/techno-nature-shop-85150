@@ -257,7 +257,7 @@ const SalesHistoryTab = () => {
         
         // Se não encontrou por CPF, tentar por nome exato
         if (!customer && cancelingProduct.buyerName) {
-          customer = customers.find(c => 
+          customer = customers.find(c =>
             c.name.toLowerCase().trim() === cancelingProduct.buyerName?.toLowerCase().trim()
           );
         }
@@ -290,6 +290,16 @@ const SalesHistoryTab = () => {
 
       // Cancelar a venda e retornar ao estoque
       productsStore.cancelSale(cancelingProduct.id);
+      
+      // Se tiver receivableId vinculado, deletar da Caderneta também
+      if (cancelingProduct.receivableId) {
+        try {
+          await receivablesStore.deleteReceivable(cancelingProduct.receivableId);
+        } catch (err) {
+          console.error("Erro ao deletar recebível:", err);
+        }
+      }
+      
       setCancelingProduct(null);
       setShowRefundDialog(false);
       loadData();
@@ -304,11 +314,21 @@ const SalesHistoryTab = () => {
     }
   };
 
-  const handleCancelSaleWithoutCredit = () => {
+  const handleCancelSaleWithoutCredit = async () => {
     if (!cancelingProduct) return;
 
     try {
       productsStore.cancelSale(cancelingProduct.id);
+      
+      // Se tiver receivableId vinculado, deletar da Caderneta também
+      if (cancelingProduct.receivableId) {
+        try {
+          await receivablesStore.deleteReceivable(cancelingProduct.receivableId);
+        } catch (err) {
+          console.error("Erro ao deletar recebível:", err);
+        }
+      }
+      
       setCancelingProduct(null);
       loadData();
       toast.success("Venda cancelada! Produto retornou ao estoque.");
