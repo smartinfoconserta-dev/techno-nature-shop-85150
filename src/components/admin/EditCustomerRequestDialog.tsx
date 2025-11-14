@@ -230,7 +230,7 @@ export const EditCustomerRequestDialog = ({ request, open, onOpenChange, onSucce
 
             <div>
               <WarrantySelector
-                value={parseInt(formData.warrantyMonths) || 90}
+                value={parseInt(formData.warrantyMonths)}
                 onChange={(days) => {
                   setFormData({ ...formData, warrantyMonths: days.toString() });
                 }}
