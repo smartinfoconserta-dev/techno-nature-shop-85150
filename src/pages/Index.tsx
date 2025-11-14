@@ -204,7 +204,7 @@ const Index = () => {
 
         {/* Products Grid */}
         <div className="mt-8">
-          {isLoading ? <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {isLoading ? <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {Array.from({
             length: 8
           }).map((_, i) => <div key={i} className="space-y-4">
@@ -217,7 +217,7 @@ const Index = () => {
               <Button variant="link" onClick={handleResetFilters} className="mt-2">
                 Limpar filtros
               </Button>
-            </div> : <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            </div> : <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {filteredProducts.map(product => <ProductCard key={product.id} id={product.id} images={product.images} name={product.name} brand={product.brand} category={product.category} specs={product.specs} description={product.description} price={product.price} costPrice={product.costPrice} discountPrice={product.discountPrice} passOnCashDiscount={product.passOnCashDiscount} />)}
             </div>}
         </div>
