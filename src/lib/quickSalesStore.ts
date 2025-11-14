@@ -41,6 +41,24 @@ function saveQuickCache() {
   // No-op: cache apenas em memória - não salva em localStorage
 }
 
+// Helper functions for auto-archiving logic
+const isWarrantyExpired = (saleDate: string, warrantyMonths: number = 3): boolean => {
+  if (warrantyMonths === 0) return true;
+  const sale = new Date(saleDate);
+  const expirationDate = new Date(sale);
+  expirationDate.setMonth(expirationDate.getMonth() + warrantyMonths);
+  return new Date() > expirationDate;
+};
+
+const shouldAutoArchiveQuickSale = (sale: QuickSale): boolean => {
+  // Vendas rápidas são sempre pagas, então só verifica garantia
+  const warrantyExpired = isWarrantyExpired(
+    sale.saleDate, 
+    sale.warranty || 3
+  );
+  return warrantyExpired; // Vendas rápidas com garantia expirada = arquivadas
+};
+
 export const quickSalesStore = {
   async refreshFromBackend(): Promise<void> {
     const { data, error } = await supabase
@@ -85,6 +103,14 @@ export const quickSalesStore = {
 
   getQuickSaleById(id: string): QuickSale | undefined {
     return this.getAllQuickSales().find((s) => s.id === id);
+  },
+
+  getActiveQuickSales(): QuickSale[] {
+    return this.getAllQuickSales().filter((s) => !shouldAutoArchiveQuickSale(s));
+  },
+
+  getArchivedQuickSales(): QuickSale[] {
+    return this.getAllQuickSales().filter((s) => shouldAutoArchiveQuickSale(s));
   },
 
   async addQuickSale(data: Omit<QuickSale, "id" | "profit" | "createdAt" | "updatedAt">): Promise<QuickSale> {

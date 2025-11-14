@@ -61,46 +61,40 @@ Deno.serve(async (req) => {
     const hundredDaysAgo = new Date(now);
     hundredDaysAgo.setDate(now.getDate() - 100);
 
-    // 2. VENDAS RÁPIDAS (quick_sales) - 2 cenários (sempre pagas)
-    console.log('💰 Criando vendas rápidas...');
-    const quickSales = [
-      // VR1: Com garantia
+    // ============================================================
+    // 3. CRIAR VENDAS RÁPIDAS DE TESTE
+    // ============================================================
+    console.log("📦 Criando vendas rápidas de teste...");
+    
+    // Vendas rápidas são SEMPRE pagas, então só testamos garantia
+    const quickSalesData = [
       {
-        product_name: 'Notebook Dell Inspiron (VR - COM GARANTIA)',
-        customer_name: testCustomer.name,
-        customer_id: testCustomer.id,
-        cost_price: 2000,
-        sale_price: 2500,
-        profit: 500,
-        margin: 20,
-        payment_method: 'Dinheiro',
-        installments: 1,
-        installment_rate: 0,
-        digital_tax: 0,
-        payment_breakdown: { cash: 2500, pix: 0, card: 0 },
-        category: 'Notebooks',
-        brand: 'Dell',
-        warranty_months: 3,
-        created_at: thirtyDaysAgo.toISOString(),
-      },
-      // VR2: Sem garantia
-      {
-        product_name: 'iPhone 13 Pro (VR - SEM GARANTIA)',
+        product_name: "📱 iPhone 13 Pro - [VR] Garantia Ativa + Pago",
         customer_name: testCustomer.name,
         customer_id: testCustomer.id,
         cost_price: 3500,
-        sale_price: 4200,
+        sale_price: 4500,
+        profit: 1000,
+        payment_method: "card",
+        payment_breakdown: { cash: 0, pix: 0, card: 4500 },
+        digital_tax: 175.50,
+        warranty_months: 3,
+        notes: "✅ Teste VR: Garantia ativa + Pago → Deve ficar em ATIVAS",
+        created_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 dias atrás (garantia ativa)
+      },
+      {
+        product_name: "💻 Notebook Dell - [VR] Garantia Expirada + Pago",
+        customer_name: testCustomer.name,
+        customer_id: testCustomer.id,
+        cost_price: 2500,
+        sale_price: 3200,
         profit: 700,
-        margin: 16.67,
-        payment_method: 'PIX',
-        installments: 1,
-        installment_rate: 0,
-        digital_tax: 163.8,
-        payment_breakdown: { cash: 0, pix: 4200, card: 0 },
-        category: 'Smartphones',
-        brand: 'Apple',
-        warranty_months: 0,
-        created_at: hundredDaysAgo.toISOString(),
+        payment_method: "pix",
+        payment_breakdown: { cash: 0, pix: 3200, card: 0 },
+        digital_tax: 0,
+        warranty_months: 3,
+        notes: "📦 Teste VR: Garantia expirada + Pago → Deve ir para ARQUIVADAS",
+        created_at: new Date(Date.now() - 100 * 24 * 60 * 60 * 1000).toISOString(), // 100 dias atrás (garantia expirada)
       },
     ];
 
@@ -111,110 +105,103 @@ Deno.serve(async (req) => {
         'Authorization': `Bearer ${supabaseKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(quickSales),
+      body: JSON.stringify(quickSalesData),
     });
-    console.log(`✅ ${quickSales.length} vendas rápidas criadas`);
+    console.log(`✅ ${quickSalesData.length} vendas rápidas criadas`);
 
-    // 3. CADERNETAS (receivables) - 4 cenários
-    console.log('📒 Criando cadernetas...');
-    const receivables = [
-      // CAD1: Com garantia + Pago
+    // ============================================================
+    // 4. CRIAR RECEBÍVEIS DE TESTE (CADERNETAS)
+    // ============================================================
+    console.log("📒 Criando recebíveis de teste...");
+    
+    const receivablesData = [
       {
         customer_id: testCustomer.id,
         customer_name: testCustomer.name,
-        product_name: 'MacBook Air M2 (CAD - COM GARANTIA + PAGO)',
-        brand: 'Apple',
-        category: 'Notebooks',
-        base_price: 6000,
-        cost_price: 5000,
-        sale_price: 6000,
-        total_amount: 6000,
-        remaining_amount: 0,
-        paid_amount: 6000,
-        installments: 1,
-        installment_rate: 0,
-        status: 'paid',
-        due_date: thirtyDaysAgo.toISOString().split('T')[0],
-        warranty_months: 3,
-        payments: [
-          {
-            id: crypto.randomUUID(),
-            amount: 6000,
-            date: thirtyDaysAgo.toISOString(),
-            method: 'PIX',
-          },
-        ],
-        created_at: thirtyDaysAgo.toISOString(),
-      },
-      // CAD2: Com garantia + Não pago
-      {
-        customer_id: testCustomer.id,
-        customer_name: testCustomer.name,
-        product_name: 'iPad Pro 12.9" (CAD - COM GARANTIA + NÃO PAGO)',
-        brand: 'Apple',
-        category: 'Tablets',
-        base_price: 7000,
-        cost_price: 6000,
-        sale_price: 7000,
-        total_amount: 7000,
-        remaining_amount: 7000,
-        paid_amount: 0,
-        installments: 2,
-        installment_rate: 2.99,
-        status: 'pending',
-        due_date: new Date(now.getTime() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        warranty_months: 3,
-        payments: [],
-        created_at: thirtyDaysAgo.toISOString(),
-      },
-      // CAD3: Sem garantia + Pago
-      {
-        customer_id: testCustomer.id,
-        customer_name: testCustomer.name,
-        product_name: 'Samsung Galaxy S23 (CAD - SEM GARANTIA + PAGO)',
-        brand: 'Samsung',
-        category: 'Smartphones',
-        base_price: 3200,
-        cost_price: 2800,
-        sale_price: 3200,
-        total_amount: 3200,
-        remaining_amount: 0,
-        paid_amount: 3200,
-        installments: 1,
-        installment_rate: 0,
-        status: 'paid',
-        due_date: hundredDaysAgo.toISOString().split('T')[0],
-        warranty_months: 0,
-        payments: [
-          {
-            id: crypto.randomUUID(),
-            amount: 3200,
-            date: hundredDaysAgo.toISOString(),
-            method: 'Dinheiro',
-          },
-        ],
-        created_at: hundredDaysAgo.toISOString(),
-      },
-      // CAD4: Sem garantia + Não pago
-      {
-        customer_id: testCustomer.id,
-        customer_name: testCustomer.name,
-        product_name: 'Xbox Series X (CAD - SEM GARANTIA + NÃO PAGO)',
-        brand: 'Microsoft',
-        category: 'Games',
-        base_price: 4000,
+        product_name: "🎮 PlayStation 5 - [CAD] Garantia Ativa + Pago",
+        brand: "Sony",
+        category: "Games",
+        base_price: 3500,
+        sale_price: 4500,
         cost_price: 3500,
-        sale_price: 4000,
-        total_amount: 4000,
-        remaining_amount: 4000,
+        profit: 1000,
+        total_amount: 4500,
+        paid_amount: 4500,
+        remaining_amount: 0,
+        installments: 1,
+        installment_rate: 0,
+        due_date: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        status: "paid",
+        payments: [{ date: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(), amount: 4500, method: "pix" }],
+        warranty_months: 3,
+        notes: "✅ Teste CAD: Garantia ativa + Pago → Deve ficar em ATIVOS",
+        created_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 dias atrás (garantia ativa)
+      },
+      {
+        customer_id: testCustomer.id,
+        customer_name: testCustomer.name,
+        product_name: "📱 iPad Pro - [CAD] Garantia Ativa + Não Pago",
+        brand: "Apple",
+        category: "Tablets",
+        base_price: 5000,
+        sale_price: 6000,
+        cost_price: 5000,
+        profit: 1000,
+        total_amount: 6000,
         paid_amount: 0,
+        remaining_amount: 6000,
+        installments: 3,
+        installment_rate: 3.99,
+        due_date: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        status: "pending",
+        payments: [],
+        warranty_months: 3,
+        notes: "⚠️ Teste CAD: Garantia ativa + Não pago → Deve ficar em ATIVOS",
+        created_at: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(), // 20 dias atrás (garantia ativa)
+      },
+      {
+        customer_id: testCustomer.id,
+        customer_name: testCustomer.name,
+        product_name: "💻 MacBook Air - [CAD] Garantia Expirada + Pago",
+        brand: "Apple",
+        category: "Notebooks",
+        base_price: 7000,
+        sale_price: 8500,
+        cost_price: 7000,
+        profit: 1500,
+        total_amount: 8500,
+        paid_amount: 8500,
+        remaining_amount: 0,
+        installments: 1,
+        installment_rate: 0,
+        due_date: new Date(Date.now() - 50 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        status: "paid",
+        payments: [{ date: new Date(Date.now() - 50 * 24 * 60 * 60 * 1000).toISOString(), amount: 8500, method: "card" }],
+        warranty_months: 3,
+        notes: "📦 Teste CAD: Garantia expirada + Pago → Deve ir para ARQUIVADO",
+        created_at: new Date(Date.now() - 100 * 24 * 60 * 60 * 1000).toISOString(), // 100 dias atrás (garantia expirada)
+      },
+      {
+        customer_id: testCustomer.id,
+        customer_name: testCustomer.name,
+        product_name: "🎧 AirPods Pro - [CAD] Garantia Expirada + Não Pago",
+        brand: "Apple",
+        category: "Áudio",
+        base_price: 1500,
+        sale_price: 2000,
+        cost_price: 1500,
+        profit: 500,
+        total_amount: 2000,
+        paid_amount: 500,
+        remaining_amount: 1500,
         installments: 4,
         installment_rate: 4.99,
-        status: 'pending',
-        due_date: hundredDaysAgo.toISOString().split('T')[0],
-        warranty_months: 0,
-        payments: [],
-        created_at: hundredDaysAgo.toISOString(),
+        due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        status: "partial",
+        payments: [{ date: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(), amount: 500, method: "pix" }],
+        warranty_months: 3,
+        notes: "⚠️ Teste CAD: Garantia expirada + Não pago → Deve ficar em ATIVOS",
+        created_at: new Date(Date.now() - 100 * 24 * 60 * 60 * 1000).toISOString(), // 100 dias atrás (garantia expirada)
       },
     ];
 
@@ -225,13 +212,13 @@ Deno.serve(async (req) => {
         'Authorization': `Bearer ${supabaseKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(receivables),
+      body: JSON.stringify(receivablesData),
     });
-    console.log(`✅ ${receivables.length} cadernetas criadas`);
+    console.log(`✅ ${receivablesData.length} recebíveis criados`);
 
     // 4. SOLICITAÇÕES CONVERTIDAS (receivables originados de customer_requests)
     console.log('⚡ Criando solicitações convertidas...');
-    const requestReceivables = [
+    const convertedRequestsData = [
       // SOL1: Com garantia + Não pago
       {
         customer_id: testCustomer.id,
@@ -343,16 +330,16 @@ Deno.serve(async (req) => {
         'Authorization': `Bearer ${supabaseKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(requestReceivables),
+      body: JSON.stringify(convertedRequestsData),
     });
-    console.log(`✅ ${requestReceivables.length} solicitações convertidas criadas`);
+    console.log(`✅ ${convertedRequestsData.length} solicitações convertidas criadas`);
 
     const summary = {
       customer: testCustomer.name,
-      quickSales: quickSales.length,
-      receivables: receivables.length,
-      requestReceivables: requestReceivables.length,
-      total: quickSales.length + receivables.length + requestReceivables.length,
+      quickSales: quickSalesData.length,
+      receivables: receivablesData.length,
+      convertedRequests: convertedRequestsData.length,
+      total: quickSalesData.length + receivablesData.length + convertedRequestsData.length,
     };
 
     console.log('✅ Dados de teste criados com sucesso!', summary);

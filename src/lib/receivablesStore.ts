@@ -40,15 +40,34 @@ export interface Receivable {
 // Sync cache with background refresh
 const RECEIVABLES_STORAGE_KEY = "receivables_data";
 let receivablesCache: Receivable[] = [];
-let receivablesInitialized = false;
+let initialized = false;
+
+// Helper functions for auto-archiving logic
+const isWarrantyExpired = (createdAt: string, warrantyMonths: number = 3): boolean => {
+  if (warrantyMonths === 0) return true;
+  const saleDate = new Date(createdAt);
+  const expirationDate = new Date(saleDate);
+  expirationDate.setMonth(expirationDate.getMonth() + warrantyMonths);
+  return new Date() > expirationDate;
+};
+
+const shouldAutoArchive = (receivable: Receivable): boolean => {
+  // Regra: Só arquiva se PAGO + GARANTIA EXPIRADA
+  const isPaid = receivable.status === 'paid';
+  const warrantyExpired = isWarrantyExpired(
+    receivable.createdAt, 
+    receivable.warrantyMonths || 3
+  );
+  return isPaid && warrantyExpired;
+};
 
 const genIdR = () => (typeof crypto !== "undefined" && (crypto as any).randomUUID ? (crypto as any).randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`);
 
 function loadReceivablesCache() {
   // Cache apenas em memória - não lê localStorage
-  if (receivablesInitialized) return;
-  receivablesCache = [];
-  receivablesInitialized = true;
+  if (initialized) return;
+  receivablesCache.length = 0;
+  initialized = true;
 }
 
 function saveReceivablesCache() {
@@ -429,11 +448,11 @@ export const receivablesStore = {
   },
 
   getActiveReceivables(): Receivable[] {
-    return this.getAllReceivables().filter((r) => !r.archived);
+    return this.getAllReceivables().filter((r) => !shouldAutoArchive(r));
   },
 
   getArchivedReceivables(): Receivable[] {
-    return this.getAllReceivables().filter((r) => r.archived);
+    return this.getAllReceivables().filter((r) => shouldAutoArchive(r));
   },
 
   getReceivableById(id: string): Receivable | undefined {
