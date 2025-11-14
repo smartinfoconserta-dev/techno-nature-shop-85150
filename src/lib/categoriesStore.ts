@@ -5,6 +5,7 @@ export interface Category {
   name: string;
   icon: string;
   createdAt: string;
+  parentCategoryId: string | null;
 }
 
 export const categoriesStore = {
@@ -25,6 +26,7 @@ export const categoriesStore = {
       name: cat.name,
       icon: cat.icon,
       createdAt: cat.created_at,
+      parentCategoryId: cat.parent_category_id,
     }));
   },
 
@@ -33,7 +35,51 @@ export const categoriesStore = {
     return categories.map((c) => c.name).sort();
   },
 
-  async addCategory(name: string, icon: string): Promise<Category> {
+  async getParentCategories(): Promise<Category[]> {
+    const { data, error } = await supabase
+      .from("categories")
+      .select("*")
+      .is("deleted_at", null)
+      .is("parent_category_id", null)
+      .order("name");
+
+    if (error) {
+      console.error("Erro ao buscar categorias pai:", error);
+      return [];
+    }
+
+    return data.map((cat) => ({
+      id: cat.id,
+      name: cat.name,
+      icon: cat.icon,
+      createdAt: cat.created_at,
+      parentCategoryId: cat.parent_category_id,
+    }));
+  },
+
+  async getSubCategories(parentId: string): Promise<Category[]> {
+    const { data, error } = await supabase
+      .from("categories")
+      .select("*")
+      .is("deleted_at", null)
+      .eq("parent_category_id", parentId)
+      .order("name");
+
+    if (error) {
+      console.error("Erro ao buscar subcategorias:", error);
+      return [];
+    }
+
+    return data.map((cat) => ({
+      id: cat.id,
+      name: cat.name,
+      icon: cat.icon,
+      createdAt: cat.created_at,
+      parentCategoryId: cat.parent_category_id,
+    }));
+  },
+
+  async addCategory(name: string, icon: string, parentCategoryId: string | null = null): Promise<Category> {
     const trimmedName = name.trim();
 
     if (trimmedName.length < 3 || trimmedName.length > 30) {
@@ -42,7 +88,7 @@ export const categoriesStore = {
 
     const { data, error } = await supabase
       .from("categories")
-      .insert([{ name: trimmedName, icon }])
+      .insert([{ name: trimmedName, icon, parent_category_id: parentCategoryId }])
       .select()
       .single();
 
@@ -58,6 +104,7 @@ export const categoriesStore = {
       name: data.name,
       icon: data.icon,
       createdAt: data.created_at,
+      parentCategoryId: data.parent_category_id,
     };
   },
 
@@ -87,6 +134,7 @@ export const categoriesStore = {
       name: data.name,
       icon: data.icon,
       createdAt: data.created_at,
+      parentCategoryId: data.parent_category_id,
     };
   },
 
@@ -142,6 +190,7 @@ export const categoriesStore = {
         name: cat.name,
         icon: cat.icon,
         createdAt: cat.created_at,
+        parentCategoryId: cat.parent_category_id,
       })) || []
     );
   },

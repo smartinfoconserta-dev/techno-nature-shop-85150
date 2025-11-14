@@ -45,6 +45,7 @@ export type Database = {
           icon: string
           id: string
           name: string
+          parent_category_id: string | null
         }
         Insert: {
           created_at?: string
@@ -52,6 +53,7 @@ export type Database = {
           icon: string
           id?: string
           name: string
+          parent_category_id?: string | null
         }
         Update: {
           created_at?: string
@@ -59,8 +61,17 @@ export type Database = {
           icon?: string
           id?: string
           name?: string
+          parent_category_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "categories_parent_category_id_fkey"
+            columns: ["parent_category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       coupons: {
         Row: {

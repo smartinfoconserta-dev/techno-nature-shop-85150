@@ -20,10 +20,16 @@ import { Category } from "@/lib/categoriesStore";
 import * as Icons from "lucide-react";
 
 interface CategoryFormProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onSubmit: (name: string, icon: string) => void;
-  editingCategory?: Category | null;
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (name: string, icon: string, parentCategoryId: string | null) => void;
+  initialData?: {
+    name: string;
+    icon: string;
+    parentCategoryId: string | null;
+  };
+  parentCategories?: Category[];
+  selectedParentForNew?: string | null;
 }
 
 const iconOptions = [
@@ -36,49 +42,62 @@ const iconOptions = [
   { name: "Cable", label: "Acessórios" },
   { name: "Watch", label: "Relógio" },
   { name: "Camera", label: "Câmera" },
-  { name: "Package", label: "Outro" },
+  { name: "Package", label: "Outros" },
+  { name: "Bike", label: "Bicicleta" },
+  { name: "Wrench", label: "Hardware" },
+  { name: "Code", label: "Software" },
+  { name: "Mouse", label: "Periféricos" },
+  { name: "ShoppingBag", label: "Bazar" },
 ];
 
 const CategoryForm = ({
-  open,
-  onOpenChange,
+  isOpen,
+  onClose,
   onSubmit,
-  editingCategory,
+  initialData,
+  parentCategories = [],
+  selectedParentForNew = null,
 }: CategoryFormProps) => {
   const [name, setName] = useState("");
   const [icon, setIcon] = useState("Package");
+  const [parentCategoryId, setParentCategoryId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (editingCategory) {
-      setName(editingCategory.name);
-      setIcon(editingCategory.icon);
+    if (initialData) {
+      setName(initialData.name);
+      setIcon(initialData.icon);
+      setParentCategoryId(initialData.parentCategoryId);
     } else {
       setName("");
       setIcon("Package");
+      setParentCategoryId(selectedParentForNew);
     }
-  }, [editingCategory, open]);
+  }, [initialData, isOpen, selectedParentForNew]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
-    onSubmit(name, icon);
+    onSubmit(name, icon, parentCategoryId);
     setName("");
     setIcon("Package");
+    setParentCategoryId(null);
   };
 
   const IconComponent = Icons[icon as keyof typeof Icons] as React.ComponentType<{ className?: string }>;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            {editingCategory ? "Editar Categoria" : "Nova Categoria"}
+            {initialData ? "Editar Categoria" : "Nova Categoria"}
           </DialogTitle>
           <DialogDescription>
-            {editingCategory
+            {initialData
               ? "Atualize os dados da categoria"
-              : "Adicione uma nova categoria ao catálogo"}
+              : selectedParentForNew 
+                ? "Adicione uma nova subcategoria"
+                : "Adicione uma nova categoria ao catálogo"}
           </DialogDescription>
         </DialogHeader>
 
@@ -89,7 +108,7 @@ const CategoryForm = ({
               id="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Ex: Videogames"
+              placeholder="Ex: Bicicletas, Hardware, etc."
               required
             />
           </div>
@@ -116,6 +135,35 @@ const CategoryForm = ({
             </Select>
           </div>
 
+          {!initialData && parentCategories.length > 0 && (
+            <div className="space-y-2">
+              <Label htmlFor="parent">Categoria Pai (opcional)</Label>
+              <Select 
+                value={parentCategoryId || "none"} 
+                onValueChange={(val) => setParentCategoryId(val === "none" ? null : val)}
+                disabled={!!selectedParentForNew}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Categoria raiz" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Categoria raiz</SelectItem>
+                  {parentCategories.map((parent) => {
+                    const ParentIcon = Icons[parent.icon as keyof typeof Icons] as React.ComponentType<{ className?: string }>;
+                    return (
+                      <SelectItem key={parent.id} value={parent.id}>
+                        <div className="flex items-center gap-2">
+                          <ParentIcon className="w-4 h-4" />
+                          <span>{parent.name}</span>
+                        </div>
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           <div className="flex items-center gap-2 p-3 bg-muted rounded-md">
             <span className="text-sm text-muted-foreground">Preview:</span>
             <IconComponent className="w-5 h-5" />
@@ -126,13 +174,13 @@ const CategoryForm = ({
             <Button
               type="button"
               variant="outline"
-              onClick={() => onOpenChange(false)}
+              onClick={onClose}
               className="flex-1"
             >
               Cancelar
             </Button>
             <Button type="submit" className="flex-1">
-              {editingCategory ? "Salvar" : "Adicionar"}
+              {initialData ? "Salvar" : "Adicionar"}
             </Button>
           </div>
         </form>

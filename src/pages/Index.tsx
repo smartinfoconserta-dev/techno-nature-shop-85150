@@ -25,10 +25,13 @@ const Index = () => {
   const [priceSort, setPriceSort] = useState<"none" | "asc" | "desc">("none");
   const [deepLinkProductId, setDeepLinkProductId] = useState<string | null>(null);
   
-  // Estados para filtros de notebooks
-  const [selectedProcessors, setSelectedProcessors] = useState<string[]>([]);
-  const [selectedRAMs, setSelectedRAMs] = useState<string[]>([]);
-  const [hasDedicatedGPU, setHasDedicatedGPU] = useState<boolean | null>(null);
+  // Estados para filtros simplificados
+  const [minPrice, setMinPrice] = useState(0);
+  const [maxPrice, setMaxPrice] = useState(999999);
+  const [sortBy, setSortBy] = useState("newest");
+  const [selectedProcessor, setSelectedProcessor] = useState("all");
+  const [selectedRam, setSelectedRam] = useState("all");
+  const [hasDedicatedGpu, setHasDedicatedGpu] = useState<boolean | null>(null);
   useEffect(() => {
     const initCategories = async () => {
       const names = await categoriesStore.getCategoryNames();
@@ -105,42 +108,46 @@ const Index = () => {
       const categoryMatch = product.category === selectedCategory;
       const brandMatch = selectedBrand === "all" || product.brand === selectedBrand;
       const searchLower = searchQuery.toLowerCase();
-      const globalSearchMatch = searchQuery === "" || product.name.toLowerCase().includes(searchLower) || product.brand.toLowerCase().includes(searchLower) || product.specs.toLowerCase().includes(searchLower);
-      const filterSearchLower = filterSearch.toLowerCase();
-      const filterSearchMatch = filterSearch === "" || product.name.toLowerCase().includes(filterSearchLower) || product.brand.toLowerCase().includes(filterSearchLower) || product.specs.toLowerCase().includes(filterSearchLower) || product.description.toLowerCase().includes(filterSearchLower);
-      const priceMatch = product.price >= priceRange[0] && product.price <= priceRange[1];
+      const searchMatch = searchQuery === "" || 
+        product.name.toLowerCase().includes(searchLower) || 
+        product.brand.toLowerCase().includes(searchLower) || 
+        product.specs.toLowerCase().includes(searchLower);
       
-      // Filtros de notebooks
+      const priceMatch = product.price >= minPrice && product.price <= maxPrice;
+      
+      // Filtros específicos de notebooks
       let notebookMatch = true;
       if (selectedCategory === "Notebooks") {
-        if (selectedProcessors.length > 0) {
-          notebookMatch = notebookMatch && product.specifications?.processor 
-            ? selectedProcessors.includes(product.specifications.processor)
-            : false;
+        if (selectedProcessor !== "all") {
+          notebookMatch = notebookMatch && product.specifications?.processor === selectedProcessor;
         }
         
-        if (selectedRAMs.length > 0) {
-          notebookMatch = notebookMatch && product.specifications?.ram 
-            ? selectedRAMs.includes(product.specifications.ram)
-            : false;
+        if (selectedRam !== "all") {
+          notebookMatch = notebookMatch && product.specifications?.ram === selectedRam;
         }
         
-        if (hasDedicatedGPU === true) {
+        if (hasDedicatedGpu === true) {
           notebookMatch = notebookMatch && (product.specifications?.dedicatedGPU === true);
         }
       }
       
-      return categoryMatch && brandMatch && globalSearchMatch && filterSearchMatch && priceMatch && notebookMatch;
+      return categoryMatch && brandMatch && searchMatch && priceMatch && notebookMatch;
     });
 
     // Aplicar ordenação
-    if (priceSort === "asc") {
+    if (sortBy === "price-asc") {
       filtered.sort((a, b) => a.price - b.price);
-    } else if (priceSort === "desc") {
+    } else if (sortBy === "price-desc") {
       filtered.sort((a, b) => b.price - a.price);
+    } else if (sortBy === "oldest") {
+      filtered.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    } else {
+      // newest (default)
+      filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     }
+    
     return filtered;
-  }, [products, selectedCategory, selectedBrand, searchQuery, filterSearch, priceRange, priceSort, selectedProcessors, selectedRAMs, hasDedicatedGPU]);
+  }, [products, selectedCategory, selectedBrand, searchQuery, minPrice, maxPrice, sortBy, selectedProcessor, selectedRam, hasDedicatedGpu]);
   const scrollToTop = () => {
     window.scrollTo({
       top: 0,
@@ -153,12 +160,12 @@ const Index = () => {
     }
     setSelectedBrand("all");
     setSearchQuery("");
-    setFilterSearch("");
-    setPriceRange([0, maxProductPrice]);
-    setPriceSort("none");
-    setSelectedProcessors([]);
-    setSelectedRAMs([]);
-    setHasDedicatedGPU(null);
+    setMinPrice(0);
+    setMaxPrice(999999);
+    setSortBy("newest");
+    setSelectedProcessor("all");
+    setSelectedRam("all");
+    setHasDedicatedGpu(null);
     scrollToTop();
   };
   return <div className="min-h-screen bg-background">
@@ -196,25 +203,24 @@ const Index = () => {
           
           <div className="flex items-center gap-3">
             <ProductFilters 
-              selectedCategory={selectedCategory} 
-              onCategoryChange={setSelectedCategory} 
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
               selectedBrand={selectedBrand} 
               onBrandChange={setSelectedBrand} 
               brands={brands} 
-              categories={categories} 
-              priceRange={priceRange} 
-              onPriceRangeChange={setPriceRange} 
-              maxPrice={maxProductPrice} 
-              filterSearch={filterSearch} 
-              onFilterSearchChange={setFilterSearch} 
-              priceSort={priceSort} 
-              onPriceSortChange={setPriceSort}
-              selectedProcessors={selectedProcessors}
-              onProcessorsChange={setSelectedProcessors}
-              selectedRAMs={selectedRAMs}
-              onRAMsChange={setSelectedRAMs}
-              hasDedicatedGPU={hasDedicatedGPU}
-              onDedicatedGPUChange={setHasDedicatedGPU}
+              sortBy={sortBy}
+              onSortChange={setSortBy}
+              minPrice={minPrice}
+              maxPrice={maxPrice}
+              onMinPriceChange={setMinPrice}
+              onMaxPriceChange={setMaxPrice}
+              selectedProcessor={selectedProcessor}
+              onProcessorChange={setSelectedProcessor}
+              selectedRam={selectedRam}
+              onRamChange={setSelectedRam}
+              hasDedicatedGpu={hasDedicatedGpu}
+              onDedicatedGpuChange={setHasDedicatedGpu}
+              selectedCategory={selectedCategory}
             />
             <p className="text-sm text-muted-foreground">
               {filteredProducts.length} {filteredProducts.length === 1 ? 'produto' : 'produtos'}
