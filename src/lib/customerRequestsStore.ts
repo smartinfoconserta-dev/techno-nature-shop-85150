@@ -74,6 +74,7 @@ export const customerRequestsStore = {
     const { data, error } = await (supabase as any)
       .from("customer_requests")
       .select("*")
+      .is("deleted_at", null)
       .order("created_at", { ascending: false });
 
     if (error) throw error;
@@ -86,6 +87,7 @@ export const customerRequestsStore = {
       .from("customer_requests")
       .select("*")
       .eq("customer_id", customerId)
+      .is("deleted_at", null)
       .order("created_at", { ascending: false });
 
     if (error) throw error;
