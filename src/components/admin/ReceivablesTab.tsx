@@ -6,7 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DollarSign, Calendar, Eye, Trash2, AlertCircle, UserPlus, Edit, FileDown, ShoppingCart, CheckCircle2, Archive, TestTube } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { DollarSign, Calendar, Eye, Trash2, AlertCircle, UserPlus, Edit, FileDown, ShoppingCart, CheckCircle2, Archive, TestTube, Search, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { generateCustomerReportPDF } from "@/lib/generateCustomerReportPDF";
 import { format } from "date-fns";
@@ -31,24 +32,14 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-interface CustomerGroup {
-  customer: Customer | undefined;
-  receivables: Receivable[];
-  totalAmount: number;
-  paidAmount: number;
-  remainingAmount: number;
-  activeCount: number;
-  hasOverdue: boolean;
-}
-
 const ReceivablesTab = () => {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<"active" | "archived">("active");
-  const [viewMode, setViewMode] = useState<"customer" | "purchase">("customer");
   const [receivables, setReceivables] = useState<Receivable[]>([]);
   const [filteredReceivables, setFilteredReceivables] = useState<Receivable[]>([]);
   const [statusFilter, setStatusFilter] = useState("all");
   const [customerFilter, setCustomerFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [selectedReceivable, setSelectedReceivable] = useState<Receivable | null>(null);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
@@ -68,7 +59,7 @@ const ReceivablesTab = () => {
 
   useEffect(() => {
     applyFilters();
-  }, [receivables, statusFilter, customerFilter]);
+  }, [receivables, statusFilter, customerFilter, searchQuery]);
 
   const loadReceivables = () => {
     const data = activeTab === "active" 
@@ -80,6 +71,16 @@ const ReceivablesTab = () => {
   const applyFilters = () => {
     let filtered = [...receivables];
 
+    // Filtro de busca por texto
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(r => 
+        r.productName.toLowerCase().includes(query) ||
+        r.customerName.toLowerCase().includes(query) ||
+        (r.notes && r.notes.toLowerCase().includes(query))
+      );
+    }
+
     if (statusFilter !== "all") {
       filtered = filtered.filter(r => r.status === statusFilter);
     }
@@ -89,6 +90,20 @@ const ReceivablesTab = () => {
     }
 
     setFilteredReceivables(filtered);
+  };
+
+  const getStatusCounts = () => {
+    const all = receivables.length;
+    const pending = receivables.filter(r => r.status === "pending").length;
+    const partial = receivables.filter(r => r.status === "partial").length;
+    const paid = receivables.filter(r => r.status === "paid").length;
+    return { all, pending, partial, paid };
+  };
+
+  const clearFilters = () => {
+    setSearchQuery("");
+    setStatusFilter("all");
+    setCustomerFilter("all");
   };
 
   const getTotals = () => {
@@ -204,45 +219,6 @@ const ReceivablesTab = () => {
     return new Date(receivable.dueDate) < new Date();
   };
 
-  const [customerGroups, setCustomerGroups] = useState<CustomerGroup[]>([]);
-
-  useEffect(() => {
-    const groupByCustomer = async () => {
-      const grouped: Record<string, CustomerGroup> = {};
-      
-      for (const receivable of filteredReceivables) {
-        const customerId = receivable.customerId;
-        if (!grouped[customerId]) {
-          const customer = await customersStore.getCustomerById(customerId);
-          grouped[customerId] = {
-            customer,
-            receivables: [],
-            totalAmount: 0,
-            paidAmount: 0,
-            remainingAmount: 0,
-            activeCount: 0,
-            hasOverdue: false,
-          };
-        }
-        grouped[customerId].receivables.push(receivable);
-        grouped[customerId].totalAmount += receivable.totalAmount;
-        grouped[customerId].paidAmount += receivable.paidAmount;
-        grouped[customerId].remainingAmount += receivable.remainingAmount;
-        if (receivable.status !== "paid") grouped[customerId].activeCount++;
-        if (isOverdue(receivable)) grouped[customerId].hasOverdue = true;
-      }
-      
-      const sorted = Object.values(grouped).sort((a, b) => {
-        if (!a.customer || !b.customer) return 0;
-        return a.customer.code.localeCompare(b.customer.code);
-      });
-      
-      setCustomerGroups(sorted);
-    };
-    
-    groupByCustomer();
-  }, [filteredReceivables]);
-
   const handleEditCustomer = (customer: Customer) => {
     setCustomerToEdit(customer);
     setShowEditCustomerDialog(true);
@@ -257,11 +233,14 @@ const ReceivablesTab = () => {
   };
 
   const totals = getTotals();
+  const statusCounts = getStatusCounts();
   const [customers, setCustomers] = useState<Customer[]>([]);
 
   useEffect(() => {
     customersStore.getActiveCustomers().then(setCustomers);
   }, []);
+
+  const hasActiveFilters = searchQuery || statusFilter !== "all" || customerFilter !== "all";
 
   return (
     <div className="space-y-6">
@@ -308,53 +287,71 @@ const ReceivablesTab = () => {
         </CardContent>
       </Card>
 
-      {/* Filtros e Modo de Visualização */}
+      {/* Filtros */}
       <Card>
         <CardContent className="pt-6">
-          <div className="flex flex-wrap gap-4">
-            <div className="flex-1 min-w-[200px]">
-              <label className="text-sm font-medium mb-2 block">Modo de Visualização</label>
-              <Select value={viewMode} onValueChange={(v) => setViewMode(v as "customer" | "purchase")}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="customer">👥 Ver por Cliente</SelectItem>
-                  <SelectItem value="purchase">📦 Ver por Compra</SelectItem>
-                </SelectContent>
-              </Select>
+          <div className="space-y-4">
+            {/* Barra de Pesquisa */}
+            <div className="w-full">
+              <label className="text-sm font-medium mb-2 block">Pesquisar</label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Pesquisar por produto, cliente ou observações..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
             </div>
 
-            <div className="flex-1 min-w-[200px]">
-              <label className="text-sm font-medium mb-2 block">Status</label>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas</SelectItem>
-                  <SelectItem value="pending">🔴 Pendente</SelectItem>
-                  <SelectItem value="partial">🟡 Parcial</SelectItem>
-                  <SelectItem value="paid">🟢 Quitado</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            {/* Filtros de Status e Cliente */}
+            <div className="flex flex-wrap gap-4">
+              <div className="flex-1 min-w-[200px]">
+                <label className="text-sm font-medium mb-2 block">Status</label>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas ({statusCounts.all})</SelectItem>
+                    <SelectItem value="pending">🔴 Pendente ({statusCounts.pending})</SelectItem>
+                    <SelectItem value="partial">🟡 Parcial ({statusCounts.partial})</SelectItem>
+                    <SelectItem value="paid">🟢 Quitado ({statusCounts.paid})</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-            <div className="flex-1 min-w-[200px]">
-              <label className="text-sm font-medium mb-2 block">Cliente</label>
-              <Select value={customerFilter} onValueChange={setCustomerFilter}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  {customers.map(customer => (
-                    <SelectItem key={customer.id} value={customer.id}>
-                      {customer.code} - {customer.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex-1 min-w-[200px]">
+                <label className="text-sm font-medium mb-2 block">Cliente</label>
+                <Select value={customerFilter} onValueChange={setCustomerFilter}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    {customers.map(customer => (
+                      <SelectItem key={customer.id} value={customer.id}>
+                        {customer.code} - {customer.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Botão Limpar Filtros */}
+              {hasActiveFilters && (
+                <div className="flex-1 min-w-[200px] flex items-end">
+                  <Button
+                    variant="outline"
+                    onClick={clearFilters}
+                    className="w-full gap-2"
+                  >
+                    <X className="h-4 w-4" />
+                    Limpar Filtros
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
         </CardContent>
@@ -412,190 +409,48 @@ const ReceivablesTab = () => {
       </div>
 
       {/* Lista de Contas */}
-      {viewMode === "customer" ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>👥 Clientes ({customerGroups.length})</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {customerGroups.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
-                <p>Nenhum cliente encontrado</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {customerGroups.map((group) => {
-                  if (!group.customer) return null;
-                  return (
-                    <div
-                      key={group.customer.id}
-                      className={`p-4 rounded-lg border-2 ${
-                        group.hasOverdue ? "border-red-300 bg-red-50 dark:bg-red-950/20" : "border-border bg-muted/30"
-                      }`}
-                    >
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            {group.hasOverdue && (
-                              <Badge variant="destructive" className="gap-1">
-                                <AlertCircle className="h-3 w-3" />
-                                VENCIDO
-                              </Badge>
-                            )}
-                          </div>
-                          <h3 className="font-semibold text-lg">
-                            {group.customer.code} - {group.customer.name}
-                          </h3>
-                          <p className="text-sm text-muted-foreground">
-                            {group.customer.type === "lojista" ? "🏪 Lojista" : "👤 Cliente"}
-                            {group.customer.phone && ` • ${group.customer.phone}`}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3 text-sm">
-                        <div>
-                          <span className="text-muted-foreground">Total:</span>
-                          <p className="font-semibold">R$ {group.totalAmount.toFixed(2)}</p>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">Pago:</span>
-                          <p className="font-semibold text-green-600">R$ {group.paidAmount.toFixed(2)}</p>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">Resta:</span>
-                          <p className="font-bold text-red-600">R$ {group.remainingAmount.toFixed(2)}</p>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">Contas:</span>
-                          <p className="font-semibold">{group.activeCount} ativas</p>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-wrap gap-2">
-                        <Button
-                          size="sm"
-                          onClick={() => {
-                            setSelectedCustomerId(group.customer!.id);
-                            setShowCustomerDialog(true);
-                          }}
-                        >
-                          👁️ Ver Compras
-                        </Button>
-                        {group.remainingAmount > 0 && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setSelectedCustomerId(group.customer!.id);
-                              setShowCustomerPaymentDialog(true);
-                            }}
-                          >
-                            💰 Registrar Pagamento
-                          </Button>
-                        )}
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleEditCustomer(group.customer!)}
-                        >
-                          <Edit className="h-4 w-4 mr-1" />
-                          Editar Cadastro
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            if (group.customer) {
-                              generateCustomerReportPDF(group.customer, group.receivables);
-                              toast({
-                                title: "PDF gerado!",
-                                description: "Download iniciado com sucesso",
-                              });
-                            }
-                          }}
-                        >
-                          <FileDown className="h-4 w-4 mr-1" />
-                          Baixar PDF
-                        </Button>
-                        {group.remainingAmount === 0 && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              group.receivables.forEach(r => {
-                                if (activeTab === "active") {
-                                  receivablesStore.archiveReceivable(r.id);
-                                } else {
-                                  receivablesStore.unarchiveReceivable(r.id);
-                                }
-                              });
-                              
-                              toast({
-                                title: activeTab === "active" ? "Cliente arquivado!" : "Cliente reativado!",
-                                description: activeTab === "active" 
-                                  ? "Contas movidas para o histórico" 
-                                  : "Contas voltaram para ativas",
-                              });
-                              
-                              loadReceivables();
-                            }}
-                          >
-                            {activeTab === "active" ? "📦 Arquivar" : "♻️ Desarquivar"}
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle>📋 Lista de Contas ({filteredReceivables.length})</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {filteredReceivables.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
-                <p>Nenhuma conta a receber encontrada</p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {filteredReceivables.map((receivable) => (
-                  <ReceivableItem
-                    key={receivable.id}
-                    receivable={receivable}
-                    isOverdue={isOverdue(receivable)}
-                    onViewDetails={(r) => {
-                      setSelectedReceivable(r);
-                      setShowDetailsDialog(true);
-                    }}
-                    onAddPayment={handleAddPayment}
-                    onEditCustomer={async (customerId) => {
-                      const customer = await customersStore.getCustomerById(customerId);
-                      if (customer) {
-                        setCustomerToEdit(customer);
-                        setShowEditCustomerDialog(true);
-                      }
-                    }}
-                    onGeneratePDF={async (customerId) => {
-                      const customer = await customersStore.getCustomerById(customerId);
-                      if (customer) {
-                        const receivables = receivablesStore.getReceivablesByCustomer(customerId);
-                        generateCustomerReportPDF(customer, receivables);
-                        toast({ title: "PDF gerado com sucesso!" });
-                      }
-                    }}
-                  />
-                ))}
-              </div>
-            )}
+      <Card>
+        <CardHeader>
+          <CardTitle>📋 Lista de Contas ({filteredReceivables.length})</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {filteredReceivables.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <p>Nenhuma conta a receber encontrada</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {filteredReceivables.map((receivable) => (
+                <ReceivableItem
+                  key={receivable.id}
+                  receivable={receivable}
+                  isOverdue={isOverdue(receivable)}
+                  onViewDetails={(r) => {
+                    setSelectedReceivable(r);
+                    setShowDetailsDialog(true);
+                  }}
+                  onAddPayment={handleAddPayment}
+                  onEditCustomer={async (customerId) => {
+                    const customer = await customersStore.getCustomerById(customerId);
+                    if (customer) {
+                      setCustomerToEdit(customer);
+                      setShowEditCustomerDialog(true);
+                    }
+                  }}
+                  onGeneratePDF={async (customerId) => {
+                    const customer = await customersStore.getCustomerById(customerId);
+                    if (customer) {
+                      const receivables = receivablesStore.getReceivablesByCustomer(customerId);
+                      generateCustomerReportPDF(customer, receivables);
+                      toast({ title: "PDF gerado com sucesso!" });
+                    }
+                  }}
+                />
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
-      )}
 
       <NewCustomerDialog
         open={showNewCustomerDialog}
