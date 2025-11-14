@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { customersStore, Customer } from "@/lib/customersStore";
-import { UserPlus } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Check, ChevronsUpDown, UserPlus } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { customersStore, Customer } from "@/lib/customersStore";
 
 interface CustomerSelectorProps {
   selectedCustomer: Customer | null;
@@ -13,38 +15,70 @@ interface CustomerSelectorProps {
 }
 
 const CustomerSelector = ({ selectedCustomer, onCustomerSelect, onNewCustomer, customers }: CustomerSelectorProps) => {
-  const handleSelectChange = (value: string) => {
-    if (value === "new") {
+  const [open, setOpen] = useState(false);
+
+  const handleSelectChange = (customerId: string) => {
+    if (customerId === "new") {
       onNewCustomer();
+      setOpen(false);
       return;
     }
     
-    const customer = customers.find(c => c.id === value);
+    const customer = customers.find(c => c.id === customerId);
     onCustomerSelect(customer || null);
+    setOpen(false);
   };
 
   return (
     <div className="space-y-4">
       <div>
         <label className="text-sm font-medium mb-2 block">Cliente/Lojista</label>
-        <Select value={selectedCustomer?.id || ""} onValueChange={handleSelectChange}>
-          <SelectTrigger>
-            <SelectValue placeholder="Selecionar cliente..." />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="new">
-              <div className="flex items-center gap-2">
-                <UserPlus className="h-4 w-4" />
-                <span className="font-medium">+ Cadastrar Novo Cliente</span>
-              </div>
-            </SelectItem>
-            {customers.map((customer) => (
-              <SelectItem key={customer.id} value={customer.id}>
-                {customer.code} - {customer.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <Popover open={open} onOpenChange={setOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              role="combobox"
+              aria-expanded={open}
+              className="w-full justify-between"
+            >
+              {selectedCustomer
+                ? `${selectedCustomer.code} - ${selectedCustomer.name}`
+                : "Selecionar cliente..."}
+              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-full p-0" align="start">
+            <Command>
+              <CommandInput placeholder="Buscar cliente..." />
+              <CommandEmpty>Nenhum cliente encontrado.</CommandEmpty>
+              <CommandGroup>
+                <CommandItem
+                  value="new"
+                  onSelect={() => handleSelectChange("new")}
+                  className="text-primary font-semibold"
+                >
+                  <UserPlus className="mr-2 h-4 w-4" />
+                  + Cadastrar Novo Cliente
+                </CommandItem>
+                {customers.map((customer) => (
+                  <CommandItem
+                    key={customer.id}
+                    value={`${customer.code} ${customer.name}`}
+                    onSelect={() => handleSelectChange(customer.id)}
+                  >
+                    <Check
+                      className={cn(
+                        "mr-2 h-4 w-4",
+                        selectedCustomer?.id === customer.id ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                    {customer.code} - {customer.name}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </Command>
+          </PopoverContent>
+        </Popover>
       </div>
 
       {selectedCustomer && (

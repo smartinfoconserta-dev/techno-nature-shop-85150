@@ -148,7 +148,7 @@ export function AddManualReceivableDialog({
 
       const finalProductId = productSource === "catalog" 
         ? selectedProductId 
-        : `manual_${Date.now()}`;
+        : null; // Entrada manual não tem product_id vinculado
 
       // Calcula data de expiração da garantia
       let warrantyExpiresAt: string | undefined;
