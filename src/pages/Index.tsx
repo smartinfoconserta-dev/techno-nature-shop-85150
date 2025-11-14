@@ -3,19 +3,20 @@ import Header from "@/components/Header";
 import ProductFilters from "@/components/ProductFilters";
 import ProductCard from "@/components/ProductCard";
 import ProductDetailsDialog from "@/components/ProductDetailsDialog";
+import { CategoryDropdownButton } from "@/components/CategoryDropdownButton";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowUp } from "lucide-react";
 import { brandsStore } from "@/lib/brandsStore";
 import { productsStore } from "@/lib/productsStore";
-import { categoriesStore } from "@/lib/categoriesStore";
+import { categoriesStore, CategoryTreeNode } from "@/lib/categoriesStore";
 import heroImage from "@/assets/hero-banner.jpg";
 
 const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedBrand, setSelectedBrand] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [categories, setCategories] = useState<string[]>([]);
+  const [categoryTree, setCategoryTree] = useState<CategoryTreeNode[]>([]);
   const [brands, setBrands] = useState<string[]>([]);
   const [products, setProducts] = useState(productsStore.getAvailableProducts());
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -73,8 +74,8 @@ const Index = () => {
   }, [selectedCategory]);
 
   const loadCategories = async () => {
-    const categoryNames = await categoriesStore.getCategoryNames();
-    setCategories(categoryNames);
+    const tree = await categoriesStore.getCategoryTree();
+    setCategoryTree(tree);
   };
 
   const loadBrands = async () => {
@@ -206,16 +207,13 @@ const Index = () => {
             >
               Todas as Categorias
             </Button>
-            {categories.map((category) => (
-              <Button
-                key={category}
-                variant={selectedCategory === category ? "default" : "outline"}
-                size="sm"
-                onClick={() => handleSelectCategory(category)}
-                className="whitespace-nowrap"
-              >
-                {category}
-              </Button>
+            {categoryTree.map((category) => (
+              <CategoryDropdownButton
+                key={category.id}
+                category={category}
+                selectedCategory={selectedCategory}
+                onSelectCategory={handleSelectCategory}
+              />
             ))}
           </div>
         </div>
