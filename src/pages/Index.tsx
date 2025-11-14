@@ -35,9 +35,23 @@ const Index = () => {
   useEffect(() => {
     const init = async () => {
       setIsLoading(true);
+      
+      // 1. Carregar categorias primeiro
+      const tree = await categoriesStore.getCategoryTree();
+      setCategoryTree(tree);
+      
+      // 2. Encontrar e definir Notebooks como categoria inicial
+      const notebooksCategory = tree.find(cat => 
+        cat.name.toLowerCase().includes('notebook')
+      );
+      if (notebooksCategory) {
+        setSelectedCategory(notebooksCategory.id);
+      }
+      
+      // 3. Carregar produtos
       await productsStore.refreshFromBackend();
-      await loadCategories();
       loadProducts();
+      
       setIsLoading(false);
     };
     init();
@@ -69,19 +83,6 @@ const Index = () => {
     }
   }, [deepLinkProductId, products]);
 
-  // Buscar e definir categoria Notebooks como inicial
-  useEffect(() => {
-    const findNotebooksCategory = async () => {
-      const tree = await categoriesStore.getCategoryTree();
-      const notebooksCategory = tree.find(cat => 
-        cat.name.toLowerCase().includes('notebook')
-      );
-      if (notebooksCategory) {
-        setSelectedCategory(notebooksCategory.id);
-      }
-    };
-    findNotebooksCategory();
-  }, []);
 
   useEffect(() => {
     loadBrands();
