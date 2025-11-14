@@ -67,12 +67,12 @@ const AddPaymentDialog = ({ open, onOpenChange, receivable, onConfirm }: AddPaym
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md max-h-[90vh] flex flex-col">
+      <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>💵 Registrar Pagamento</DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto pr-2">
+        <div className="max-h-[60vh] overflow-y-auto pr-2">
           <div className="space-y-4 py-4">
             <div className="space-y-2 bg-muted/50 p-4 rounded-lg">
               <div className="flex justify-between text-sm">
@@ -183,7 +183,7 @@ const AddPaymentDialog = ({ open, onOpenChange, receivable, onConfirm }: AddPaym
           </div>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="mt-4">
           <Button variant="outline" onClick={handleClose}>
             Cancelar
           </Button>
