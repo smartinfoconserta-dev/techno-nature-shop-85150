@@ -8,7 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { LogOut, ShoppingBag, DollarSign, Clock, Shield, Loader2, FileText, Notebook, Plus, Trash2, XCircle, CheckCircle2, Archive, ChevronDown } from "lucide-react";
+import { LogOut, ShoppingBag, DollarSign, Clock, Shield, Loader2, FileText, Notebook, Plus, Trash2, XCircle, CheckCircle2, Archive, ChevronDown, Printer } from "lucide-react";
 import { calculateWarranty } from "@/lib/warrantyHelper";
 import { format } from "date-fns";
 import { CustomerStatsChart } from "@/components/customer/CustomerStatsChart";
@@ -256,34 +256,36 @@ const CustomerPortal = () => {
             <Sheet>
               <SheetTrigger asChild>
                 <Button variant="outline" size="sm">
-                  <Notebook className="h-4 w-4 sm:mr-2" />
-                  <span className="hidden sm:inline">Minha Caderneta</span>
+                  <Notebook className="h-4 w-4 mr-2" />
+                  <span className="hidden md:inline">Minha Caderneta</span>
+                  <span className="md:hidden">Novo Item</span>
                 </Button>
               </SheetTrigger>
               <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto">
                 <SheetHeader>
                   <SheetTitle>Minha Caderneta</SheetTitle>
                 </SheetHeader>
-                <div className="mt-4">
+                <div className="space-y-4 mt-4">
+                  <CustomerRequestsList refreshKey={refreshKey} />
                   <Button 
                     onClick={() => setShowAddDialog(true)} 
-                    className="w-full mb-4"
+                    className="w-full"
                   >
                     <Plus className="w-4 h-4 mr-2" />
-                    Adicionar Item
+                    Adicionar Novo Item
                   </Button>
-                  <CustomerRequestsList key={refreshKey} refreshKey={refreshKey} />
                 </div>
               </SheetContent>
             </Sheet>
             
             <Button variant="outline" onClick={handlePrintPDF} size="sm">
-              <FileText className="h-4 w-4 sm:mr-2" />
-              <span className="hidden sm:inline">Imprimir PDF</span>
+              <Printer className="h-4 w-4 mr-2" />
+              <span className="hidden md:inline">Imprimir PDF</span>
+              <span className="md:hidden">PDF</span>
             </Button>
             <Button variant="outline" onClick={handleLogout} size="sm">
-              <LogOut className="h-4 w-4 sm:mr-2" />
-              <span className="hidden sm:inline">Sair</span>
+              <LogOut className="h-4 w-4 mr-2" />
+              Sair
             </Button>
           </div>
         </div>
