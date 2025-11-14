@@ -105,14 +105,7 @@ export const EditCustomerRequestDialog = ({ request, open, onOpenChange, onSucce
       toast.error("Preço de custo é obrigatório");
       return;
     }
-    if (!formData.brand) {
-      toast.error("Marca é obrigatória");
-      return;
-    }
-    if (!formData.category) {
-      toast.error("Categoria é obrigatória");
-      return;
-    }
+    // Marca e categoria são opcionais para vendas na caderneta
     // Forma de pagamento é opcional - pode ser definida depois
 
     const salePrice = parseFloat(formData.salePrice);
