@@ -49,6 +49,10 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
   const [processor, setProcessor] = useState(product?.specifications?.processor || "");
   const [ram, setRam] = useState(product?.specifications?.ram || "");
   const [dedicatedGPU, setDedicatedGPU] = useState(product?.specifications?.dedicatedGPU || false);
+  
+  // Opções dinâmicas de processador e RAM
+  const [processorOptions, setProcessorOptions] = useState<string[]>([]);
+  const [ramOptions, setRamOptions] = useState<string[]>([]);
 
   // Carregar rascunho salvo ao montar (apenas para novos produtos)
   useEffect(() => {
@@ -130,6 +134,16 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
       setPassOnCashDiscount(product.passOnCashDiscount || false);
     }
   }, [product]);
+
+  useEffect(() => {
+    const loadSpecOptions = async () => {
+      const { settingsStore } = await import("@/lib/settingsStore");
+      const settings = await settingsStore.getSettings();
+      setProcessorOptions(settings.processorOptions || []);
+      setRamOptions(settings.ramOptions || []);
+    };
+    loadSpecOptions();
+  }, []);
 
   const loadBrands = async () => {
     const brands = await brandsStore.getBrandsByCategory(category);
@@ -363,10 +377,9 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
                   <SelectValue placeholder="Nenhum selecionado" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="i3">Intel Core i3</SelectItem>
-                  <SelectItem value="i5">Intel Core i5</SelectItem>
-                  <SelectItem value="i7">Intel Core i7</SelectItem>
-                  <SelectItem value="i9">Intel Core i9</SelectItem>
+                  {processorOptions.map((proc) => (
+                    <SelectItem key={proc} value={proc}>{proc}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -378,9 +391,9 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
                   <SelectValue placeholder="Nenhum selecionado" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="4GB">4GB</SelectItem>
-                  <SelectItem value="8GB">8GB</SelectItem>
-                  <SelectItem value="16GB">16GB</SelectItem>
+                  {ramOptions.map((memory) => (
+                    <SelectItem key={memory} value={memory}>{memory}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

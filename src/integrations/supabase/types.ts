@@ -637,6 +637,8 @@ export type Database = {
           id: string
           include_cash_in_tax: boolean
           installment_rates: Json
+          processor_options: Json | null
+          ram_options: Json | null
           updated_at: string
         }
         Insert: {
@@ -644,6 +646,8 @@ export type Database = {
           id?: string
           include_cash_in_tax?: boolean
           installment_rates?: Json
+          processor_options?: Json | null
+          ram_options?: Json | null
           updated_at?: string
         }
         Update: {
@@ -651,6 +655,8 @@ export type Database = {
           id?: string
           include_cash_in_tax?: boolean
           installment_rates?: Json
+          processor_options?: Json | null
+          ram_options?: Json | null
           updated_at?: string
         }
         Relationships: []
