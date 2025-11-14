@@ -67,13 +67,14 @@ const AddPaymentDialog = ({ open, onOpenChange, receivable, onConfirm }: AddPaym
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>💵 Registrar Pagamento</DialogTitle>
-        </DialogHeader>
+      <DialogContent className="max-w-md max-h-[85dvh] overflow-y-auto p-0">
+        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b px-6 pt-6 pb-3">
+          <DialogHeader>
+            <DialogTitle>💵 Registrar Pagamento</DialogTitle>
+          </DialogHeader>
+        </div>
 
-        <div className="max-h-[60vh] overflow-y-auto pr-2">
-          <div className="space-y-4 py-4">
+        <div className="px-6 py-4 space-y-4 pb-24">
             <div className="space-y-2 bg-muted/50 p-4 rounded-lg">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Cliente:</span>
@@ -111,6 +112,7 @@ const AddPaymentDialog = ({ open, onOpenChange, receivable, onConfirm }: AddPaym
                   min="0"
                   value={cash}
                   onChange={(e) => setCash(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleConfirm()}
                   placeholder="0.00"
                 />
               </div>
@@ -123,6 +125,7 @@ const AddPaymentDialog = ({ open, onOpenChange, receivable, onConfirm }: AddPaym
                   min="0"
                   value={pix}
                   onChange={(e) => setPix(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleConfirm()}
                   placeholder="0.00"
                 />
               </div>
@@ -135,6 +138,7 @@ const AddPaymentDialog = ({ open, onOpenChange, receivable, onConfirm }: AddPaym
                   min="0"
                   value={card}
                   onChange={(e) => setCard(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleConfirm()}
                   placeholder="0.00"
                 />
               </div>
@@ -180,17 +184,18 @@ const AddPaymentDialog = ({ open, onOpenChange, receivable, onConfirm }: AddPaym
                 </div>
               )}
             </div>
-          </div>
         </div>
 
-        <DialogFooter className="mt-4">
-          <Button variant="outline" onClick={handleClose}>
-            Cancelar
-          </Button>
-          <Button onClick={handleConfirm}>
-            Registrar Pagamento
-          </Button>
-        </DialogFooter>
+        <div className="sticky bottom-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t px-6 py-3">
+          <DialogFooter className="sm:justify-end">
+            <Button variant="outline" onClick={handleClose}>
+              Cancelar
+            </Button>
+            <Button onClick={handleConfirm}>
+              Registrar Pagamento
+            </Button>
+          </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );
