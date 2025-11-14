@@ -70,19 +70,25 @@ Deno.serve(async (req) => {
       view = url.searchParams.get('view') || 'all';
     }
 
-    // Buscar recebíveis do cliente com filtro de view
-    let query = supabase
+    // Função auxiliar para calcular se a garantia venceu
+    const isWarrantyExpired = (createdAt: string, warrantyMonths?: number): boolean => {
+      if (!warrantyMonths || warrantyMonths === 0) return true;
+      
+      const saleDate = new Date(createdAt);
+      const expirationDate = new Date(saleDate);
+      expirationDate.setMonth(expirationDate.getMonth() + warrantyMonths);
+      
+      return new Date() > expirationDate;
+    };
+
+    // Buscar TODOS os recebíveis do cliente (exceto soft deleted e hard deleted)
+    const { data: receivables, error } = await supabase
       .from('receivables')
       .select('*')
-      .eq('customer_id', customerId);
-
-    if (view === 'active') {
-      query = query.or('archived.is.false,archived.is.null');
-    } else if (view === 'archived') {
-      query = query.eq('archived', true);
-    }
-
-    const { data: receivables, error } = await query.order('created_at', { ascending: false });
+      .eq('customer_id', customerId)
+      .eq('hidden_from_portal', false)
+      .is('deleted_at', null)
+      .order('created_at', { ascending: false });
 
     if (error) {
       console.error('Database error:', error);
@@ -95,35 +101,53 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Mapear dados para formato esperado pelo frontend
-    const mappedReceivables = (receivables || []).map(row => ({
-      id: row.id,
-      customerId: row.customer_id,
-      customerCode: '',
-      customerName: row.customer_name,
-      productId: row.id,
-      productName: row.product_name,
-      brand: row.brand || '',
-      category: row.category || '',
-      costPrice: row.cost_price ? Number(row.cost_price) : undefined,
-      basePrice: row.base_price ? Number(row.base_price) : undefined,
-      salePrice: row.sale_price ? Number(row.sale_price) : undefined,
-      profit: row.profit ? Number(row.profit) : undefined,
-      totalAmount: Number(row.total_amount),
-      paidAmount: Number(row.paid_amount),
-      remainingAmount: Number(row.remaining_amount),
-      installments: row.installments || 1,
-      installmentRate: row.installment_rate ? Number(row.installment_rate) : 0,
-      dueDate: row.due_date || undefined,
-      status: row.status,
-      payments: row.payments || [],
-      notes: row.notes || undefined,
-      archived: row.archived || false,
-      createdAt: row.created_at,
-      updatedAt: row.updated_at || row.created_at,
-    }));
+    // Mapear e calcular arquivamento automático
+    const allMappedReceivables = (receivables || []).map(row => {
+      const isPaid = row.status === 'paid';
+      const warrantyExpired = isWarrantyExpired(row.created_at, row.warranty_months);
+      
+      return {
+        id: row.id,
+        customerId: row.customer_id,
+        customerCode: '',
+        customerName: row.customer_name,
+        productId: row.id,
+        productName: row.product_name,
+        brand: row.brand || '',
+        category: row.category || '',
+        costPrice: row.cost_price ? Number(row.cost_price) : undefined,
+        basePrice: row.base_price ? Number(row.base_price) : undefined,
+        salePrice: row.sale_price ? Number(row.sale_price) : undefined,
+        profit: row.profit ? Number(row.profit) : undefined,
+        totalAmount: Number(row.total_amount),
+        paidAmount: Number(row.paid_amount),
+        remainingAmount: Number(row.remaining_amount),
+        installments: row.installments || 1,
+        installmentRate: row.installment_rate ? Number(row.installment_rate) : 0,
+        dueDate: row.due_date || undefined,
+        status: row.status,
+        payments: row.payments || [],
+        notes: row.notes || undefined,
+        archived: row.archived || false,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at || row.created_at,
+        warrantyMonths: row.warranty_months,
+        autoArchived: isPaid && warrantyExpired, // Arquivamento automático
+      };
+    });
 
-    console.log(`Found ${mappedReceivables.length} receivables for customer ${customerId}`);
+    // Filtrar baseado na view solicitada
+    let mappedReceivables;
+    if (view === 'active') {
+      mappedReceivables = allMappedReceivables.filter(r => !r.autoArchived);
+    } else if (view === 'archived') {
+      mappedReceivables = allMappedReceivables.filter(r => r.autoArchived);
+    } else {
+      mappedReceivables = allMappedReceivables;
+    }
+
+    console.log(`Found ${allMappedReceivables.length} total receivables for customer ${customerId}`);
+    console.log(`Returning ${mappedReceivables.length} receivables for view "${view}"`);
 
     return new Response(
       JSON.stringify({

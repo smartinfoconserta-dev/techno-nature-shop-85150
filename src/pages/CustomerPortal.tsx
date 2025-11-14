@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, ShoppingBag, DollarSign, Clock, Shield, Loader2, FileText, Notebook, Plus, Archive } from "lucide-react";
+import { LogOut, ShoppingBag, DollarSign, Clock, Shield, Loader2, FileText, Notebook, Plus, Trash2 } from "lucide-react";
 import { calculateWarranty } from "@/lib/warrantyHelper";
 import { format } from "date-fns";
 import { CustomerStatsChart } from "@/components/customer/CustomerStatsChart";
@@ -591,13 +591,20 @@ const CustomerPortal = () => {
                               </div>
                               <div className="flex items-center gap-2">
                                 {getStatusBadge(receivable.status)}
+                                <Badge variant="outline" className="gap-1">
+                                  <Shield className="w-3 h-3" />
+                                  Garantia Vencida
+                                </Badge>
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => handleUnarchive(receivable.id)}
-                                  title="Desarquivar compra"
+                                  onClick={() => {
+                                    setSelectedReceivable(receivable);
+                                    setShowDeleteDialog(true);
+                                  }}
+                                  title="Excluir compra"
                                 >
-                                  <Archive className="w-4 h-4 text-blue-600" />
+                                  <Trash2 className="w-4 h-4 text-destructive" />
                                 </Button>
                               </div>
                             </div>
