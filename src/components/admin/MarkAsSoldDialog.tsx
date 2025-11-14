@@ -125,9 +125,39 @@ const MarkAsSoldDialog = ({
       return;
     }
 
-    setCouponValidated(true);
-    setCouponDiscount(coupon.discountPercent);
-    setCouponError("");
+    const discountPercent = coupon.discountPercent;
+    
+    // Cupom de preço fixo (discount_percent null ou 0)
+    if (discountPercent === null || discountPercent === 0) {
+      if (product.discountPrice && product.discountPrice < product.price) {
+        setCouponValidated(true);
+        setCouponDiscount(0);
+        setCouponError("");
+        toast({ 
+          title: "Cupom aplicado!", 
+          description: "Preço promocional ativado" 
+        });
+      } else {
+        setCouponValidated(false);
+        setCouponDiscount(0);
+        setCouponError("Este produto não tem preço promocional configurado");
+        toast({
+          title: "Cupom não aplicável",
+          description: "Este produto não possui preço promocional",
+          variant: "destructive"
+        });
+      }
+    } 
+    // Cupom com porcentagem
+    else {
+      setCouponValidated(true);
+      setCouponDiscount(discountPercent);
+      setCouponError("");
+      toast({ 
+        title: "Cupom válido!", 
+        description: `${discountPercent}% de desconto aplicado` 
+      });
+    }
   };
 
   const handleCustomerCreated = (customer: Customer) => {
