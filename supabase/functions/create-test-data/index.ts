@@ -61,11 +61,12 @@ Deno.serve(async (req) => {
     const hundredDaysAgo = new Date(now);
     hundredDaysAgo.setDate(now.getDate() - 100);
 
-    // 2. VENDAS RÁPIDAS (quick_sales) - 3 cenários
+    // 2. VENDAS RÁPIDAS (quick_sales) - 2 cenários (sempre pagas)
     console.log('💰 Criando vendas rápidas...');
     const quickSales = [
+      // VR1: Com garantia
       {
-        product_name: 'Notebook Dell Inspiron (VR)',
+        product_name: 'Notebook Dell Inspiron (VR - COM GARANTIA)',
         customer_name: testCustomer.name,
         customer_id: testCustomer.id,
         cost_price: 2000,
@@ -82,8 +83,9 @@ Deno.serve(async (req) => {
         warranty_months: 3,
         created_at: thirtyDaysAgo.toISOString(),
       },
+      // VR2: Sem garantia
       {
-        product_name: 'iPhone 13 Pro (VR)',
+        product_name: 'iPhone 13 Pro (VR - SEM GARANTIA)',
         customer_name: testCustomer.name,
         customer_id: testCustomer.id,
         cost_price: 3500,
@@ -97,26 +99,8 @@ Deno.serve(async (req) => {
         payment_breakdown: { cash: 0, pix: 4200, card: 0 },
         category: 'Smartphones',
         brand: 'Apple',
-        warranty_months: 3,
+        warranty_months: 0,
         created_at: hundredDaysAgo.toISOString(),
-      },
-      {
-        product_name: 'Smart TV LG 55" (VR)',
-        customer_name: testCustomer.name,
-        customer_id: testCustomer.id,
-        cost_price: 1800,
-        sale_price: 2300,
-        profit: 500,
-        margin: 21.74,
-        payment_method: 'Cartão 3x',
-        installments: 3,
-        installment_rate: 3.99,
-        digital_tax: 89.7,
-        payment_breakdown: { cash: 0, pix: 0, card: 2300 },
-        category: 'TVs',
-        brand: 'LG',
-        warranty_months: 3,
-        created_at: now.toISOString(),
       },
     ];
 
@@ -134,11 +118,11 @@ Deno.serve(async (req) => {
     // 3. CADERNETAS (receivables) - 4 cenários
     console.log('📒 Criando cadernetas...');
     const receivables = [
-      // Cenário 1: Pago + Garantia ativa
+      // CAD1: Com garantia + Pago
       {
         customer_id: testCustomer.id,
         customer_name: testCustomer.name,
-        product_name: 'MacBook Air M2 (CAD)',
+        product_name: 'MacBook Air M2 (CAD - COM GARANTIA + PAGO)',
         brand: 'Apple',
         category: 'Notebooks',
         base_price: 6000,
@@ -162,39 +146,11 @@ Deno.serve(async (req) => {
         ],
         created_at: thirtyDaysAgo.toISOString(),
       },
-      // Cenário 2: Pago + Garantia expirada
+      // CAD2: Com garantia + Não pago
       {
         customer_id: testCustomer.id,
         customer_name: testCustomer.name,
-        product_name: 'Samsung Galaxy S23 (CAD)',
-        brand: 'Samsung',
-        category: 'Smartphones',
-        base_price: 3200,
-        cost_price: 2800,
-        sale_price: 3200,
-        total_amount: 3200,
-        remaining_amount: 0,
-        paid_amount: 3200,
-        installments: 1,
-        installment_rate: 0,
-        status: 'paid',
-        due_date: hundredDaysAgo.toISOString().split('T')[0],
-        warranty_months: 3,
-        payments: [
-          {
-            id: crypto.randomUUID(),
-            amount: 3200,
-            date: hundredDaysAgo.toISOString(),
-            method: 'Dinheiro',
-          },
-        ],
-        created_at: hundredDaysAgo.toISOString(),
-      },
-      // Cenário 3: Não pago + Garantia ativa
-      {
-        customer_id: testCustomer.id,
-        customer_name: testCustomer.name,
-        product_name: 'iPad Pro 12.9" (CAD)',
+        product_name: 'iPad Pro 12.9" (CAD - COM GARANTIA + NÃO PAGO)',
         brand: 'Apple',
         category: 'Tablets',
         base_price: 7000,
@@ -209,13 +165,41 @@ Deno.serve(async (req) => {
         due_date: new Date(now.getTime() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         warranty_months: 3,
         payments: [],
-        created_at: now.toISOString(),
+        created_at: thirtyDaysAgo.toISOString(),
       },
-      // Cenário 4: Não pago + Garantia expirada
+      // CAD3: Sem garantia + Pago
       {
         customer_id: testCustomer.id,
         customer_name: testCustomer.name,
-        product_name: 'Xbox Series X (CAD)',
+        product_name: 'Samsung Galaxy S23 (CAD - SEM GARANTIA + PAGO)',
+        brand: 'Samsung',
+        category: 'Smartphones',
+        base_price: 3200,
+        cost_price: 2800,
+        sale_price: 3200,
+        total_amount: 3200,
+        remaining_amount: 0,
+        paid_amount: 3200,
+        installments: 1,
+        installment_rate: 0,
+        status: 'paid',
+        due_date: hundredDaysAgo.toISOString().split('T')[0],
+        warranty_months: 0,
+        payments: [
+          {
+            id: crypto.randomUUID(),
+            amount: 3200,
+            date: hundredDaysAgo.toISOString(),
+            method: 'Dinheiro',
+          },
+        ],
+        created_at: hundredDaysAgo.toISOString(),
+      },
+      // CAD4: Sem garantia + Não pago
+      {
+        customer_id: testCustomer.id,
+        customer_name: testCustomer.name,
+        product_name: 'Xbox Series X (CAD - SEM GARANTIA + NÃO PAGO)',
         brand: 'Microsoft',
         category: 'Games',
         base_price: 4000,
@@ -228,7 +212,7 @@ Deno.serve(async (req) => {
         installment_rate: 4.99,
         status: 'pending',
         due_date: hundredDaysAgo.toISOString().split('T')[0],
-        warranty_months: 3,
+        warranty_months: 0,
         payments: [],
         created_at: hundredDaysAgo.toISOString(),
       },
@@ -248,10 +232,11 @@ Deno.serve(async (req) => {
     // 4. SOLICITAÇÕES CONVERTIDAS (receivables originados de customer_requests)
     console.log('⚡ Criando solicitações convertidas...');
     const requestReceivables = [
+      // SOL1: Com garantia + Não pago
       {
         customer_id: testCustomer.id,
         customer_name: testCustomer.name,
-        product_name: 'PlayStation 5 (SOL)',
+        product_name: 'PlayStation 5 (SOL - COM GARANTIA + NÃO PAGO)',
         brand: 'Sony',
         category: 'Games',
         base_price: 4500,
@@ -266,13 +251,14 @@ Deno.serve(async (req) => {
         due_date: new Date(now.getTime() + 20 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         warranty_months: 3,
         payments: [],
-        created_at: now.toISOString(),
+        created_at: thirtyDaysAgo.toISOString(),
         notes: '⚡ Convertido de solicitação do portal',
       },
+      // SOL2: Com garantia + Pago
       {
         customer_id: testCustomer.id,
         customer_name: testCustomer.name,
-        product_name: 'AirPods Pro 2 (SOL)',
+        product_name: 'AirPods Pro 2 (SOL - COM GARANTIA + PAGO)',
         brand: 'Apple',
         category: 'Áudio',
         base_price: 2000,
@@ -297,10 +283,11 @@ Deno.serve(async (req) => {
         created_at: thirtyDaysAgo.toISOString(),
         notes: '⚡ Convertido de solicitação do portal',
       },
+      // SOL3: Sem garantia + Pago
       {
         customer_id: testCustomer.id,
         customer_name: testCustomer.name,
-        product_name: 'Monitor LG 34" Ultrawide (SOL)',
+        product_name: 'Monitor LG 34" Ultrawide (SOL - SEM GARANTIA + PAGO)',
         brand: 'LG',
         category: 'Monitores',
         base_price: 2800,
@@ -313,7 +300,7 @@ Deno.serve(async (req) => {
         installment_rate: 0,
         status: 'paid',
         due_date: hundredDaysAgo.toISOString().split('T')[0],
-        warranty_months: 3,
+        warranty_months: 0,
         payments: [
           {
             id: crypto.randomUUID(),
@@ -322,6 +309,28 @@ Deno.serve(async (req) => {
             method: 'Dinheiro',
           },
         ],
+        created_at: hundredDaysAgo.toISOString(),
+        notes: '⚡ Convertido de solicitação do portal',
+      },
+      // SOL4: Sem garantia + Não pago
+      {
+        customer_id: testCustomer.id,
+        customer_name: testCustomer.name,
+        product_name: 'Teclado Mecânico Razer (SOL - SEM GARANTIA + NÃO PAGO)',
+        brand: 'Razer',
+        category: 'Periféricos',
+        base_price: 800,
+        cost_price: 600,
+        sale_price: 800,
+        total_amount: 800,
+        remaining_amount: 800,
+        paid_amount: 0,
+        installments: 2,
+        installment_rate: 2.99,
+        status: 'pending',
+        due_date: hundredDaysAgo.toISOString().split('T')[0],
+        warranty_months: 0,
+        payments: [],
         created_at: hundredDaysAgo.toISOString(),
         notes: '⚡ Convertido de solicitação do portal',
       },
