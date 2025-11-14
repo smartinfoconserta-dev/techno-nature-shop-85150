@@ -127,17 +127,6 @@ All colors MUST be HSL.
   background-color: hsl(var(--popover)) !important;
 }
 
-/* Forçar background e texto visível em itens do dropdown */
-[data-radix-select-item] {
-  background-color: transparent !important;
-}
-
-[data-radix-select-item]:hover,
-[data-radix-select-item]:focus,
-[data-radix-select-item][data-highlighted] {
-  background-color: hsl(var(--accent)) !important;
-  color: hsl(var(--accent-foreground)) !important;
-}
 
 /* Esconder scrollbar mantendo funcionalidade */
 @layer utilities {
