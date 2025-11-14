@@ -39,6 +39,7 @@ import { EditQuickSaleDialog } from "./EditQuickSaleDialog";
 import WarrantyBadge from "./WarrantyBadge";
 import { calculateWarranty } from "@/lib/warrantyHelper";
 import { Input } from "@/components/ui/input";
+import QuickSaleItem from "./QuickSaleItem";
 import { cn } from "@/lib/utils";
 
 const QuickSalesTab = () => {
@@ -322,8 +323,10 @@ const QuickSalesTab = () => {
               </Button>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
+            <>
+              {/* Desktop: Tabela */}
+              <div className="hidden md:block overflow-x-auto">
+                <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Data</TableHead>
@@ -422,7 +425,19 @@ const QuickSalesTab = () => {
                   ))}
                 </TableBody>
               </Table>
-            </div>
+              </div>
+
+              {/* Mobile: Lista compacta */}
+              <div className="block md:hidden space-y-2">
+                {filteredSales.map(sale => (
+                  <QuickSaleItem
+                    key={sale.id}
+                    sale={sale}
+                    onEdit={setEditSaleId}
+                  />
+                ))}
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

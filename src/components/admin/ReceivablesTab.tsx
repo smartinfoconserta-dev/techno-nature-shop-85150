@@ -19,6 +19,7 @@ import { AddCustomerPaymentDialog } from "./AddCustomerPaymentDialog";
 import NewCustomerDialog from "./NewCustomerDialog";
 import EditCustomerDialog from "./EditCustomerDialog";
 import QuickSaleDialog from "./QuickSaleDialog";
+import ReceivableItem from "./ReceivableItem";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -562,124 +563,36 @@ const ReceivablesTab = () => {
                 <p>Nenhuma conta a receber encontrada</p>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-2">
                 {filteredReceivables.map((receivable) => (
-                <div
-                  key={receivable.id}
-                  className={`p-4 rounded-lg border-2 ${
-                    isOverdue(receivable) ? "border-red-300 bg-red-50 dark:bg-red-950/20" : "border-border bg-muted/30"
-                  }`}
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        {getStatusBadge(receivable.status)}
-                        {isOverdue(receivable) && (
-                          <Badge variant="destructive" className="gap-1">
-                            <AlertCircle className="h-3 w-3" />
-                            VENCIDO
-                          </Badge>
-                        )}
-                      </div>
-                      <button
-                        onClick={() => handleCustomerClick(receivable.customerId)}
-                        className="font-semibold text-lg hover:underline hover:text-primary cursor-pointer text-left transition-colors"
-                      >
-                        {receivable.customerCode} - {receivable.customerName}
-                      </button>
-                      <p className="text-sm text-muted-foreground">
-                        Produto: {receivable.productName}
-                      </p>
-                      {receivable.couponCode && (
-                        <p className="text-sm text-muted-foreground">
-                          🎟️ Cupom aplicado: {receivable.couponCode} (-{receivable.couponDiscount}%)
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-4 mb-3 text-sm">
-                    <div>
-                      <span className="text-muted-foreground">Total:</span>
-                      <p className="font-semibold">R$ {receivable.totalAmount.toFixed(2)}</p>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Pago:</span>
-                      <p className="font-semibold text-green-600">R$ {receivable.paidAmount.toFixed(2)}</p>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Resta:</span>
-                      <p className="font-bold text-red-600">R$ {receivable.remainingAmount.toFixed(2)}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-4 text-xs text-muted-foreground mb-3">
-                    {receivable.dueDate && (
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        Vencimento: {format(new Date(receivable.dueDate), "dd/MM/yyyy", { locale: ptBR })}
-                      </div>
-                    )}
-                    <div className="flex items-center gap-1">
-                      <Calendar className="h-3 w-3" />
-                      Criado: {format(new Date(receivable.createdAt), "dd/MM/yyyy", { locale: ptBR })}
-                    </div>
-                  </div>
-
-                  <div className="flex flex-wrap gap-2">
-                    {receivable.status !== "paid" && (
-                      <Button
-                        size="sm"
-                        onClick={() => handleAddPayment(receivable)}
-                      >
-                        💵 Registrar Pagamento
-                      </Button>
-                    )}
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleViewDetails(receivable)}
-                    >
-                      <Eye className="h-4 w-4 mr-1" />
-                      Ver Detalhes
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => setReceivableToDelete(receivable.id)}
-                    >
-                      <Trash2 className="h-4 w-4 mr-1" />
-                      Remover
-                    </Button>
-                    {receivable.status === "paid" && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          if (activeTab === "active") {
-                            receivablesStore.archiveReceivable(receivable.id);
-                            toast({
-                              title: "Venda arquivada!",
-                              description: "Movida para o histórico",
-                            });
-                          } else {
-                            receivablesStore.unarchiveReceivable(receivable.id);
-                            toast({
-                              title: "Venda reativada!",
-                              description: "Voltou para lista ativa",
-                            });
-                          }
-                          loadReceivables();
-                        }}
-                      >
-                        {activeTab === "active" ? "📦 Arquivar" : "♻️ Desarquivar"}
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+                  <ReceivableItem
+                    key={receivable.id}
+                    receivable={receivable}
+                    isOverdue={isOverdue(receivable)}
+                    onViewDetails={(r) => {
+                      setSelectedReceivable(r);
+                      setShowDetailsDialog(true);
+                    }}
+                    onAddPayment={handleAddPayment}
+                    onEditCustomer={async (customerId) => {
+                      const customer = await customersStore.getCustomerById(customerId);
+                      if (customer) {
+                        setCustomerToEdit(customer);
+                        setShowEditCustomerDialog(true);
+                      }
+                    }}
+                    onGeneratePDF={async (customerId) => {
+                      const customer = await customersStore.getCustomerById(customerId);
+                      if (customer) {
+                        const receivables = receivablesStore.getReceivablesByCustomerId(customerId);
+                        generateCustomerReportPDF(customer, receivables);
+                        toast({ title: "PDF gerado com sucesso!" });
+                      }
+                    }}
+                  />
+                ))}
+              </div>
+            )}
         </CardContent>
       </Card>
       )}
