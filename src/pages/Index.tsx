@@ -24,6 +24,11 @@ const Index = () => {
   const [filterSearch, setFilterSearch] = useState("");
   const [priceSort, setPriceSort] = useState<"none" | "asc" | "desc">("none");
   const [deepLinkProductId, setDeepLinkProductId] = useState<string | null>(null);
+  
+  // Estados para filtros de notebooks
+  const [selectedProcessors, setSelectedProcessors] = useState<string[]>([]);
+  const [selectedRAMs, setSelectedRAMs] = useState<string[]>([]);
+  const [hasDedicatedGPU, setHasDedicatedGPU] = useState<boolean | null>(null);
   useEffect(() => {
     const initCategories = async () => {
       const names = await categoriesStore.getCategoryNames();
@@ -104,7 +109,28 @@ const Index = () => {
       const filterSearchLower = filterSearch.toLowerCase();
       const filterSearchMatch = filterSearch === "" || product.name.toLowerCase().includes(filterSearchLower) || product.brand.toLowerCase().includes(filterSearchLower) || product.specs.toLowerCase().includes(filterSearchLower) || product.description.toLowerCase().includes(filterSearchLower);
       const priceMatch = product.price >= priceRange[0] && product.price <= priceRange[1];
-      return categoryMatch && brandMatch && globalSearchMatch && filterSearchMatch && priceMatch;
+      
+      // Filtros de notebooks
+      let notebookMatch = true;
+      if (selectedCategory === "Notebooks") {
+        if (selectedProcessors.length > 0) {
+          notebookMatch = notebookMatch && product.specifications?.processor 
+            ? selectedProcessors.includes(product.specifications.processor)
+            : false;
+        }
+        
+        if (selectedRAMs.length > 0) {
+          notebookMatch = notebookMatch && product.specifications?.ram 
+            ? selectedRAMs.includes(product.specifications.ram)
+            : false;
+        }
+        
+        if (hasDedicatedGPU === true) {
+          notebookMatch = notebookMatch && (product.specifications?.dedicatedGPU === true);
+        }
+      }
+      
+      return categoryMatch && brandMatch && globalSearchMatch && filterSearchMatch && priceMatch && notebookMatch;
     });
 
     // Aplicar ordenação
@@ -114,7 +140,7 @@ const Index = () => {
       filtered.sort((a, b) => b.price - a.price);
     }
     return filtered;
-  }, [products, selectedCategory, selectedBrand, searchQuery, filterSearch, priceRange, priceSort]);
+  }, [products, selectedCategory, selectedBrand, searchQuery, filterSearch, priceRange, priceSort, selectedProcessors, selectedRAMs, hasDedicatedGPU]);
   const scrollToTop = () => {
     window.scrollTo({
       top: 0,
@@ -130,6 +156,9 @@ const Index = () => {
     setFilterSearch("");
     setPriceRange([0, maxProductPrice]);
     setPriceSort("none");
+    setSelectedProcessors([]);
+    setSelectedRAMs([]);
+    setHasDedicatedGPU(null);
     scrollToTop();
   };
   return <div className="min-h-screen bg-background">
@@ -166,7 +195,27 @@ const Index = () => {
           </div>
           
           <div className="flex items-center gap-3">
-            <ProductFilters selectedCategory={selectedCategory} onCategoryChange={setSelectedCategory} selectedBrand={selectedBrand} onBrandChange={setSelectedBrand} brands={brands} categories={categories} priceRange={priceRange} onPriceRangeChange={setPriceRange} maxPrice={maxProductPrice} filterSearch={filterSearch} onFilterSearchChange={setFilterSearch} priceSort={priceSort} onPriceSortChange={setPriceSort} />
+            <ProductFilters 
+              selectedCategory={selectedCategory} 
+              onCategoryChange={setSelectedCategory} 
+              selectedBrand={selectedBrand} 
+              onBrandChange={setSelectedBrand} 
+              brands={brands} 
+              categories={categories} 
+              priceRange={priceRange} 
+              onPriceRangeChange={setPriceRange} 
+              maxPrice={maxProductPrice} 
+              filterSearch={filterSearch} 
+              onFilterSearchChange={setFilterSearch} 
+              priceSort={priceSort} 
+              onPriceSortChange={setPriceSort}
+              selectedProcessors={selectedProcessors}
+              onProcessorsChange={setSelectedProcessors}
+              selectedRAMs={selectedRAMs}
+              onRAMsChange={setSelectedRAMs}
+              hasDedicatedGPU={hasDedicatedGPU}
+              onDedicatedGPUChange={setHasDedicatedGPU}
+            />
             <p className="text-sm text-muted-foreground">
               {filteredProducts.length} {filteredProducts.length === 1 ? 'produto' : 'produtos'}
             </p>

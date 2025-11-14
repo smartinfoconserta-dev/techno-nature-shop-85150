@@ -44,6 +44,11 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
   const [categories, setCategories] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+  
+  // Estados para especificações técnicas (notebooks)
+  const [processor, setProcessor] = useState(product?.specifications?.processor || "");
+  const [ram, setRam] = useState(product?.specifications?.ram || "");
+  const [dedicatedGPU, setDedicatedGPU] = useState(product?.specifications?.dedicatedGPU || false);
 
   // Carregar rascunho salvo ao montar (apenas para novos produtos)
   useEffect(() => {
@@ -85,10 +90,13 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
         discountPrice,
         passOnCashDiscount,
         images,
+        processor,
+        ram,
+        dedicatedGPU,
       };
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
     }
-  }, [name, category, brand, specs, description, price, discountPrice, passOnCashDiscount, images, product]);
+  }, [name, category, brand, specs, description, price, discountPrice, passOnCashDiscount, images, processor, ram, dedicatedGPU, product]);
 
   // Avisar antes de fechar/recarregar se houver dados não salvos
   useEffect(() => {
@@ -197,6 +205,13 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
 
     setSaving(true);
     try {
+      // Construir especificações se for notebook
+      const specifications = category === "Notebooks" && (processor || ram || dedicatedGPU) ? {
+        processor: processor || undefined,
+        ram: ram || undefined,
+        dedicatedGPU: dedicatedGPU || undefined,
+      } : undefined;
+
       await onSave({
         name,
         category,
@@ -207,7 +222,8 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
         discountPrice: discountPrice ? parseFloat(discountPrice) : undefined,
         passOnCashDiscount,
         images,
-      });
+        specifications,
+      } as any);
 
       // Limpar rascunho após salvar
       sessionStorage.removeItem(STORAGE_KEY);
@@ -330,6 +346,63 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
           </div>
         </div>
       </div>
+
+      {/* Especificações Técnicas para Notebooks */}
+      {category === "Notebooks" && (
+        <div className="col-span-2 space-y-4 p-4 border rounded-lg bg-muted/50">
+          <h3 className="font-semibold text-sm">Especificações Técnicas (para filtros)</h3>
+          <p className="text-xs text-muted-foreground">
+            Essas informações serão usadas apenas para filtros de busca e não aparecerão no anúncio.
+          </p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="processor">Processador</Label>
+              <Select value={processor} onValueChange={setProcessor}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Nenhum</SelectItem>
+                  <SelectItem value="i3">Intel Core i3</SelectItem>
+                  <SelectItem value="i5">Intel Core i5</SelectItem>
+                  <SelectItem value="i7">Intel Core i7</SelectItem>
+                  <SelectItem value="i9">Intel Core i9</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="ram">Memória RAM</Label>
+              <Select value={ram} onValueChange={setRam}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Nenhum</SelectItem>
+                  <SelectItem value="4GB">4GB</SelectItem>
+                  <SelectItem value="8GB">8GB</SelectItem>
+                  <SelectItem value="16GB">16GB</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="dedicatedGPU">Placa de Vídeo</Label>
+              <div className="flex items-center space-x-2 h-10">
+                <Checkbox
+                  id="dedicatedGPU"
+                  checked={dedicatedGPU}
+                  onCheckedChange={(checked) => setDedicatedGPU(checked as boolean)}
+                />
+                <label htmlFor="dedicatedGPU" className="text-sm cursor-pointer">
+                  Tem placa de vídeo dedicada
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="space-y-2 w-full">
         <Label htmlFor="description">Descrição</Label>
