@@ -9,29 +9,14 @@ interface Props {
 }
 
 export const CustomerStatsChart = ({ receivables }: Props) => {
-  // Calcular pagamentos feitos NESTE MÊS (independente de quando a compra foi feita)
-  const now = new Date();
-  const currentMonth = now.getMonth();
-  const currentYear = now.getFullYear();
-
-  // Somar todos os pagamentos feitos NESTE MÊS
-  let totalPagoEsteMes = 0;
-  receivables.forEach(r => {
-    if (r.payments && r.payments.length > 0) {
-      r.payments.forEach((payment: any) => {
-        const paymentDate = new Date(payment.paidAt);
-        if (paymentDate.getMonth() === currentMonth && paymentDate.getFullYear() === currentYear) {
-          totalPagoEsteMes += payment.amount;
-        }
-      });
-    }
-  });
-
-  // Saldo Devedor = TODAS as dívidas ativas (não importa quando foi criada)
+  // Calcular total pago (de todas as dívidas)
+  const totalPago = receivables.reduce((sum, r) => sum + r.paidAmount, 0);
+  
+  // Saldo Devedor = TODAS as dívidas ativas
   const totalSaldoDevedor = receivables.reduce((sum, r) => sum + r.remainingAmount, 0);
 
   const pieData = [
-    { name: "Pago (este mês)", value: totalPagoEsteMes, color: "hsl(142 76% 36%)" }, // Verde
+    { name: "Pago", value: totalPago, color: "hsl(142 76% 36%)" }, // Verde
     { name: "Saldo Devedor", value: totalSaldoDevedor, color: "hsl(0 84% 60%)" }  // Vermelho
   ];
 
