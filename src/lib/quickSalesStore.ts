@@ -154,7 +154,7 @@ export const quickSalesStore = {
         payment_breakdown: paymentBreakdown,
         payment_method: paymentMethod,
         digital_tax: newSale.taxAmount || 0,
-        warranty_months: newSale.warranty || 3,
+        warranty_months: newSale.warranty ?? 90, // Default 90 dias
         notes: newSale.notes || null,
         created_at: newSale.createdAt,
         updated_at: newSale.updatedAt,

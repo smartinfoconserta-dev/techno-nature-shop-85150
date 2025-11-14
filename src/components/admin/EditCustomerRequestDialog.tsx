@@ -32,7 +32,7 @@ export const EditCustomerRequestDialog = ({ request, open, onOpenChange, onSucce
     costPrice: request.cost_price?.toString() || "",
     brand: request.brand || "",
     category: request.category || "",
-    warrantyMonths: (request.warranty_months ?? 3) === 0 ? "0" : ((request.warranty_months ?? 3) * 30).toString(),
+    warrantyMonths: (request.warranty_months ?? 90).toString(), // Já está em dias
     paymentMethod: request.payment_method || "",
     installments: request.installments?.toString() || "1",
     adminNotes: request.admin_notes || "",
@@ -58,7 +58,7 @@ export const EditCustomerRequestDialog = ({ request, open, onOpenChange, onSucce
         cost_price: formData.costPrice ? parseFloat(formData.costPrice) : undefined,
         brand: formData.brand || undefined,
         category: formData.category || undefined,
-        warranty_months: Math.floor(parseInt(formData.warrantyMonths) / 30),
+        warranty_months: parseInt(formData.warrantyMonths), // Salvar dias diretamente
         payment_method: formData.paymentMethod || undefined,
         installments: parseInt(formData.installments),
         admin_notes: formData.adminNotes || undefined,
