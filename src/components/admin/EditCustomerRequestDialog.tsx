@@ -79,8 +79,8 @@ export const EditCustomerRequestDialog = ({ request, open, onOpenChange, onSucce
   const handleReject = async () => {
     setLoading(true);
     try {
-      await customerRequestsStore.rejectRequest(request.id, formData.adminNotes);
-      toast.success("Solicitação rejeitada");
+      await customerRequestsStore.deleteRequest(request.id);
+      toast.success("Solicitação rejeitada e excluída");
       onOpenChange(false);
       onSuccess();
     } catch (error) {
