@@ -60,14 +60,6 @@ export const CustomerStatsChart = ({ receivables }: Props) => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {/* Destaque do saldo devedor */}
-          <div className="mb-4 p-4 bg-destructive/10 rounded-lg border border-destructive/20">
-            <p className="text-sm text-muted-foreground">Saldo Devedor Total (Este Mês)</p>
-            <p className="text-2xl font-bold text-destructive">
-              R$ {totalPendenteMes.toFixed(2)}
-            </p>
-          </div>
-
           <ResponsiveContainer width="100%" height={200}>
             <PieChart>
               <Pie
