@@ -13,6 +13,7 @@ import { TrendingUp, DollarSign, Package, Percent, Pencil, FileText, XCircle, Se
 import EditSaleDialog from "./EditSaleDialog";
 import WarrantyBadge from "./WarrantyBadge";
 import { calculateWarranty } from "@/lib/warrantyHelper";
+import SaleHistoryItem from "./SaleHistoryItem";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import {
@@ -554,234 +555,21 @@ const SalesHistoryTab = () => {
             </CardHeader>
           </Card>
         ) : (
-          filteredSales.map((sale) => {
-            const warranty = sale.saleDate ? calculateWarranty(sale.saleDate) : null;
-            const isEditableCatalog = sale.type === "catalog";
-            
-            return (
-              <Card
-                key={sale.id}
-                className={cn(
-                  "transition-all",
-                  warranty?.isActive && warranty.daysRemaining > 30 && "border-green-300 shadow-sm shadow-green-100",
-                  warranty?.isActive && warranty.daysRemaining <= 30 && warranty.daysRemaining > 7 && "border-yellow-300 shadow-sm shadow-yellow-100",
-                  warranty?.isActive && warranty.daysRemaining <= 7 && "border-orange-300 shadow-sm shadow-orange-100",
-                  !warranty?.isActive && warranty && "border-red-200 shadow-sm shadow-red-50 opacity-90"
-                )}
-              >
-                <CardContent className="p-6">
-                  <div className="flex items-start gap-4">
-                    {sale.type === "catalog" && (sale.originalData as Product).images?.[0] && (
-                      <img
-                        src={(sale.originalData as Product).images[0]}
-                        alt={sale.productName}
-                        className="w-24 h-24 object-cover rounded border border-border"
-                      />
-                    )}
-                    <div className="flex-1 space-y-3">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <Badge variant={
-                              sale.type === "catalog" ? "default" : 
-                              sale.type === "quick" ? "secondary" : 
-                              "outline"
-                            }>
-                              {sale.type === "catalog" ? "📦 Catálogo" : 
-                               sale.type === "quick" ? "⚡ Rápida" : 
-                               "📒 Caderneta"}
-                            </Badge>
-                            {sale.type === "receivable" && (
-                              <Badge variant={
-                                sale.status === "paid" ? "default" :
-                                sale.status === "partial" ? "secondary" :
-                                "outline"
-                              }>
-                                {sale.status === "paid" ? "Pago" :
-                                 sale.status === "partial" ? "Parcial" :
-                                 "Pendente"}
-                              </Badge>
-                            )}
-                          </div>
-                          <h3 className="font-semibold text-lg text-foreground">
-                            {sale.productName}
-                          </h3>
-                          {sale.type === "catalog" && (
-                            <p className="text-sm text-muted-foreground">
-                              Marca: {(sale.originalData as Product).brand}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="space-y-1">
-                        <p className="text-sm text-muted-foreground">
-                          Comprador: <span className="font-medium text-foreground">{sale.buyerName || "Não informado"}</span>
-                          {sale.buyerCpf && (
-                            <span className="text-muted-foreground"> ({sale.buyerCpf})</span>
-                          )}
-                        </p>
-                        {sale.saleDate && (
-                          <div className="flex items-center gap-2">
-                            <Shield className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm text-muted-foreground">Garantia:</span>
-                            <WarrantyBadge 
-                              saleDate={sale.saleDate}
-                              warrantyDays={getWarrantyDays(sale)}
-                              size="sm"
-                            />
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="space-y-3">
-                        <div>
-                          <p className="text-sm text-muted-foreground mb-1">Data da venda</p>
-                          <p className="font-semibold text-foreground">
-                            {sale.saleDate
-                              ? format(new Date(sale.saleDate), "dd 'de' MMM. yyyy", {
-                                  locale: ptBR,
-                                })
-                              : "N/A"}
-                          </p>
-                        </div>
-
-                        {sale.paymentBreakdown && (
-                          <>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm bg-muted/50 p-3 rounded">
-                              <div>
-                                <p className="text-muted-foreground">💰 Total</p>
-                                <p className="font-bold text-green-600">
-                                  R$ {sale.salePrice.toFixed(2)}
-                                </p>
-                              </div>
-                              <div>
-                                <p className="text-muted-foreground">💵 Dinheiro</p>
-                                <p className="font-semibold">
-                                  R$ {(sale.paymentBreakdown.cash || 0).toFixed(2)}
-                                </p>
-                              </div>
-                              <div>
-                                <p className="text-muted-foreground">📱 PIX</p>
-                                <p className="font-semibold">
-                                  R$ {(sale.paymentBreakdown.pix || 0).toFixed(2)}
-                                </p>
-                              </div>
-                              <div>
-                                <p className="text-muted-foreground">💳 Cartão</p>
-                                <p className="font-semibold">
-                                  R$ {(sale.paymentBreakdown.card || 0).toFixed(2)}
-                                </p>
-                              </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-3 text-sm">
-                              <div className="bg-blue-50 dark:bg-blue-950/20 p-2 rounded">
-                                <p className="text-muted-foreground">💻 Total Digital</p>
-                                <p className="font-semibold text-blue-600">
-                                  R${" "}
-                                  {(
-                                    (sale.paymentBreakdown.pix || 0) +
-                                    (sale.paymentBreakdown.card || 0)
-                                  ).toFixed(2)}
-                                </p>
-                              </div>
-                              <div className="bg-orange-50 dark:bg-orange-950/20 p-2 rounded">
-                                <p className="text-muted-foreground">📊 Imposto 6%</p>
-                                <p className="font-semibold text-orange-600">
-                                  R$ {(sale.taxAmount || 0).toFixed(2)}
-                                </p>
-                              </div>
-                            </div>
-                          </>
-                        )}
-
-                        {!sale.paymentBreakdown && (
-                          <div className="bg-muted/50 p-3 rounded">
-                            <p className="text-muted-foreground text-sm">💰 Valor Total</p>
-                            <p className="font-bold text-green-600 text-lg">
-                              R$ {sale.salePrice.toFixed(2)}
-                            </p>
-                          </div>
-                        )}
-
-                        {sale.costPrice !== undefined && (
-                          <div className="pt-2 border-t">
-                            <p className="text-sm text-muted-foreground">Custo</p>
-                            <p className="font-semibold text-orange-600">
-                              R$ {sale.costPrice.toFixed(2)}
-                            </p>
-                          </div>
-                        )}
-
-                        {sale.notes && (
-                          <div className="text-sm">
-                            <p className="text-muted-foreground">📝 Observações:</p>
-                            <p className="text-foreground">{sale.notes}</p>
-                          </div>
-                        )}
-                      </div>
-
-                      {sale.profit !== undefined && (
-                        <div className="flex items-center gap-6 pt-2 border-t border-border">
-                          <div>
-                            <p className="text-sm text-muted-foreground">Lucro</p>
-                            <p
-                              className={`text-xl font-bold ${
-                                sale.profit >= 0 ? "text-green-600" : "text-red-600"
-                              }`}
-                            >
-                              R$ {sale.profit.toFixed(2)}
-                            </p>
-                          </div>
-                          {sale.salePrice > 0 && (
-                            <div>
-                              <p className="text-sm text-muted-foreground">Margem</p>
-                              <p className="text-xl font-bold text-foreground">
-                                {((sale.profit / sale.salePrice) * 100).toFixed(1)}%
-                              </p>
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {isEditableCatalog && (
-                        <div className="flex gap-2 mt-4 flex-wrap">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEdit(sale.originalData as Product)}
-                          >
-                            <Pencil className="w-4 h-4 mr-2" />
-                            Editar
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleCancelClick(sale.originalData as Product)}
-                            className="text-destructive hover:text-destructive"
-                          >
-                            <XCircle className="w-4 h-4 mr-2" />
-                            Cancelar Venda
-                          </Button>
-                          {(sale.originalData as Product).invoiceUrl && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => window.open((sale.originalData as Product).invoiceUrl, "_blank")}
-                            >
-                              <FileText className="w-4 h-4 mr-2" />
-                              Nota Fiscal
-                            </Button>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })
+          <div className="space-y-2">
+            {filteredSales.map((sale) => {
+              const warrantyDays = getWarrantyDays(sale);
+              
+              return (
+                <SaleHistoryItem
+                  key={sale.id}
+                  sale={sale}
+                  warrantyDays={warrantyDays}
+                  onEdit={sale.type === "catalog" ? handleEdit : undefined}
+                  onCancel={sale.type === "catalog" ? handleCancelClick : undefined}
+                />
+              );
+            })}
+          </div>
         )}
       </div>
         </TabsContent>
