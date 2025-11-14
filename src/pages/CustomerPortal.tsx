@@ -215,6 +215,35 @@ const CustomerPortal = () => {
     }
   };
 
+  const handleUnarchive = async (receivableId: string) => {
+    try {
+      const { error } = await supabase
+        .from('receivables')
+        .update({ archived: false })
+        .eq('id', receivableId);
+
+      if (error) throw error;
+
+      // Recarregar ambas as listas
+      await Promise.all([
+        loadReceivables("active"),
+        loadReceivables("archived")
+      ]);
+
+      toast({
+        title: "Compra desarquivada",
+        description: "A compra foi movida de volta para Ativas",
+      });
+    } catch (error) {
+      console.error("Erro ao desarquivar:", error);
+      toast({
+        title: "Erro ao desarquivar",
+        description: "Não foi possível desarquivar a compra.",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (!customer) return null;
 
   // Usar receivables corretos baseado na tab ativa
@@ -560,7 +589,17 @@ const CustomerPortal = () => {
                                   Data: {format(new Date(receivable.createdAt), "dd/MM/yyyy")}
                                 </p>
                               </div>
-                              {getStatusBadge(receivable.status)}
+                              <div className="flex items-center gap-2">
+                                {getStatusBadge(receivable.status)}
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleUnarchive(receivable.id)}
+                                  title="Desarquivar compra"
+                                >
+                                  <Archive className="w-4 h-4 text-blue-600" />
+                                </Button>
+                              </div>
                             </div>
 
                             <div className="grid grid-cols-2 gap-3 mb-3">
