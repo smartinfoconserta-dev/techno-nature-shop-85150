@@ -56,7 +56,7 @@ const shouldAutoArchive = (receivable: Receivable): boolean => {
   const isPaid = receivable.status === 'paid';
   const warrantyExpired = isWarrantyExpired(
     receivable.createdAt, 
-    receivable.warrantyMonths || 3
+    receivable.warrantyMonths ?? 3
   );
   return isPaid && warrantyExpired;
 };
@@ -101,7 +101,7 @@ function mapRowToReceivable(row: any): Receivable {
     })),
     source: undefined,
     warranty: undefined,
-    warrantyMonths: row.warranty_months ? Number(row.warranty_months) : undefined,
+    warrantyMonths: (row.warranty_months === null || row.warranty_months === undefined) ? undefined : Number(row.warranty_months),
     warrantyExpiresAt: undefined,
     notes: row.notes || undefined,
     archived: row.archived || false,
@@ -225,7 +225,7 @@ export const receivablesStore = {
         payments: receivable.payments || [],
         coupon_code: receivable.couponCode || null,
         coupon_discount: receivable.couponDiscount || null,
-        warranty_months: receivable.warrantyMonths || 3,
+        warranty_months: receivable.warrantyMonths ?? 3,
         notes: receivable.notes || null,
         archived: receivable.archived || false,
         created_at: receivable.createdAt,
