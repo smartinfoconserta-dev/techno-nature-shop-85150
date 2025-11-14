@@ -1,12 +1,6 @@
 import { useState } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { StickyDialogContent, DialogHeader, DialogFooter } from "@/components/ui/sticky-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -100,15 +94,26 @@ const AddExpenseDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>💸 Adicionar Gasto</DialogTitle>
-          <DialogDescription>
-            Registre um novo gasto relacionado ao produto
-          </DialogDescription>
-        </DialogHeader>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
+      <StickyDialogContent
+        maxWidth="md"
+        header={
+          <DialogHeader>
+            <DialogTitle>💸 Adicionar Gasto</DialogTitle>
+            <DialogDescription>
+              Registre um novo gasto relacionado ao produto
+            </DialogDescription>
+          </DialogHeader>
+        }
+        footer={
+          <DialogFooter className="gap-2">
+            <Button type="button" variant="outline" onClick={handleCancel}>
+              Cancelar
+            </Button>
+            <Button type="submit" form="expense-form">Adicionar</Button>
+          </DialogFooter>
+        }
+      >
+        <form id="expense-form" onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="label">Nome do gasto *</Label>
             <Input
@@ -192,15 +197,8 @@ const AddExpenseDialog = ({
               {description.length}/500 caracteres
             </p>
           </div>
-
-          <DialogFooter className="gap-2">
-            <Button type="button" variant="outline" onClick={handleCancel}>
-              Cancelar
-            </Button>
-            <Button type="submit">Adicionar</Button>
-          </DialogFooter>
         </form>
-      </DialogContent>
+      </StickyDialogContent>
     </Dialog>
   );
 };

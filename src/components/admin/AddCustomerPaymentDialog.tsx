@@ -2,14 +2,8 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { StickyDialogContent, DialogHeader, DialogFooter } from "@/components/ui/sticky-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -243,15 +237,34 @@ export function AddCustomerPaymentDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[85dvh] overflow-y-auto p-0">
-        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b px-6 pt-6 pb-3">
+      <StickyDialogContent
+        maxWidth="2xl"
+        header={
           <DialogHeader>
             <DialogTitle>💰 Registrar Pagamento do Cliente</DialogTitle>
             <DialogDescription>
               {customer && `${customer.code} - ${customer.name}`}
             </DialogDescription>
           </DialogHeader>
-        </div>
+        }
+        footer={
+          totalDue > 0 && (
+            <DialogFooter className="sm:justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                disabled={isLoading}
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" form="customer-payment-form" disabled={isLoading || totalDue === 0}>
+                {isLoading ? "Registrando..." : "Registrar Pagamento"}
+              </Button>
+            </DialogFooter>
+          )
+        }
+      >
 
         {totalDue === 0 ? (
           <Alert>
@@ -261,8 +274,7 @@ export function AddCustomerPaymentDialog({
           </Alert>
         ) : (
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)}>
-              <div className="px-6 py-4 space-y-4 pb-24">
+            <form id="customer-payment-form" onSubmit={form.handleSubmit(onSubmit)}>
                   <Alert>
                     <AlertDescription>
                       <strong>Total devedor:</strong> R$ {totalDue.toFixed(2)}
@@ -422,27 +434,10 @@ export function AddCustomerPaymentDialog({
                       </FormItem>
                   )}
                 />
-              </div>
-
-              <div className="sticky bottom-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t px-6 py-3">
-                <DialogFooter className="sm:justify-end">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => onOpenChange(false)}
-                    disabled={isLoading}
-                  >
-                    Cancelar
-                  </Button>
-                  <Button type="submit" disabled={isLoading || totalDue === 0}>
-                    {isLoading ? "Registrando..." : "Registrar Pagamento"}
-                  </Button>
-                </DialogFooter>
-              </div>
             </form>
           </Form>
         )}
-      </DialogContent>
+      </StickyDialogContent>
     </Dialog>
   );
 }
