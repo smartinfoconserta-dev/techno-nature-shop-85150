@@ -41,6 +41,7 @@ const formSchema = z.object({
   productName: z.string().min(1, "Nome do produto é obrigatório"),
   costPrice: z.number().optional(),
   salePrice: z.number().min(0.01, "Preço de venda deve ser maior que 0"),
+  saleDate: z.date().optional(),
   dueDate: z.date().optional(),
   initialCash: z.number().min(0).optional(),
   initialPix: z.number().min(0).optional(),
@@ -159,7 +160,9 @@ export function AddManualReceivableDialog({
       }
 
       // Criar array de pagamentos iniciais
-      const paymentDate = format(new Date(), "yyyy-MM-dd");
+      const paymentDate = data.saleDate 
+        ? format(data.saleDate, "yyyy-MM-dd") 
+        : format(new Date(), "yyyy-MM-dd");
       const initialPayments: any[] = [];
       let totalInitial = 0;
 
@@ -212,6 +215,7 @@ export function AddManualReceivableDialog({
         source: productSource === "catalog" ? "catalog" : "manual",
         warranty: data.warranty,
         warrantyExpiresAt,
+        createdAt: data.saleDate ? data.saleDate.toISOString() : undefined,
       });
 
       // Se for do catálogo, marca produto como vendido
@@ -481,6 +485,50 @@ export function AddManualReceivableDialog({
               </div>
             )}
 
+            {/* Data da Venda */}
+            <FormField
+              control={form.control}
+              name="saleDate"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>📅 Data da Venda (opcional)</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "pl-3 text-left font-normal",
+                            !field.value && "text-muted-foreground"
+                          )}
+                        >
+                          {field.value ? (
+                            format(field.value, "dd/MM/yyyy", { locale: ptBR })
+                          ) : (
+                            <span>Data de hoje</span>
+                          )}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field.value}
+                        onSelect={field.onChange}
+                        initialFocus
+                        className="pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <p className="text-xs text-muted-foreground">
+                    Se deixar em branco, usa a data de hoje
+                  </p>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             {/* Data de Vencimento */}
             <FormField
               control={form.control}
@@ -514,6 +562,7 @@ export function AddManualReceivableDialog({
                         onSelect={field.onChange}
                         disabled={(date) => date < new Date()}
                         initialFocus
+                        className="pointer-events-auto"
                       />
                     </PopoverContent>
                   </Popover>
