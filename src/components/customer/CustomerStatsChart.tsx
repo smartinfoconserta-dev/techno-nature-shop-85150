@@ -68,7 +68,7 @@ export const CustomerStatsChart = ({ receivables }: Props) => {
             </p>
           </div>
 
-          <ResponsiveContainer width="100%" height={250}>
+          <ResponsiveContainer width="100%" height={200}>
             <PieChart>
               <Pie
                 data={pieData}
@@ -97,7 +97,7 @@ export const CustomerStatsChart = ({ receivables }: Props) => {
           <CardTitle className="text-base">Histórico dos Últimos 6 Meses</CardTitle>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={250}>
+          <ResponsiveContainer width="100%" height={200}>
             <BarChart data={barData}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
               <XAxis dataKey="month" className="text-muted-foreground" />

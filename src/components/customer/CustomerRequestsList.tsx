@@ -50,13 +50,13 @@ export const CustomerRequestsList = ({ refreshKey }: Props) => {
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       {requests.map((request) => (
         <Card key={request.id}>
-          <CardHeader className="pb-3">
+          <CardHeader className="pb-2">
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <CardTitle className="text-base">{request.product_name}</CardTitle>
+                <CardTitle className="text-sm">{request.product_name}</CardTitle>
                 <p className="text-sm text-muted-foreground mt-1">
                   {format(new Date(request.created_at), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", {
                     locale: ptBR,
@@ -66,7 +66,7 @@ export const CustomerRequestsList = ({ refreshKey }: Props) => {
               <RequestStatusBadge status={request.status} />
             </div>
           </CardHeader>
-          <CardContent className="space-y-2">
+          <CardContent className="space-y-1.5">
             <div className="flex justify-between">
               <span className="text-sm text-muted-foreground">Valor:</span>
               <span className="font-semibold text-primary">
