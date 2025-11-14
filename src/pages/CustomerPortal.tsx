@@ -14,6 +14,8 @@ import { SummaryCard } from "@/components/customer/SummaryCard";
 import { PurchaseFilters } from "@/components/customer/PurchaseFilters";
 import { AddNotebookItemDialog } from "@/components/customer/AddNotebookItemDialog";
 import { CustomerRequestsList } from "@/components/customer/CustomerRequestsList";
+import { DeletePortalReceivableDialog } from "@/components/customer/DeletePortalReceivableDialog";
+import SearchBar from "@/components/SearchBar";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { generateCustomerPortalPDF } from "@/lib/generateCustomerPortalPDF";
@@ -55,12 +57,16 @@ const CustomerPortal = () => {
   const [archivedReceivables, setArchivedReceivables] = useState<Receivable[]>([]);
   const [activeTab, setActiveTab] = useState("active");
   const [searchTerm, setSearchTerm] = useState("");
+  const [activeSearchTerm, setActiveSearchTerm] = useState("");
+  const [archivedSearchTerm, setArchivedSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [periodFilter, setPeriodFilter] = useState("all");
   const [warrantyFilter, setWarrantyFilter] = useState("all");
   const [brandFilter, setBrandFilter] = useState("all");
   const [loading, setLoading] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [selectedReceivable, setSelectedReceivable] = useState<Receivable | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
@@ -184,64 +190,6 @@ const CustomerPortal = () => {
       title: "PDF gerado com sucesso",
       description: "O extrato foi baixado para seu computador.",
     });
-  };
-
-  const handleArchive = async (receivableId: string) => {
-    try {
-      const { error } = await supabase
-        .from('receivables')
-        .update({ archived: true })
-        .eq('id', receivableId);
-
-      if (error) throw error;
-
-      // Recarregar ambas as listas
-      await Promise.all([
-        loadReceivables("active"),
-        loadReceivables("archived")
-      ]);
-
-      toast({
-        title: "Compra arquivada",
-        description: "A compra foi movida para a pasta Arquivadas",
-      });
-    } catch (error) {
-      console.error("Erro ao arquivar:", error);
-      toast({
-        title: "Erro ao arquivar",
-        description: "Não foi possível arquivar a compra.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleUnarchive = async (receivableId: string) => {
-    try {
-      const { error } = await supabase
-        .from('receivables')
-        .update({ archived: false })
-        .eq('id', receivableId);
-
-      if (error) throw error;
-
-      // Recarregar ambas as listas
-      await Promise.all([
-        loadReceivables("active"),
-        loadReceivables("archived")
-      ]);
-
-      toast({
-        title: "Compra desarquivada",
-        description: "A compra foi movida de volta para Ativas",
-      });
-    } catch (error) {
-      console.error("Erro ao desarquivar:", error);
-      toast({
-        title: "Erro ao desarquivar",
-        description: "Não foi possível desarquivar a compra.",
-        variant: "destructive",
-      });
-    }
   };
 
   if (!customer) return null;
@@ -484,19 +432,7 @@ const CustomerPortal = () => {
                                   Data: {format(new Date(receivable.createdAt), "dd/MM/yyyy")}
                                 </p>
                               </div>
-                              <div className="flex items-center gap-2">
-                                {getStatusBadge(receivable.status)}
-                                {receivable.status === "paid" && (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => handleArchive(receivable.id)}
-                                    title="Arquivar compra"
-                                  >
-                                    <Archive className="w-4 h-4" />
-                                  </Button>
-                                )}
-                              </div>
+                              {getStatusBadge(receivable.status)}
                             </div>
 
                             <div className="grid grid-cols-2 gap-3 mb-3">
@@ -685,6 +621,16 @@ const CustomerPortal = () => {
         open={showAddDialog}
         onOpenChange={setShowAddDialog}
         onSuccess={() => setRefreshKey(prev => prev + 1)}
+      />
+      
+      <DeletePortalReceivableDialog
+        receivable={selectedReceivable}
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        onDeleted={() => {
+          loadReceivables("active");
+          loadReceivables("archived");
+        }}
       />
     </div>
   );

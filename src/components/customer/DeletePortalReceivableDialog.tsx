@@ -46,7 +46,7 @@ export function DeletePortalReceivableDialog({
         // SOFT DELETE: Ocultar do portal, mantém no financeiro
         const { error } = await supabase
           .from("receivables")
-          .update({ hidden_from_portal: true })
+          .update({ hidden_from_portal: true } as any)
           .eq("id", receivable.id);
 
         if (error) throw error;
@@ -59,7 +59,7 @@ export function DeletePortalReceivableDialog({
         // HARD DELETE: Exclusão permanente (soft delete com deleted_at)
         const { error } = await supabase
           .from("receivables")
-          .update({ deleted_at: new Date().toISOString() })
+          .update({ deleted_at: new Date().toISOString() } as any)
           .eq("id", receivable.id);
 
         if (error) throw error;
