@@ -163,7 +163,8 @@ export const EditCustomerRequestDialog = ({ request, open, onOpenChange, onSucce
         dueDate: dueDate.toISOString().split('T')[0],
         payments: [],
         source: "manual" as any,
-        warranty: parseInt(formData.warrantyMonths),
+        warranty: parseInt(formData.warrantyMonths) * 30,
+        warrantyMonths: parseInt(formData.warrantyMonths),
         notes: formData.adminNotes || formData.notes,
       });
 

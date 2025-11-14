@@ -272,6 +272,7 @@ const MarkAsSoldDialog = ({
           dueDate: dueDate || undefined,
           notes: notes || undefined,
           warranty: warrantyDays,
+          warrantyMonths: Math.ceil(warrantyDays / 30),
           warrantyExpiresAt: warrantyExpires,
           payments: initialPayments,
         });
