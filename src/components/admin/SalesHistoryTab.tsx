@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { TrendingUp, DollarSign, Package, Percent, Pencil, FileText, XCircle, Search, Shield } from "lucide-react";
+import { TrendingUp, DollarSign, Package, Percent, Pencil, FileText, XCircle, Search, Shield, CheckCircle2, Archive } from "lucide-react";
 import EditSaleDialog from "./EditSaleDialog";
 import WarrantyBadge from "./WarrantyBadge";
 import { calculateWarranty } from "@/lib/warrantyHelper";
@@ -107,17 +107,8 @@ const SalesHistoryTab = () => {
     const warranty = calculateWarranty(sale.saleDate, warrantyDays);
     
     // Verificar se está paga
-    let isPaid = false;
-    if (sale.type === "receivable") {
-      const receivable = sale.originalData as Receivable;
-      isPaid = receivable.status === "paid";
-    } else {
-      // Produtos do catálogo e quick sales são sempre considerados pagos
-      isPaid = true;
-    }
-    
-    // Regra: Paga + Garantia Vencida = Arquivada
-    return isPaid && !warranty.isActive;
+    // Admin: Arquiva quando garantia vencer, independente de pagamento
+    return !warranty.isActive;
   };
 
   const loadUnifiedHistory = async () => {
@@ -462,14 +453,16 @@ const SalesHistoryTab = () => {
 
       {/* Tabs para Ativas e Arquivadas */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "active" | "archived")}>
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="active">
-            Ativas ({activeCount})
-          </TabsTrigger>
-          <TabsTrigger value="archived">
-            Arquivadas ({archivedCount})
-          </TabsTrigger>
-        </TabsList>
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="active" className="flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4" />
+              Ativas ({activeCount})
+            </TabsTrigger>
+            <TabsTrigger value="archived" className="flex items-center gap-2">
+              <Archive className="h-4 w-4" />
+              Arquivadas ({archivedCount})
+            </TabsTrigger>
+          </TabsList>
 
         <TabsContent value={activeTab} className="space-y-4 mt-4">
           {/* Campo de Busca */}

@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DollarSign, Calendar, Eye, Trash2, AlertCircle, UserPlus, Edit, FileDown, ShoppingCart } from "lucide-react";
+import { DollarSign, Calendar, Eye, Trash2, AlertCircle, UserPlus, Edit, FileDown, ShoppingCart, CheckCircle2, Archive } from "lucide-react";
 import { generateCustomerReportPDF } from "@/lib/generateCustomerReportPDF";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -290,14 +290,16 @@ const ReceivablesTab = () => {
               onClick={() => setActiveTab("active")}
               className="flex-1 gap-2"
             >
-              📋 ATIVAS ({receivablesStore.getActiveReceivables().length})
+              <CheckCircle2 className="h-4 w-4" />
+              ATIVAS ({receivablesStore.getActiveReceivables().length})
             </Button>
             <Button
               variant={activeTab === "archived" ? "default" : "outline"}
               onClick={() => setActiveTab("archived")}
               className="flex-1 gap-2"
             >
-              📦 HISTÓRICO ({receivablesStore.getArchivedReceivables().length})
+              <Archive className="h-4 w-4" />
+              HISTÓRICO ({receivablesStore.getArchivedReceivables().length})
             </Button>
           </div>
         </CardContent>

@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, ShoppingBag, DollarSign, Clock, Shield, Loader2, FileText, Notebook, Plus, Trash2, XCircle } from "lucide-react";
+import { LogOut, ShoppingBag, DollarSign, Clock, Shield, Loader2, FileText, Notebook, Plus, Trash2, XCircle, CheckCircle2, Archive } from "lucide-react";
 import { calculateWarranty } from "@/lib/warrantyHelper";
 import { format } from "date-fns";
 import { CustomerStatsChart } from "@/components/customer/CustomerStatsChart";
@@ -400,8 +400,14 @@ const CustomerPortal = () => {
           <CardContent>
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid w-full grid-cols-2 mb-4">
-                <TabsTrigger value="active">Ativas</TabsTrigger>
-                <TabsTrigger value="archived">Arquivadas</TabsTrigger>
+                <TabsTrigger value="active" className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4" />
+                  Ativas
+                </TabsTrigger>
+                <TabsTrigger value="archived" className="flex items-center gap-2">
+                  <Archive className="h-4 w-4" />
+                  Arquivadas
+                </TabsTrigger>
               </TabsList>
 
               <TabsContent value="active" className="mt-0">
