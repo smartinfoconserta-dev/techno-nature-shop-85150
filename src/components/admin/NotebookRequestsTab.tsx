@@ -118,65 +118,87 @@ const NotebookRequestsTab = () => {
                 filteredRequests.map((request) => (
                   <Card key={request.id} className="border-l-4 border-l-primary">
                     <CardContent className="pt-6">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className="font-semibold text-lg">{request.product_name}</h3>
-                            <RequestStatusBadge status={request.status} />
+                      <div className="space-y-4 mb-4">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start gap-2 mb-1 flex-wrap">
+                              <h3 className="font-semibold text-base sm:text-lg break-words">{request.product_name}</h3>
+                              <RequestStatusBadge status={request.status} />
+                            </div>
+                            <p className="text-xs sm:text-sm text-muted-foreground">
+                              Cliente: <span className="font-medium break-words">{request.customer_name}</span>
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {format(new Date(request.created_at), "dd/MM/yyyy 'às' HH:mm", {
+                                locale: ptBR,
+                              })}
+                            </p>
                           </div>
-                          <p className="text-sm text-muted-foreground">
-                            Cliente: <span className="font-medium">{request.customer_name}</span>
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {format(new Date(request.created_at), "dd/MM/yyyy 'às' HH:mm", {
-                              locale: ptBR,
-                            })}
-                          </p>
+                          <div className="hidden md:flex gap-2 flex-shrink-0">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setEditingRequest(request)}
+                            >
+                              <Edit className="w-4 h-4 mr-1" />
+                              Editar
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setDeletingId(request.id)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
                         </div>
-                        <div className="flex gap-2">
+                        
+                        <div className="flex md:hidden gap-2">
                           <Button
                             size="sm"
                             variant="outline"
                             onClick={() => setEditingRequest(request)}
+                            className="flex-1"
                           >
-                            <Edit className="w-4 h-4 mr-1" />
+                            <Edit className="w-4 h-4 mr-2" />
                             Editar
                           </Button>
                           <Button
                             size="sm"
                             variant="outline"
                             onClick={() => setDeletingId(request.id)}
+                            className="w-12"
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-muted/50 rounded-lg">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 p-3 sm:p-4 bg-muted/50 rounded-lg">
                         <div>
-                          <p className="text-xs text-muted-foreground">Valor de Venda</p>
-                          <p className="font-semibold text-primary">
+                          <p className="text-xs text-muted-foreground mb-0.5">Valor de Venda</p>
+                          <p className="font-semibold text-sm sm:text-base text-primary">
                             R$ {request.sale_price.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                           </p>
                         </div>
                         {request.cost_price && (
                           <div>
-                            <p className="text-xs text-muted-foreground">Custo</p>
-                            <p className="font-semibold">
+                            <p className="text-xs text-muted-foreground mb-0.5">Custo</p>
+                            <p className="font-semibold text-sm sm:text-base">
                               R$ {request.cost_price.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                             </p>
                           </div>
                         )}
                         {request.brand && (
                           <div>
-                            <p className="text-xs text-muted-foreground">Marca</p>
-                            <p className="font-medium">{request.brand}</p>
+                            <p className="text-xs text-muted-foreground mb-0.5">Marca</p>
+                            <p className="font-medium text-sm sm:text-base">{request.brand}</p>
                           </div>
                         )}
                         {request.category && (
                           <div>
-                            <p className="text-xs text-muted-foreground">Categoria</p>
-                            <p className="font-medium">{request.category}</p>
+                            <p className="text-xs text-muted-foreground mb-0.5">Categoria</p>
+                            <p className="font-medium text-sm sm:text-base">{request.category}</p>
                           </div>
                         )}
                       </div>
