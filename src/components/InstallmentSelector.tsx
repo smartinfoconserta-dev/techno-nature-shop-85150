@@ -113,13 +113,13 @@ const InstallmentSelector = ({ basePrice, hasCouponActive, onSelect }: Installme
         >
           <SelectValue placeholder="Selecione a forma de pagamento" />
         </SelectTrigger>
-        <SelectContent className="scrollbar-hide">
+        <SelectContent className="scrollbar-hide bg-popover">
           <SelectItem value="none">Ver preço original</SelectItem>
           {!hasCouponActive && (
             <SelectItem 
               value="cash"
               className={cn(
-                selectedValue === "cash" && "bg-green-100 dark:bg-green-950 font-semibold"
+                selectedValue === "cash" && "font-semibold"
               )}
             >
               💵 À vista (5% desconto)
@@ -131,7 +131,7 @@ const InstallmentSelector = ({ basePrice, hasCouponActive, onSelect }: Installme
               value={option.installments.toString()}
               className={cn(
                 selectedValue === option.installments.toString() && 
-                "bg-blue-100 dark:bg-blue-950 font-semibold"
+                "font-semibold"
               )}
             >
               💳 {option.installments}x no cartão (Visa/Master)

@@ -18,18 +18,21 @@ export type Database = {
         Row: {
           category: string
           created_at: string
+          deleted_at: string | null
           id: string
           name: string
         }
         Insert: {
           category: string
           created_at?: string
+          deleted_at?: string | null
           id?: string
           name: string
         }
         Update: {
           category?: string
           created_at?: string
+          deleted_at?: string | null
           id?: string
           name?: string
         }
@@ -38,18 +41,21 @@ export type Database = {
       categories: {
         Row: {
           created_at: string
+          deleted_at: string | null
           icon: string
           id: string
           name: string
         }
         Insert: {
           created_at?: string
+          deleted_at?: string | null
           icon: string
           id?: string
           name: string
         }
         Update: {
           created_at?: string
+          deleted_at?: string | null
           icon?: string
           id?: string
           name?: string
@@ -61,6 +67,7 @@ export type Database = {
           active: boolean
           code: string
           created_at: string
+          deleted_at: string | null
           discount_percent: number | null
           discount_type: string | null
           id: string
@@ -70,6 +77,7 @@ export type Database = {
           active?: boolean
           code: string
           created_at?: string
+          deleted_at?: string | null
           discount_percent?: number | null
           discount_type?: string | null
           id?: string
@@ -79,6 +87,7 @@ export type Database = {
           active?: boolean
           code?: string
           created_at?: string
+          deleted_at?: string | null
           discount_percent?: number | null
           discount_type?: string | null
           id?: string
@@ -121,6 +130,93 @@ export type Database = {
           },
         ]
       }
+      customer_requests: {
+        Row: {
+          admin_notes: string | null
+          brand: string | null
+          category: string | null
+          confirmed_at: string | null
+          confirmed_by: string | null
+          converted_to_receivable_id: string | null
+          cost_price: number | null
+          created_at: string
+          customer_id: string
+          customer_name: string
+          deleted_at: string | null
+          id: string
+          installment_rate: number | null
+          installments: number | null
+          notes: string | null
+          payment_method: string | null
+          product_name: string
+          sale_price: number
+          status: string
+          updated_at: string
+          warranty_months: number | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          brand?: string | null
+          category?: string | null
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          converted_to_receivable_id?: string | null
+          cost_price?: number | null
+          created_at?: string
+          customer_id: string
+          customer_name: string
+          deleted_at?: string | null
+          id?: string
+          installment_rate?: number | null
+          installments?: number | null
+          notes?: string | null
+          payment_method?: string | null
+          product_name: string
+          sale_price: number
+          status?: string
+          updated_at?: string
+          warranty_months?: number | null
+        }
+        Update: {
+          admin_notes?: string | null
+          brand?: string | null
+          category?: string | null
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          converted_to_receivable_id?: string | null
+          cost_price?: number | null
+          created_at?: string
+          customer_id?: string
+          customer_name?: string
+          deleted_at?: string | null
+          id?: string
+          installment_rate?: number | null
+          installments?: number | null
+          notes?: string | null
+          payment_method?: string | null
+          product_name?: string
+          sale_price?: number
+          status?: string
+          updated_at?: string
+          warranty_months?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_requests_converted_to_receivable_id_fkey"
+            columns: ["converted_to_receivable_id"]
+            isOneToOne: false
+            referencedRelation: "receivables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_requests_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           active: boolean
@@ -132,6 +228,7 @@ export type Database = {
           credit_balance: number
           credit_limit: number
           customer_type: string
+          deleted_at: string | null
           email: string | null
           has_portal_access: boolean | null
           id: string
@@ -154,6 +251,7 @@ export type Database = {
           credit_balance?: number
           credit_limit?: number
           customer_type: string
+          deleted_at?: string | null
           email?: string | null
           has_portal_access?: boolean | null
           id?: string
@@ -176,6 +274,7 @@ export type Database = {
           credit_balance?: number
           credit_limit?: number
           customer_type?: string
+          deleted_at?: string | null
           email?: string | null
           has_portal_access?: boolean | null
           id?: string
@@ -234,6 +333,7 @@ export type Database = {
           created_at: string
           customer_id: string | null
           customer_name: string | null
+          deleted_at: string | null
           description: string | null
           digital_tax: number | null
           discount_price: number | null
@@ -250,9 +350,11 @@ export type Database = {
           payment_method: string | null
           product_order: number | null
           profit: number | null
+          receivable_id: string | null
           sale_price: number | null
           sold: boolean
           sold_date: string | null
+          sold_on_credit: boolean
           specifications: Json | null
           warranty_months: number | null
         }
@@ -263,6 +365,7 @@ export type Database = {
           created_at?: string
           customer_id?: string | null
           customer_name?: string | null
+          deleted_at?: string | null
           description?: string | null
           digital_tax?: number | null
           discount_price?: number | null
@@ -279,9 +382,11 @@ export type Database = {
           payment_method?: string | null
           product_order?: number | null
           profit?: number | null
+          receivable_id?: string | null
           sale_price?: number | null
           sold?: boolean
           sold_date?: string | null
+          sold_on_credit?: boolean
           specifications?: Json | null
           warranty_months?: number | null
         }
@@ -292,6 +397,7 @@ export type Database = {
           created_at?: string
           customer_id?: string | null
           customer_name?: string | null
+          deleted_at?: string | null
           description?: string | null
           digital_tax?: number | null
           discount_price?: number | null
@@ -308,9 +414,11 @@ export type Database = {
           payment_method?: string | null
           product_order?: number | null
           profit?: number | null
+          receivable_id?: string | null
           sale_price?: number | null
           sold?: boolean
           sold_date?: string | null
+          sold_on_credit?: boolean
           specifications?: Json | null
           warranty_months?: number | null
         }
@@ -353,6 +461,7 @@ export type Database = {
           created_at: string
           customer_id: string | null
           customer_name: string
+          deleted_at: string | null
           digital_tax: number | null
           id: string
           installment_rate: number | null
@@ -374,6 +483,7 @@ export type Database = {
           created_at?: string
           customer_id?: string | null
           customer_name: string
+          deleted_at?: string | null
           digital_tax?: number | null
           id?: string
           installment_rate?: number | null
@@ -395,6 +505,7 @@ export type Database = {
           created_at?: string
           customer_id?: string | null
           customer_name?: string
+          deleted_at?: string | null
           digital_tax?: number | null
           id?: string
           installment_rate?: number | null
@@ -426,16 +537,21 @@ export type Database = {
           brand: string | null
           category: string | null
           cost_price: number | null
+          coupon_code: string | null
+          coupon_discount: number | null
           created_at: string
           customer_id: string
           customer_name: string
+          deleted_at: string | null
           due_date: string
+          hidden_from_portal: boolean | null
           id: string
           installment_rate: number | null
           installments: number
           notes: string | null
           paid_amount: number
           payments: Json | null
+          product_id: string | null
           product_name: string
           profit: number | null
           remaining_amount: number
@@ -443,6 +559,7 @@ export type Database = {
           status: string
           total_amount: number
           updated_at: string
+          warranty_months: number | null
         }
         Insert: {
           archived?: boolean
@@ -450,16 +567,21 @@ export type Database = {
           brand?: string | null
           category?: string | null
           cost_price?: number | null
+          coupon_code?: string | null
+          coupon_discount?: number | null
           created_at?: string
           customer_id: string
           customer_name: string
+          deleted_at?: string | null
           due_date: string
+          hidden_from_portal?: boolean | null
           id?: string
           installment_rate?: number | null
           installments: number
           notes?: string | null
           paid_amount?: number
           payments?: Json | null
+          product_id?: string | null
           product_name: string
           profit?: number | null
           remaining_amount: number
@@ -467,6 +589,7 @@ export type Database = {
           status: string
           total_amount: number
           updated_at?: string
+          warranty_months?: number | null
         }
         Update: {
           archived?: boolean
@@ -474,16 +597,21 @@ export type Database = {
           brand?: string | null
           category?: string | null
           cost_price?: number | null
+          coupon_code?: string | null
+          coupon_discount?: number | null
           created_at?: string
           customer_id?: string
           customer_name?: string
+          deleted_at?: string | null
           due_date?: string
+          hidden_from_portal?: boolean | null
           id?: string
           installment_rate?: number | null
           installments?: number
           notes?: string | null
           paid_amount?: number
           payments?: Json | null
+          product_id?: string | null
           product_name?: string
           profit?: number | null
           remaining_amount?: number
@@ -491,6 +619,7 @@ export type Database = {
           status?: string
           total_amount?: number
           updated_at?: string
+          warranty_months?: number | null
         }
         Relationships: [
           {
@@ -552,6 +681,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cleanup_old_deleted_items: { Args: never; Returns: undefined }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
