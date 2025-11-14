@@ -212,7 +212,7 @@ export const productsStore = {
       brand: product.brand,
       category: product.category,
       images: product.images,
-      specifications: product.specs,
+      specifications: product.specifications || null,
       description: product.description,
       base_price: product.price,
       discount_price: product.discountPrice || null,
@@ -249,6 +249,7 @@ export const productsStore = {
     if (data.category !== undefined) updateData.category = data.category;
     if (data.images !== undefined) updateData.images = data.images;
     if (data.specs !== undefined) updateData.specifications = data.specs;
+    if (data.specifications !== undefined) updateData.specifications = data.specifications;
     if (data.description !== undefined) updateData.description = data.description;
     if (data.price !== undefined) updateData.base_price = data.price;
     if (data.discountPrice !== undefined) updateData.discount_price = data.discountPrice || null;
