@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { customerRequestsStore, CustomerRequest } from "@/lib/customerRequestsStore";
 import { RequestStatusBadge } from "./RequestStatusBadge";
 import { format } from "date-fns";
@@ -40,75 +39,73 @@ export const CustomerRequestsList = ({ refreshKey }: Props) => {
 
   if (requests.length === 0) {
     return (
-      <Card>
-        <CardContent className="py-8 text-center text-muted-foreground">
-          <Package className="w-12 h-12 mx-auto mb-2 opacity-50" />
-          <p>Nenhuma solicitação ainda</p>
-        </CardContent>
-      </Card>
+      <div className="py-8 text-center text-muted-foreground border rounded-lg bg-card">
+        <Package className="w-12 h-12 mx-auto mb-2 opacity-50" />
+        <p>Nenhuma solicitação ainda</p>
+      </div>
     );
   }
 
   return (
-    <div className="space-y-2">
-      {requests.map((request) => (
-        <Card key={request.id}>
-          <CardHeader className="pb-2">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <CardTitle className="text-sm">{request.product_name}</CardTitle>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {format(new Date(request.created_at), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", {
-                    locale: ptBR,
-                  })}
-                </p>
-              </div>
-              <RequestStatusBadge status={request.status} />
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-1.5">
-            <div className="flex justify-between">
-              <span className="text-sm text-muted-foreground">Valor:</span>
-              <span className="font-semibold text-primary">
-                R$ {request.sale_price.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-              </span>
-            </div>
+    <div className="space-y-1.5">
+      {requests.map((request) => {
+        const warrantyDays = request.warranty_months ? request.warranty_months * 30 : 0;
+        let warrantyText = null;
+        
+        if (request.warranty_months && request.warranty_months > 0) {
+          if (request.status === 'confirmed' && request.confirmed_at) {
+            const warranty = calculateWarranty(request.confirmed_at, warrantyDays);
+            warrantyText = warranty.isActive 
+              ? `${warranty.daysRemaining} dias restantes`
+              : `Expirada`;
+          } else {
+            warrantyText = `${request.warranty_months} ${request.warranty_months === 1 ? 'mês' : 'meses'}`;
+          }
+        }
 
-            {request.notes && (
-              <div className="pt-2 border-t">
-                <p className="text-sm text-muted-foreground">Observações:</p>
-                <p className="text-sm mt-1">{request.notes}</p>
+        return (
+          <div key={request.id} className="flex items-center gap-3 p-3 border rounded-lg hover:shadow-sm transition-shadow bg-card">
+            <Package className="h-8 w-8 text-primary flex-shrink-0" />
+            
+            <div className="flex-1 min-w-0 space-y-1">
+              {/* Linha 1: Nome + Badge */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <h4 className="font-semibold text-sm truncate">{request.product_name}</h4>
+                <RequestStatusBadge status={request.status} />
               </div>
-            )}
-
-            {request.admin_notes && (
-              <div className="pt-2 border-t bg-muted/50 p-2 rounded">
-                <p className="text-sm text-muted-foreground font-medium">Resposta do Administrador:</p>
-                <p className="text-sm mt-1">{request.admin_notes}</p>
-              </div>
-            )}
-
-            {/* Garantia */}
-            {request.warranty_months && request.warranty_months > 0 && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground mt-2 pt-2 border-t">
-                <Shield className="h-4 w-4" />
-                <span>
-                  {(() => {
-                    const days = request.warranty_months * 30;
-                    if (request.status === 'confirmed' && request.confirmed_at) {
-                      const warranty = calculateWarranty(request.confirmed_at, days);
-                      return warranty.isActive 
-                        ? `Garantia: ${warranty.daysRemaining} dias restantes`
-                        : `Garantia expirada`;
-                    }
-                    return `Garantia: ${request.warranty_months} ${request.warranty_months === 1 ? 'mês' : 'meses'}`;
-                  })()}
+              
+              {/* Linha 2: Data + Valor */}
+              <p className="text-xs text-muted-foreground">
+                {format(new Date(request.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })} • 
+                <span className="font-semibold text-foreground ml-1">
+                  R$ {request.sale_price.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                 </span>
+              </p>
+              
+              {/* Linha 3: Garantia + Notas */}
+              <div className="flex items-center gap-2 flex-wrap text-xs">
+                {warrantyText && (
+                  <span className="flex items-center gap-1 text-muted-foreground">
+                    <Shield className="h-3 w-3" />
+                    Garantia: {warrantyText}
+                  </span>
+                )}
+                {request.notes && (
+                  <span className="text-muted-foreground">• Obs: {request.notes}</span>
+                )}
               </div>
-            )}
-          </CardContent>
-        </Card>
-      ))}
+
+              {/* Resposta do admin (se houver) */}
+              {request.admin_notes && (
+                <div className="mt-1 bg-muted/50 p-2 rounded">
+                  <p className="text-xs font-medium text-muted-foreground">Resposta:</p>
+                  <p className="text-xs mt-0.5">{request.admin_notes}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 };

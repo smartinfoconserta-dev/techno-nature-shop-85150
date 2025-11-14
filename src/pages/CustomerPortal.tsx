@@ -16,6 +16,7 @@ import { Search } from "lucide-react";
 import { AddNotebookItemDialog } from "@/components/customer/AddNotebookItemDialog";
 import { CustomerRequestsList } from "@/components/customer/CustomerRequestsList";
 import { DeletePortalReceivableDialog } from "@/components/customer/DeletePortalReceivableDialog";
+import { CustomerReceivableItem } from "@/components/customer/CustomerReceivableItem";
 import SearchBar from "@/components/SearchBar";
 import WarrantyBadge from "@/components/admin/WarrantyBadge";
 import { supabase } from "@/integrations/supabase/client";
@@ -376,84 +377,15 @@ const CustomerPortal = () => {
                     {activeReceivables.length === 0 ? "Nenhuma compra ativa" : "Nenhuma compra encontrada com os filtros aplicados"}
                   </p>
                 ) : (
-                  <div className="space-y-2.5">
-                    {filteredReceivables.map(receivable => {
-                      return (
-                        <Card key={receivable.id} className="border">
-                          <CardContent className="pt-3">
-                            <div className="flex justify-between items-start mb-2">
-                              <div>
-                                <h3 className="font-semibold text-base">{receivable.productName}</h3>
-                                <p className="text-sm text-muted-foreground">
-                                  Data: {format(new Date(receivable.createdAt), "dd/MM/yyyy")}
-                                </p>
-                              </div>
-                              {getStatusBadge(receivable.status)}
-                            </div>
-
-                            {/* Badge de Garantia - SEMPRE EXIBIR */}
-                            <div className="flex items-center gap-2 mb-2 p-2 bg-muted/50 rounded-lg">
-                              <Shield className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-sm text-muted-foreground mr-2">Garantia:</span>
-                              {receivable.warrantyMonths && receivable.warrantyMonths > 0 ? (
-                                <WarrantyBadge 
-                                  saleDate={receivable.createdAt}
-                                  warrantyDays={convertMonthsToDays(receivable.warrantyMonths)}
-                                  size="default"
-                                />
-                              ) : (
-                                <Badge variant="outline" className="gap-1">
-                                  <XCircle className="w-3 h-3" />
-                                  Sem garantia
-                                </Badge>
-                              )}
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-2 mb-1.5">
-                              <div>
-                                <p className="text-sm text-muted-foreground">Total</p>
-                                <p className="font-semibold">R$ {receivable.totalAmount.toFixed(2)}</p>
-                              </div>
-                              <div>
-                                <p className="text-sm text-muted-foreground">Pago</p>
-                                <p className="font-semibold text-green-600">R$ {receivable.paidAmount.toFixed(2)}</p>
-                              </div>
-                              <div>
-                                <p className="text-sm text-muted-foreground">Restante</p>
-                                <p className="font-semibold text-red-600">R$ {receivable.remainingAmount.toFixed(2)}</p>
-                              </div>
-                              {receivable.dueDate && (
-                                <div>
-                                  <p className="text-sm text-muted-foreground">Vencimento</p>
-                                  <p className="font-semibold">{format(new Date(receivable.dueDate), "dd/MM/yyyy")}</p>
-                                </div>
-                              )}
-                            </div>
-
-                            {/* Histórico de Pagamentos */}
-                            {receivable.payments.length > 0 && (
-                              <div className="mt-2 pt-2 border-t">
-                                <p className="text-sm font-semibold mb-2">Pagamentos</p>
-                                <div className="space-y-1">
-                                  {receivable.payments.map(payment => (
-                                    <div key={payment.id} className="flex justify-between text-sm">
-                                      <span className="text-muted-foreground">
-                                        {format(new Date(payment.paymentDate), "dd/MM/yyyy")} - 
-                                        {payment.paymentMethod === "cash" ? " Dinheiro" : 
-                                         payment.paymentMethod === "pix" ? " PIX" : " Cartão"}
-                                      </span>
-                                      <span className="font-semibold text-green-600">
-                                        R$ {payment.amount.toFixed(2)}
-                                      </span>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                          </CardContent>
-                        </Card>
-                      );
-                    })}
+                  <div className="space-y-1.5">
+                    {filteredReceivables.map(receivable => (
+                      <CustomerReceivableItem
+                        key={receivable.id}
+                        receivable={receivable}
+                        isArchived={false}
+                        getStatusBadge={getStatusBadge}
+                      />
+                    ))}
                   </div>
                 )}
               </TabsContent>
@@ -464,97 +396,22 @@ const CustomerPortal = () => {
                     Nenhuma compra arquivada
                   </p>
                 ) : (
-                  <div className="space-y-4">
-                    {archivedReceivables.map(receivable => {
-                      return (
-                        <Card key={receivable.id} className="border">
-                          <CardContent className="pt-6">
-                            <div className="flex justify-between items-start mb-3">
-                              <div>
-                                <h3 className="font-semibold text-lg">{receivable.productName}</h3>
-                                <p className="text-sm text-muted-foreground">
-                                  Data: {format(new Date(receivable.createdAt), "dd/MM/yyyy")}
-                                </p>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                {getStatusBadge(receivable.status)}
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => {
-                                    setSelectedReceivable(receivable);
-                                    setShowDeleteDialog(true);
-                                  }}
-                                  title="Excluir compra"
-                                >
-                                  <Trash2 className="w-4 h-4 text-destructive" />
-                                </Button>
-                              </div>
-                            </div>
-
-                            {/* Badge de Garantia - SEMPRE EXIBIR */}
-                            <div className="flex items-center gap-2 mb-3 p-3 bg-muted/50 rounded-lg">
-                              <Shield className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-sm text-muted-foreground mr-2">Garantia:</span>
-                              {receivable.warrantyMonths && receivable.warrantyMonths > 0 ? (
-                                <WarrantyBadge 
-                                  saleDate={receivable.createdAt}
-                                  warrantyDays={convertMonthsToDays(receivable.warrantyMonths)}
-                                  size="default"
-                                />
-                              ) : (
-                                <Badge variant="outline" className="gap-1 text-muted-foreground">
-                                  <XCircle className="w-3 h-3" />
-                                  Sem garantia
-                                </Badge>
-                              )}
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-3 mb-3">
-                              <div>
-                                <p className="text-sm text-muted-foreground">Total</p>
-                                <p className="font-semibold">R$ {receivable.totalAmount.toFixed(2)}</p>
-                              </div>
-                              <div>
-                                <p className="text-sm text-muted-foreground">Pago</p>
-                                <p className="font-semibold text-green-600">R$ {receivable.paidAmount.toFixed(2)}</p>
-                              </div>
-                              <div>
-                                <p className="text-sm text-muted-foreground">Restante</p>
-                                <p className="font-semibold text-red-600">R$ {receivable.remainingAmount.toFixed(2)}</p>
-                              </div>
-                              {receivable.dueDate && (
-                                <div>
-                                  <p className="text-sm text-muted-foreground">Vencimento</p>
-                                  <p className="font-semibold">{format(new Date(receivable.dueDate), "dd/MM/yyyy")}</p>
-                                </div>
-                              )}
-                            </div>
-
-                            {/* Histórico de Pagamentos */}
-                            {receivable.payments.length > 0 && (
-                              <div className="mt-4 pt-4 border-t">
-                                <p className="text-sm font-semibold mb-2">Pagamentos</p>
-                                <div className="space-y-2">
-                                  {receivable.payments.map(payment => (
-                                    <div key={payment.id} className="flex justify-between text-sm">
-                                      <span className="text-muted-foreground">
-                                        {format(new Date(payment.paymentDate), "dd/MM/yyyy")} - 
-                                        {payment.paymentMethod === "cash" ? " Dinheiro" : 
-                                         payment.paymentMethod === "pix" ? " PIX" : " Cartão"}
-                                      </span>
-                                      <span className="font-semibold text-green-600">
-                                        R$ {payment.amount.toFixed(2)}
-                                      </span>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                          </CardContent>
-                        </Card>
-                      );
-                    })}
+                  <div className="space-y-1.5">
+                    {archivedReceivables.map(receivable => (
+                      <CustomerReceivableItem
+                        key={receivable.id}
+                        receivable={receivable}
+                        isArchived={true}
+                        onDelete={(id) => {
+                          const rec = archivedReceivables.find(r => r.id === id);
+                          if (rec) {
+                            setSelectedReceivable(rec);
+                            setShowDeleteDialog(true);
+                          }
+                        }}
+                        getStatusBadge={getStatusBadge}
+                      />
+                    ))}
                   </div>
                 )}
               </TabsContent>
