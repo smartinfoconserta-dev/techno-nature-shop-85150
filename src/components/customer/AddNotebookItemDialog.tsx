@@ -7,7 +7,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { customerRequestsStore } from "@/lib/customerRequestsStore";
 import { Loader2 } from "lucide-react";
-import WarrantySelector from "@/components/admin/WarrantySelector";
 
 interface Props {
   open: boolean;
@@ -20,7 +19,6 @@ export const AddNotebookItemDialog = ({ open, onOpenChange, onSuccess }: Props) 
   const [productName, setProductName] = useState("");
   const [salePrice, setSalePrice] = useState("");
   const [notes, setNotes] = useState("");
-  const [warrantyDays, setWarrantyDays] = useState(90);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,7 +40,6 @@ export const AddNotebookItemDialog = ({ open, onOpenChange, onSuccess }: Props) 
         productName: productName.trim(),
         salePrice: price,
         notes: notes.trim() || undefined,
-        warrantyMonths: Math.floor(warrantyDays / 30),
       });
 
       toast.success("Solicitação enviada com sucesso!");
@@ -101,10 +98,6 @@ export const AddNotebookItemDialog = ({ open, onOpenChange, onSuccess }: Props) 
               placeholder="Detalhes adicionais..."
               rows={3}
             />
-          </div>
-
-          <div>
-            <WarrantySelector value={warrantyDays} onChange={setWarrantyDays} />
           </div>
 
           <div className="flex gap-2 justify-end">

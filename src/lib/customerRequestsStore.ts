@@ -29,7 +29,6 @@ export const customerRequestsStore = {
     productName: string;
     salePrice: number;
     notes?: string;
-    warrantyMonths?: number;
   }): Promise<CustomerRequest> {
     const token = localStorage.getItem("customer_token");
     
@@ -41,7 +40,6 @@ export const customerRequestsStore = {
         productName: data.productName,
         salePrice: data.salePrice,
         notes: data.notes,
-        warrantyMonths: data.warrantyMonths,
       },
       }
     );
