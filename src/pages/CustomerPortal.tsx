@@ -256,8 +256,8 @@ const CustomerPortal = () => {
             <Sheet>
               <SheetTrigger asChild>
                 <Button variant="outline" size="sm">
-                  <Notebook className="h-4 w-4 mr-2" />
-                  Minha Caderneta
+                  <Notebook className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Minha Caderneta</span>
                 </Button>
               </SheetTrigger>
               <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto">
@@ -278,12 +278,12 @@ const CustomerPortal = () => {
             </Sheet>
             
             <Button variant="outline" onClick={handlePrintPDF} size="sm">
-              <FileText className="h-4 w-4 mr-2" />
-              Imprimir PDF
+              <FileText className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Imprimir PDF</span>
             </Button>
             <Button variant="outline" onClick={handleLogout} size="sm">
-              <LogOut className="h-4 w-4 mr-2" />
-              Sair
+              <LogOut className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Sair</span>
             </Button>
           </div>
         </div>
