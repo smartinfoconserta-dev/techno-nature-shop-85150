@@ -10,6 +10,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { CalendarIcon, Check, X } from "lucide-react";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 import { Product, productsStore } from "@/lib/productsStore";
 import { settingsStore } from "@/lib/settingsStore";
 import { couponsStore } from "@/lib/couponsStore";
@@ -18,7 +24,6 @@ import { Customer, customersStore } from "@/lib/customersStore";
 import { Separator } from "@/components/ui/separator";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Check, X } from "lucide-react";
 import { InstallmentOption, getAllInstallmentOptions } from "@/lib/installmentHelper";
 import { useToast } from "@/hooks/use-toast";
 import CustomerSelector from "./CustomerSelector";
@@ -56,6 +61,7 @@ const MarkAsSoldDialog = ({
   
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [initialPayment, setInitialPayment] = useState("");
+  const [saleDate, setSaleDate] = useState<Date | undefined>(undefined);
   const [dueDate, setDueDate] = useState("");
   const [notes, setNotes] = useState("");
   const [showNewCustomerDialog, setShowNewCustomerDialog] = useState(false);
@@ -83,6 +89,7 @@ const MarkAsSoldDialog = ({
       setCouponError("");
       setSelectedCustomer(null);
       setInitialPayment("");
+      setSaleDate(undefined);
       setDueDate("");
       setNotes("");
       setWarrantyDays(90);
@@ -225,13 +232,15 @@ const MarkAsSoldDialog = ({
 
         // Criar array de pagamentos iniciais
         const initialPayments: any[] = [];
-        const now = new Date().toISOString().split('T')[0];
+        const saleDateStr = saleDate 
+          ? format(saleDate, "yyyy-MM-dd") 
+          : new Date().toISOString().split('T')[0];
 
         if (cashInitial > 0) {
           initialPayments.push({
             id: `${Date.now()}-cash`,
             amount: cashInitial,
-            paymentDate: now,
+            paymentDate: saleDateStr,
             paymentMethod: "cash",
             notes: "Pagamento inicial - Dinheiro",
           });
@@ -241,7 +250,7 @@ const MarkAsSoldDialog = ({
           initialPayments.push({
             id: `${Date.now()}-pix`,
             amount: pixInitial,
-            paymentDate: now,
+            paymentDate: saleDateStr,
             paymentMethod: "pix",
             notes: "Pagamento inicial - PIX",
           });
@@ -251,7 +260,7 @@ const MarkAsSoldDialog = ({
           initialPayments.push({
             id: `${Date.now()}-card`,
             amount: cardInitial,
-            paymentDate: now,
+            paymentDate: saleDateStr,
             paymentMethod: "card",
             notes: "Pagamento inicial - Cartão",
           });
@@ -275,6 +284,7 @@ const MarkAsSoldDialog = ({
           warrantyMonths: warrantyDays, // Salvar dias diretamente
           warrantyExpiresAt: warrantyExpires,
           payments: initialPayments,
+          createdAt: saleDate ? saleDate.toISOString() : undefined,
         });
 
         productsStore.markAsSoldOnCredit(product.id, selectedCustomer.name, selectedCustomer.cpfCnpj, finalPrice, receivable.id, warrantyDays, warrantyExpires);
@@ -504,7 +514,128 @@ const MarkAsSoldDialog = ({
               <WarrantySelector value={warrantyDays} onChange={setWarrantyDays} />
             </>
           ) : (
-            <><CustomerSelector selectedCustomer={selectedCustomer} customers={customers} onCustomerSelect={setSelectedCustomer} onNewCustomer={() => setShowNewCustomerDialog(true)} /><div className="bg-muted/50 p-4 rounded-lg space-y-3"><div className="flex justify-between"><span className="font-medium">Valor Total:</span><span className="text-xl font-bold">R$ {finalPrice.toFixed(2)}</span></div><div className="space-y-2"><Label>Pagamento Inicial</Label><div className="space-y-3 pl-4 border-l-2 border-muted"><div className="space-y-2"><Label className="text-sm">💵 Dinheiro</Label><Input type="number" step="0.01" min="0" value={initialCash} onChange={(e) => setInitialCash(e.target.value)} placeholder="0.00" /></div><div className="space-y-2"><Label className="text-sm">📱 PIX</Label><Input type="number" step="0.01" min="0" value={initialPix} onChange={(e) => setInitialPix(e.target.value)} placeholder="0.00" /></div><div className="space-y-2"><Label className="text-sm">💳 Cartão</Label><Input type="number" step="0.01" min="0" value={initialCard} onChange={(e) => setInitialCard(e.target.value)} placeholder="0.00" /></div><div className="bg-primary/10 p-2 rounded"><div className="flex justify-between text-sm"><span>Total Inicial:</span><span className="font-bold">R$ {((parseFloat(initialCash) || 0) + (parseFloat(initialPix) || 0) + (parseFloat(initialCard) || 0)).toFixed(2)}</span></div></div></div></div><div className="flex justify-between"><span className="text-muted-foreground">Restante:</span><span className="text-lg font-bold text-red-600">R$ {(finalPrice - ((parseFloat(initialCash) || 0) + (parseFloat(initialPix) || 0) + (parseFloat(initialCard) || 0))).toFixed(2)}</span></div><div className="space-y-2"><Label>Vencimento</Label><Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} /></div><div className="space-y-2"><Label>Observações</Label><Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Informações adicionais" /></div></div><Separator /><WarrantySelector value={warrantyDays} onChange={setWarrantyDays} /></>
+            <>
+              <CustomerSelector 
+                selectedCustomer={selectedCustomer} 
+                customers={customers} 
+                onCustomerSelect={setSelectedCustomer} 
+                onNewCustomer={() => setShowNewCustomerDialog(true)} 
+              />
+              
+              <div className="bg-muted/50 p-4 rounded-lg space-y-3">
+                <div className="flex justify-between">
+                  <span className="font-medium">Valor Total:</span>
+                  <span className="text-xl font-bold">R$ {finalPrice.toFixed(2)}</span>
+                </div>
+
+                {/* Data da Venda */}
+                <div className="space-y-2">
+                  <Label>📅 Data da Venda (opcional)</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !saleDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {saleDate ? format(saleDate, "PPP", { locale: ptBR }) : "Data de hoje"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={saleDate}
+                        onSelect={setSaleDate}
+                        initialFocus
+                        locale={ptBR}
+                        className="pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <p className="text-xs text-muted-foreground">
+                    Se deixar em branco, usa a data de hoje
+                  </p>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Pagamento Inicial</Label>
+                  <div className="space-y-3 pl-4 border-l-2 border-muted">
+                    <div className="space-y-2">
+                      <Label className="text-sm">💵 Dinheiro</Label>
+                      <Input 
+                        type="number" 
+                        step="0.01" 
+                        min="0" 
+                        value={initialCash} 
+                        onChange={(e) => setInitialCash(e.target.value)} 
+                        placeholder="0.00" 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm">📱 PIX</Label>
+                      <Input 
+                        type="number" 
+                        step="0.01" 
+                        min="0" 
+                        value={initialPix} 
+                        onChange={(e) => setInitialPix(e.target.value)} 
+                        placeholder="0.00" 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm">💳 Cartão</Label>
+                      <Input 
+                        type="number" 
+                        step="0.01" 
+                        min="0" 
+                        value={initialCard} 
+                        onChange={(e) => setInitialCard(e.target.value)} 
+                        placeholder="0.00" 
+                      />
+                    </div>
+                    <div className="bg-primary/10 p-2 rounded">
+                      <div className="flex justify-between text-sm">
+                        <span>Total Inicial:</span>
+                        <span className="font-bold">
+                          R$ {((parseFloat(initialCash) || 0) + (parseFloat(initialPix) || 0) + (parseFloat(initialCard) || 0)).toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Restante:</span>
+                  <span className="text-lg font-bold text-red-600">
+                    R$ {(finalPrice - ((parseFloat(initialCash) || 0) + (parseFloat(initialPix) || 0) + (parseFloat(initialCard) || 0))).toFixed(2)}
+                  </span>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Vencimento</Label>
+                  <Input 
+                    type="date" 
+                    value={dueDate} 
+                    onChange={(e) => setDueDate(e.target.value)} 
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Observações</Label>
+                  <Input 
+                    value={notes} 
+                    onChange={(e) => setNotes(e.target.value)} 
+                    placeholder="Informações adicionais" 
+                  />
+                </div>
+              </div>
+              
+              <Separator />
+              <WarrantySelector value={warrantyDays} onChange={setWarrantyDays} />
+            </>
           )}
         </div>
 

@@ -153,7 +153,7 @@ export const receivablesStore = {
   },
 
   async addReceivable(
-    data: Omit<Receivable, "id" | "status" | "remainingAmount" | "profit" | "createdAt" | "updatedAt">
+    data: Omit<Receivable, "id" | "status" | "remainingAmount" | "profit" | "createdAt" | "updatedAt"> & { createdAt?: string }
   ): Promise<Receivable> {
     if (!data.customerId) throw new Error("Cliente é obrigatório");
     if (!data.productId) throw new Error("Produto é obrigatório");
@@ -197,7 +197,7 @@ export const receivablesStore = {
       notes: data.notes,
       archived: false,
       archivedAt: undefined,
-      createdAt: new Date().toISOString(),
+      createdAt: data.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
 
