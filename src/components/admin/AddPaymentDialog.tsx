@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogTitle } from "@/components/ui/dialog";
+import { StickyDialogContent, DialogHeader, DialogFooter } from "@/components/ui/sticky-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -67,14 +68,24 @@ const AddPaymentDialog = ({ open, onOpenChange, receivable, onConfirm }: AddPaym
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md max-h-[85dvh] overflow-y-auto p-0">
-        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b px-6 pt-6 pb-3">
+      <StickyDialogContent
+        maxWidth="md"
+        header={
           <DialogHeader>
             <DialogTitle>💵 Registrar Pagamento</DialogTitle>
           </DialogHeader>
-        </div>
-
-        <div className="px-6 py-4 space-y-4 pb-24">
+        }
+        footer={
+          <DialogFooter className="sm:justify-end">
+            <Button variant="outline" onClick={handleClose}>
+              Cancelar
+            </Button>
+            <Button onClick={handleConfirm}>
+              Registrar Pagamento
+            </Button>
+          </DialogFooter>
+        }
+      >
             <div className="space-y-2 bg-muted/50 p-4 rounded-lg">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Cliente:</span>
@@ -184,19 +195,7 @@ const AddPaymentDialog = ({ open, onOpenChange, receivable, onConfirm }: AddPaym
                 </div>
               )}
             </div>
-        </div>
-
-        <div className="sticky bottom-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t px-6 py-3">
-          <DialogFooter className="sm:justify-end">
-            <Button variant="outline" onClick={handleClose}>
-              Cancelar
-            </Button>
-            <Button onClick={handleConfirm}>
-              Registrar Pagamento
-            </Button>
-          </DialogFooter>
-        </div>
-      </DialogContent>
+      </StickyDialogContent>
     </Dialog>
   );
 };
