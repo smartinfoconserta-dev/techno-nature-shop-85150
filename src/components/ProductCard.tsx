@@ -75,17 +75,28 @@ const ProductCard = ({ id, images, name, brand, category, specs, description, pr
   let displayMode: 'original' | 'coupon' | 'cash' | 'installment' | 'coupon-installment' = 'original';
   let paymentDetails: { installments?: number; installmentValue?: number; totalAmount?: number } = {};
 
-  if (isDiscountActive && couponValidation.coupon && 
-      typeof couponValidation.coupon.discountPercent === 'number' &&
-      couponValidation.coupon.discountPercent > 0) {
-    
-    // Calcular preço base com cupom
+  if (isDiscountActive && couponValidation.coupon) {
     let discountedPrice = displayPrice;
-    if (discountPrice && discountPrice < displayPrice) {
-      discountedPrice = discountPrice;
-    } else {
-      const discount = couponValidation.coupon.discountPercent / 100;
-      discountedPrice = displayPrice * (1 - discount);
+    
+    // Cupom de preço fixo (discount_percent null ou 0): verifica se produto tem discount_price
+    if (couponValidation.coupon.discountPercent === null || 
+        couponValidation.coupon.discountPercent === 0) {
+      if (discountPrice && discountPrice < displayPrice) {
+        discountedPrice = discountPrice;
+      } else {
+        // Produto não tem preço promocional configurado, cupom não se aplica
+        discountedPrice = displayPrice;
+      }
+    } 
+    // Cupom com porcentagem: aplica desconto percentual
+    else if (typeof couponValidation.coupon.discountPercent === 'number' && 
+             couponValidation.coupon.discountPercent > 0) {
+      if (discountPrice && discountPrice < displayPrice) {
+        discountedPrice = discountPrice;
+      } else {
+        const discount = couponValidation.coupon.discountPercent / 100;
+        discountedPrice = displayPrice * (1 - discount);
+      }
     }
     
     // Prioridade 1: Cupom + Parcelamento
