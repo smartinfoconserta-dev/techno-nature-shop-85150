@@ -187,13 +187,16 @@ export const EditCustomerRequestDialog = ({ request, open, onOpenChange, onSucce
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[95vh] overflow-y-auto w-[95vw] sm:w-full">
         <DialogHeader>
-          <DialogTitle>Editar Solicitação - {request.customer_name}</DialogTitle>
+          <DialogTitle className="text-base sm:text-lg">
+            Editar Solicitação
+            <span className="hidden sm:inline"> - {request.customer_name}</span>
+          </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="productName">Nome do Produto</Label>
               <Input
@@ -215,7 +218,7 @@ export const EditCustomerRequestDialog = ({ request, open, onOpenChange, onSucce
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="costPrice">Preço de Custo (R$)</Label>
               <Input
@@ -238,11 +241,11 @@ export const EditCustomerRequestDialog = ({ request, open, onOpenChange, onSucce
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="brand">Marca</Label>
               <Select value={formData.brand} onValueChange={(value) => setFormData({ ...formData, brand: value })}>
-                <SelectTrigger>
+                <SelectTrigger className="w-full text-sm sm:text-base">
                   <SelectValue placeholder="Selecione a marca" />
                 </SelectTrigger>
                 <SelectContent>
@@ -258,7 +261,7 @@ export const EditCustomerRequestDialog = ({ request, open, onOpenChange, onSucce
             <div>
               <Label htmlFor="category">Categoria</Label>
               <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
-                <SelectTrigger>
+                <SelectTrigger className="w-full text-sm sm:text-base">
                   <SelectValue placeholder="Selecione a categoria" />
                 </SelectTrigger>
                 <SelectContent>
@@ -272,14 +275,14 @@ export const EditCustomerRequestDialog = ({ request, open, onOpenChange, onSucce
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="paymentMethod">Forma de Pagamento</Label>
               <Select
                 value={formData.paymentMethod}
                 onValueChange={(value) => setFormData({ ...formData, paymentMethod: value })}
               >
-                <SelectTrigger>
+                <SelectTrigger className="w-full text-sm sm:text-base">
                   <SelectValue placeholder="Definir depois (opcional)" />
                 </SelectTrigger>
                 <SelectContent>
@@ -325,29 +328,45 @@ export const EditCustomerRequestDialog = ({ request, open, onOpenChange, onSucce
             />
           </div>
 
-          <div className="flex gap-2 justify-end pt-4 border-t">
-            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading || confirmLoading}>
+          <div className="flex flex-col md:flex-row gap-2 md:justify-end pt-4 border-t">
+            <Button 
+              variant="outline" 
+              onClick={() => onOpenChange(false)} 
+              disabled={loading || confirmLoading}
+              className="w-full md:w-auto order-3 md:order-1"
+            >
               Cancelar
             </Button>
             {request.status === "pending" && (
               <>
-                <Button variant="destructive" onClick={handleReject} disabled={loading || confirmLoading}>
+                <Button 
+                  variant="destructive" 
+                  onClick={handleReject} 
+                  disabled={loading || confirmLoading}
+                  className="w-full md:w-auto order-2"
+                >
                   {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <XCircle className="w-4 h-4 mr-2" />}
                   Rejeitar
                 </Button>
                 <Button 
                   onClick={handleConfirmAndConvert} 
                   disabled={loading || confirmLoading}
-                  className="bg-green-600 hover:bg-green-700 text-white"
+                  className="bg-green-600 hover:bg-green-700 text-white w-full md:w-auto order-1 md:order-3"
                 >
                   {confirmLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Check className="w-4 h-4 mr-2" />}
-                  Confirmar e Converter em Venda
+                  <span className="hidden sm:inline">Confirmar e Converter em Venda</span>
+                  <span className="sm:hidden">Confirmar Venda</span>
                 </Button>
               </>
             )}
-            <Button onClick={handleUpdate} disabled={loading || confirmLoading}>
+            <Button 
+              onClick={handleUpdate} 
+              disabled={loading || confirmLoading}
+              className="w-full md:w-auto order-4"
+            >
               {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
-              Salvar Alterações
+              <span className="hidden sm:inline">Salvar Alterações</span>
+              <span className="sm:hidden">Salvar</span>
             </Button>
           </div>
         </div>
