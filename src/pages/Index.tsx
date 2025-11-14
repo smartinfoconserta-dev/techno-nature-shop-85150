@@ -216,7 +216,7 @@ const Index = () => {
       </section>
 
       {/* Categorias Horizontais */}
-      <section className="bg-muted/30 border-b fixed top-16 left-0 right-0 z-30 backdrop-blur-sm">
+      <section className="bg-muted/30 border-b sticky top-16 z-30 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-3">
           <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
             {categoryTree.map((category) => (
@@ -232,7 +232,7 @@ const Index = () => {
       </section>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8 pt-24">
+      <main className="container mx-auto px-4 py-8">
         <ProductFilters
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
