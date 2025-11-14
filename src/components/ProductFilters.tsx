@@ -1,7 +1,9 @@
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Filter, X, Search, ArrowUpDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import { settingsStore } from "@/lib/settingsStore";
 import {
   Select,
   SelectContent,
@@ -63,6 +65,17 @@ const ProductFilters = ({
   hasDedicatedGPU,
   onDedicatedGPUChange,
 }: ProductFiltersProps) => {
+  const [processorOptions, setProcessorOptions] = useState<string[]>([]);
+  const [ramOptions, setRamOptions] = useState<string[]>([]);
+
+  useEffect(() => {
+    const loadSpecOptions = async () => {
+      const settings = await settingsStore.getSettings();
+      setProcessorOptions(settings.processorOptions || []);
+      setRamOptions(settings.ramOptions || []);
+    };
+    loadSpecOptions();
+  }, []);
   const activeFiltersCount = 
     (selectedBrand !== "all" ? 1 : 0) + 
     (priceRange[0] > 0 || priceRange[1] < maxPrice ? 1 : 0) +
@@ -223,7 +236,7 @@ const ProductFilters = ({
                 <div>
                   <h3 className="font-semibold mb-3">Processador</h3>
                   <div className="flex flex-wrap gap-2">
-                    {['i3', 'i5', 'i7', 'i9'].map((proc) => (
+                    {processorOptions.map((proc) => (
                       <Button
                         key={proc}
                         size="sm"
@@ -236,7 +249,7 @@ const ProductFilters = ({
                           }
                         }}
                       >
-                        {proc.toUpperCase()}
+                        {proc}
                       </Button>
                     ))}
                   </div>
@@ -245,7 +258,7 @@ const ProductFilters = ({
                 <div>
                   <h3 className="font-semibold mb-3">Memória RAM</h3>
                   <div className="flex flex-wrap gap-2">
-                    {['4GB', '8GB', '16GB'].map((memory) => (
+                    {ramOptions.map((memory) => (
                       <Button
                         key={memory}
                         size="sm"

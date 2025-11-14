@@ -40,6 +40,14 @@ const SettingsTab = () => {
   const [newInstallments, setNewInstallments] = useState("");
   const [newRate, setNewRate] = useState("");
   const [editingRates, setEditingRates] = useState<Record<number, string>>({});
+  
+  // Processor and RAM options
+  const [processorOptions, setProcessorOptions] = useState<string[]>([]);
+  const [ramOptions, setRamOptions] = useState<string[]>([]);
+  const [showAddProcessorDialog, setShowAddProcessorDialog] = useState(false);
+  const [showAddRAMDialog, setShowAddRAMDialog] = useState(false);
+  const [newProcessor, setNewProcessor] = useState("");
+  const [newRAM, setNewRAM] = useState("");
 
   useEffect(() => {
     loadSettings();
@@ -50,6 +58,8 @@ const SettingsTab = () => {
     setDigitalTaxRate(settings.digitalTaxRate || 6);
     setIncludeCashInTax(settings.includeCashInTax || false);
     setInstallmentRates(settings.installmentRates || []);
+    setProcessorOptions(settings.processorOptions || []);
+    setRamOptions(settings.ramOptions || []);
   };
 
   const handleSaveTaxSettings = () => {
@@ -132,6 +142,60 @@ const SettingsTab = () => {
       toast.success(`Parcela ${installments}x removida!`);
     } catch (error: any) {
       toast.error(error.message || "Erro ao remover parcela");
+    }
+  };
+
+  const handleAddProcessor = () => {
+    if (!newProcessor.trim()) {
+      toast.error("Digite o nome do processador");
+      return;
+    }
+
+    try {
+      settingsStore.addProcessorOption(newProcessor.trim());
+      loadSettings();
+      toast.success("Processador adicionado!");
+      setNewProcessor("");
+      setShowAddProcessorDialog(false);
+    } catch (error: any) {
+      toast.error(error.message || "Erro ao adicionar processador");
+    }
+  };
+
+  const handleRemoveProcessor = (option: string) => {
+    try {
+      settingsStore.removeProcessorOption(option);
+      loadSettings();
+      toast.success("Processador removido!");
+    } catch (error: any) {
+      toast.error(error.message || "Erro ao remover processador");
+    }
+  };
+
+  const handleAddRAM = () => {
+    if (!newRAM.trim()) {
+      toast.error("Digite a capacidade de RAM");
+      return;
+    }
+
+    try {
+      settingsStore.addRAMOption(newRAM.trim());
+      loadSettings();
+      toast.success("Opção de RAM adicionada!");
+      setNewRAM("");
+      setShowAddRAMDialog(false);
+    } catch (error: any) {
+      toast.error(error.message || "Erro ao adicionar RAM");
+    }
+  };
+
+  const handleRemoveRAM = (option: string) => {
+    try {
+      settingsStore.removeRAMOption(option);
+      loadSettings();
+      toast.success("Opção de RAM removida!");
+    } catch (error: any) {
+      toast.error(error.message || "Erro ao remover RAM");
     }
   };
 
@@ -427,6 +491,136 @@ const SettingsTab = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Processor Options Dialog */}
+      <Dialog open={showAddProcessorDialog} onOpenChange={setShowAddProcessorDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Adicionar Processador</DialogTitle>
+            <DialogDescription>
+              Digite o nome do processador (ex: Ryzen 9, i9 12th Gen)
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="newProcessor">Nome do Processador</Label>
+            <Input
+              id="newProcessor"
+              placeholder="Ex: Ryzen 9"
+              value={newProcessor}
+              onChange={(e) => setNewProcessor(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleAddProcessor()}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddProcessorDialog(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleAddProcessor}>
+              <Plus className="h-4 w-4 mr-2" />
+              Adicionar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* RAM Options Dialog */}
+      <Dialog open={showAddRAMDialog} onOpenChange={setShowAddRAMDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Adicionar Opção de RAM</DialogTitle>
+            <DialogDescription>
+              Digite a capacidade de RAM (ex: 32GB, 64GB, 128GB)
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="newRAM">Capacidade de RAM</Label>
+            <Input
+              id="newRAM"
+              placeholder="Ex: 32GB"
+              value={newRAM}
+              onChange={(e) => setNewRAM(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleAddRAM()}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddRAMDialog(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleAddRAM}>
+              <Plus className="h-4 w-4 mr-2" />
+              Adicionar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Processor Options Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <SettingsIcon className="h-5 w-5" />
+            Opções de Processador
+          </CardTitle>
+          <CardDescription>
+            Configure as opções de processadores disponíveis para notebooks
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-wrap gap-2">
+            {processorOptions.map((proc) => (
+              <div key={proc} className="flex items-center gap-2 p-2 border rounded-lg bg-muted/50">
+                <Badge variant="secondary">{proc}</Badge>
+                <Button 
+                  size="sm" 
+                  variant="ghost"
+                  className="h-6 w-6 p-0"
+                  onClick={() => handleRemoveProcessor(proc)}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+            ))}
+          </div>
+          <Button onClick={() => setShowAddProcessorDialog(true)} variant="outline" size="sm">
+            <Plus className="h-4 w-4 mr-2" />
+            Adicionar Processador
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* RAM Options Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <SettingsIcon className="h-5 w-5" />
+            Opções de Memória RAM
+          </CardTitle>
+          <CardDescription>
+            Configure as opções de RAM disponíveis para notebooks
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-wrap gap-2">
+            {ramOptions.map((ram) => (
+              <div key={ram} className="flex items-center gap-2 p-2 border rounded-lg bg-muted/50">
+                <Badge variant="secondary">{ram}</Badge>
+                <Button 
+                  size="sm" 
+                  variant="ghost"
+                  className="h-6 w-6 p-0"
+                  onClick={() => handleRemoveRAM(ram)}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+            ))}
+          </div>
+          <Button onClick={() => setShowAddRAMDialog(true)} variant="outline" size="sm">
+            <Plus className="h-4 w-4 mr-2" />
+            Adicionar Opção de RAM
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 };
