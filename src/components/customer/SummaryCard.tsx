@@ -16,14 +16,14 @@ interface Props {
 export const SummaryCard = ({ title, value, icon: Icon, progress, alert, valueColor, animated }: Props) => {
   return (
     <Card className={cn("relative overflow-hidden", animated && "hover:shadow-lg transition-shadow")}>
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-2">
         <CardTitle className="text-sm font-medium flex items-center gap-2">
           <Icon className={cn("h-4 w-4", animated && "animate-pulse")} />
           {title}
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <p className={cn("text-2xl font-bold mb-2", valueColor)}>{value}</p>
+        <p className={cn("text-xl font-bold mb-1", valueColor)}>{value}</p>
         
         {/* Barra de Progresso */}
         {progress !== undefined && (
