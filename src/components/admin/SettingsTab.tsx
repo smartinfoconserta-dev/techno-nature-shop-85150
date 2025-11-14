@@ -97,6 +97,22 @@ const SettingsTab = () => {
     }
   };
 
+  const handleClearTestData = async () => {
+    setCreatingTestData(true);
+    try {
+      const { error } = await supabase.functions.invoke('create-test-data', {
+        body: { action: 'clear' }
+      });
+      if (error) throw error;
+      toast.success('✅ Dados de teste removidos com sucesso!');
+    } catch (error) {
+      console.error(error);
+      toast.error('Erro ao limpar dados de teste');
+    } finally {
+      setCreatingTestData(false);
+    }
+  };
+
   const handleUpdateRate = (installments: number, newRate: number) => {
     if (newRate < 0 || newRate > 100) {
       toast.error("Taxa deve estar entre 0% e 100%");
@@ -204,6 +220,14 @@ const SettingsTab = () => {
             className="w-full"
           >
             {creatingTestData ? "Criando dados..." : "🧪 Criar Dados de Teste"}
+          </Button>
+          <Button 
+            onClick={handleClearTestData} 
+            disabled={creatingTestData}
+            variant="destructive"
+            className="w-full mt-2"
+          >
+            {creatingTestData ? "Limpando dados..." : "🗑️ Limpar Dados de Teste"}
           </Button>
           <p className="text-xs text-muted-foreground mt-2">
             Isso criará vendas rápidas, cadernetas e solicitações convertidas com diferentes status de pagamento e garantia
