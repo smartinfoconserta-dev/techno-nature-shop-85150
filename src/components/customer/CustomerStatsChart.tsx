@@ -35,6 +35,10 @@ export const CustomerStatsChart = ({ receivables }: Props) => {
     { name: "Saldo Devedor", value: totalSaldoDevedor, color: "hsl(0 84% 60%)" }  // Vermelho
   ];
 
+  // Filtrar apenas valores maiores que zero para renderização correta
+  const pieDataFiltered = pieData.filter(item => item.value > 0);
+  const hasData = pieDataFiltered.length > 0;
+
   // Dados do gráfico de barras: histórico dos últimos 6 meses
   const getLast6MonthsData = () => {
     const months = [];
@@ -69,26 +73,32 @@ export const CustomerStatsChart = ({ receivables }: Props) => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={200}>
-            <PieChart>
-              <Pie
-                data={pieData}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                outerRadius={80}
-                fill="hsl(var(--primary))"
-                dataKey="value"
-              >
-                {pieData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip formatter={(value: number) => `R$ ${value.toFixed(2)}`} />
-              <Legend />
-            </PieChart>
-          </ResponsiveContainer>
+          {hasData ? (
+            <ResponsiveContainer width="100%" height={200}>
+              <PieChart>
+                <Pie
+                  data={pieDataFiltered}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                  outerRadius={80}
+                  fill="hsl(var(--primary))"
+                  dataKey="value"
+                >
+                  {pieDataFiltered.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(value: number) => `R$ ${value.toFixed(2)}`} />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-[200px] flex items-center justify-center text-muted-foreground">
+              <p>Nenhum dado disponível para este período</p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
