@@ -82,16 +82,6 @@ export function EditReceivableDialog({
   const onSubmit = async (data: FormData) => {
     if (!receivable) return;
 
-    // Bloquear edição se tiver pagamentos
-    if (receivable.payments && receivable.payments.length > 0) {
-      toast({
-        title: "Não é possível editar",
-        description: "Este produto já possui pagamentos registrados. Cancele os pagamentos primeiro.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setIsLoading(true);
 
     try {
@@ -132,6 +122,15 @@ export function EditReceivableDialog({
             {receivable && `Editando: ${receivable.productName}`}
           </DialogDescription>
         </DialogHeader>
+
+        {receivable && receivable.payments && receivable.payments.length > 0 && (
+          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 p-3 rounded-lg mb-4">
+            <p className="text-sm text-yellow-800 dark:text-yellow-200">
+              ⚠️ <strong>Atenção:</strong> Esta compra já possui pagamentos registrados. 
+              Alterar os valores pode afetar o saldo devedor.
+            </p>
+          </div>
+        )}
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">

@@ -1,8 +1,9 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Receivable } from "@/lib/receivablesStore";
+import { Receivable, ReceivablePayment } from "@/lib/receivablesStore";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Calendar, CreditCard, DollarSign } from "lucide-react";
+import { Calendar, CreditCard, DollarSign, Pencil, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -10,9 +11,11 @@ interface ReceivableDetailsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   receivable: Receivable | null;
+  onEditPayment?: (payment: ReceivablePayment) => void;
+  onDeletePayment?: (paymentId: string) => void;
 }
 
-const ReceivableDetailsDialog = ({ open, onOpenChange, receivable }: ReceivableDetailsDialogProps) => {
+const ReceivableDetailsDialog = ({ open, onOpenChange, receivable, onEditPayment, onDeletePayment }: ReceivableDetailsDialogProps) => {
   if (!receivable) return null;
 
   const getStatusBadge = () => {
@@ -150,6 +153,28 @@ const ReceivableDetailsDialog = ({ open, onOpenChange, receivable }: ReceivableD
                       <p className="text-sm text-muted-foreground mt-2 italic">
                         {payment.notes}
                       </p>
+                    )}
+                    
+                    {/* Botões de ação */}
+                    {onEditPayment && onDeletePayment && (
+                      <div className="flex gap-2 mt-3 pt-3 border-t border-border">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => onEditPayment(payment)}
+                        >
+                          <Pencil className="h-3 w-3 mr-1" />
+                          Editar
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => onDeletePayment(payment.id)}
+                        >
+                          <Trash2 className="h-3 w-3 mr-1" />
+                          Excluir
+                        </Button>
+                      </div>
                     )}
                   </div>
                 ))}

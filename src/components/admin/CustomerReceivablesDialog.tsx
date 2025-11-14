@@ -37,6 +37,7 @@ import { creditHistoryStore } from "@/lib/creditHistoryStore";
 import { useToast } from "@/hooks/use-toast";
 import { RemoveCreditDialog } from "./RemoveCreditDialog";
 import { AddCreditDialog } from "./AddCreditDialog";
+import EditPaymentDialog from "./EditPaymentDialog";
 
 interface CustomerReceivablesDialogProps {
   open: boolean;
@@ -67,6 +68,8 @@ const CustomerReceivablesDialog = ({
   const [showAddCreditDialog, setShowAddCreditDialog] = useState(false);
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [creditHistory, setCreditHistory] = useState<any[]>([]);
+  const [editingPayment, setEditingPayment] = useState<any>(null);
+  const [showEditPaymentDialog, setShowEditPaymentDialog] = useState(false);
 
   useEffect(() => {
     if (open && customerId) {
@@ -222,6 +225,57 @@ const CustomerReceivablesDialog = ({
     } catch (error: any) {
       toast({
         title: "Erro ao devolver produto",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEditPayment = (payment: any) => {
+    setEditingPayment(payment);
+    setShowEditPaymentDialog(true);
+  };
+
+  const handleDeletePayment = async (paymentId: string) => {
+    if (!selectedReceivable) return;
+    
+    if (!confirm("Tem certeza que deseja excluir este pagamento?")) return;
+    
+    try {
+      await receivablesStore.removePayment(selectedReceivable.id, paymentId);
+      toast({ title: "Pagamento excluído com sucesso!" });
+      await receivablesStore.refreshFromBackend();
+      loadCustomerReceivables();
+      // Atualizar o receivable selecionado
+      const updated = receivablesStore.getReceivableById(selectedReceivable.id);
+      if (updated) setSelectedReceivable(updated);
+    } catch (error: any) {
+      toast({
+        title: "Erro ao excluir pagamento",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleUpdatePayment = async (
+    paymentId: string,
+    updates: { amount?: number; paymentDate?: string; paymentMethod?: "cash" | "pix" | "card"; notes?: string }
+  ) => {
+    if (!selectedReceivable) return;
+    
+    try {
+      await receivablesStore.updatePayment(selectedReceivable.id, paymentId, updates);
+      toast({ title: "Pagamento atualizado com sucesso!" });
+      setShowEditPaymentDialog(false);
+      await receivablesStore.refreshFromBackend();
+      loadCustomerReceivables();
+      // Atualizar o receivable selecionado
+      const updated = receivablesStore.getReceivableById(selectedReceivable.id);
+      if (updated) setSelectedReceivable(updated);
+    } catch (error: any) {
+      toast({
+        title: "Erro ao atualizar pagamento",
         description: error.message,
         variant: "destructive",
       });
@@ -521,16 +575,14 @@ const CustomerReceivablesDialog = ({
                             <Eye className="h-4 w-4 mr-1" />
                             Ver Detalhes
                           </Button>
-                          {receivable.payments.length === 0 && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleEditReceivable(receivable)}
-                            >
-                              <Pencil className="h-4 w-4 mr-1" />
-                              Editar
-                            </Button>
-                          )}
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleEditReceivable(receivable)}
+                          >
+                            <Pencil className="h-4 w-4 mr-1" />
+                            Editar
+                          </Button>
                           <Button
                             size="sm"
                             variant="destructive"
@@ -585,6 +637,8 @@ const CustomerReceivablesDialog = ({
         open={showDetailsDialog}
         onOpenChange={setShowDetailsDialog}
         receivable={selectedReceivable}
+        onEditPayment={handleEditPayment}
+        onDeletePayment={handleDeletePayment}
       />
 
       <AddManualReceivableDialog
@@ -668,6 +722,14 @@ const CustomerReceivablesDialog = ({
         onOpenChange={setShowAddCreditDialog}
         customer={customer}
         onConfirm={loadCustomerReceivables}
+      />
+
+      <EditPaymentDialog
+        open={showEditPaymentDialog}
+        onOpenChange={setShowEditPaymentDialog}
+        payment={editingPayment}
+        receivable={selectedReceivable}
+        onConfirm={handleUpdatePayment}
       />
     </>
   );
