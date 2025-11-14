@@ -262,7 +262,7 @@ export const productsStore = {
     // SOFT DELETE
     const { error } = await supabase
       .from("products")
-      .update({ deleted_at: new Date().toISOString() })
+      .update({ deleted_at: new Date().toISOString() } as any)
       .eq("id", id);
 
     if (error) {
@@ -276,7 +276,7 @@ export const productsStore = {
   async restoreProduct(id: string): Promise<void> {
     const { error } = await supabase
       .from("products")
-      .update({ deleted_at: null })
+      .update({ deleted_at: null } as any)
       .eq("id", id);
 
     if (error) {

@@ -110,7 +110,7 @@ export const customerRequestsStore = {
 
   async deleteRequest(id: string): Promise<void> {
     // SOFT DELETE
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from("customer_requests")
       .update({ deleted_at: new Date().toISOString() })
       .eq("id", id);
@@ -122,7 +122,7 @@ export const customerRequestsStore = {
   },
 
   async restoreRequest(id: string): Promise<void> {
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from("customer_requests")
       .update({ deleted_at: null })
       .eq("id", id);
@@ -134,7 +134,7 @@ export const customerRequestsStore = {
   },
 
   async permanentlyDeleteRequest(id: string): Promise<void> {
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from("customer_requests")
       .delete()
       .eq("id", id);
@@ -146,7 +146,7 @@ export const customerRequestsStore = {
   },
 
   async getDeletedRequests(): Promise<CustomerRequest[]> {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from("customer_requests")
       .select("*")
       .not("deleted_at", "is", null)
@@ -158,27 +158,20 @@ export const customerRequestsStore = {
     }
 
     return (
-      data?.map((row) => ({
-        id: row.id,
-        customer_id: row.customer_id,
-        customer_name: row.customer_name,
-        product_name: row.product_name,
-        brand: row.brand,
-        category: row.category,
-        cost_price: row.cost_price,
-        sale_price: row.sale_price,
-        payment_method: row.payment_method,
-        installments: row.installments,
-        installment_rate: row.installment_rate,
-        warranty_months: row.warranty_months,
-        notes: row.notes,
-        admin_notes: row.admin_notes,
-        status: row.status as "pending" | "confirmed" | "rejected",
-        converted_to_receivable_id: row.converted_to_receivable_id,
-        confirmed_by: row.confirmed_by,
-        confirmed_at: row.confirmed_at,
-        created_at: row.created_at,
-        updated_at: row.updated_at,
+      data?.map((req: any) => ({
+        id: req.id,
+        customerId: req.customer_id,
+        customerName: req.customer_name,
+        productName: req.product_name,
+        brand: req.brand || "",
+        category: req.category || "",
+        costPrice: req.cost_price || 0,
+        salePrice: req.sale_price || 0,
+        paymentMethod: req.payment_method || "",
+        installments: req.installments || 1,
+        installmentRate: req.installment_rate || 0,
+        warrantyMonths: req.warranty_months || 0,
+        notes: req.notes || "",
       })) || []
     );
   },
