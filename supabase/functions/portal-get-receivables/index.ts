@@ -81,6 +81,17 @@ Deno.serve(async (req) => {
       return new Date() > expirationDate;
     };
 
+    // Função auxiliar para calcular data de expiração da garantia
+    const calculateWarrantyExpiration = (createdAt: string, warrantyMonths?: number): string => {
+      if (!warrantyMonths || warrantyMonths === 0) return createdAt;
+      
+      const saleDate = new Date(createdAt);
+      const expirationDate = new Date(saleDate);
+      expirationDate.setMonth(expirationDate.getMonth() + warrantyMonths);
+      
+      return expirationDate.toISOString();
+    };
+
     // Buscar TODOS os recebíveis do cliente (exceto soft deleted e hard deleted)
     const { data: receivables, error } = await supabase
       .from('receivables')
@@ -104,7 +115,9 @@ Deno.serve(async (req) => {
     // Mapear e calcular arquivamento automático
     const allMappedReceivables = (receivables || []).map(row => {
       const isPaid = row.status === 'paid';
-      const warrantyExpired = isWarrantyExpired(row.created_at, row.warranty_months);
+      const warrantyMonths = row.warranty_months || 3;
+      const warrantyExpired = isWarrantyExpired(row.created_at, warrantyMonths);
+      const warrantyExpiresAt = calculateWarrantyExpiration(row.created_at, warrantyMonths);
       
       return {
         id: row.id,
@@ -131,7 +144,8 @@ Deno.serve(async (req) => {
         archived: row.archived || false,
         createdAt: row.created_at,
         updatedAt: row.updated_at || row.created_at,
-        warrantyMonths: row.warranty_months,
+        warrantyMonths: warrantyMonths,
+        warrantyExpiresAt: warrantyExpiresAt,
         autoArchived: isPaid && warrantyExpired, // Arquivamento automático
       };
     });

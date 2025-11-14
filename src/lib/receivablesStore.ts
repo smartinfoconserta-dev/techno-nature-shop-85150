@@ -28,6 +28,7 @@ export interface Receivable {
   payments: ReceivablePayment[];
   source?: "catalog" | "quick" | "manual";
   warranty?: number;
+  warrantyMonths?: number;
   warrantyExpiresAt?: string;
   notes?: string;
   archived?: boolean;
@@ -81,6 +82,7 @@ function mapRowToReceivable(row: any): Receivable {
     })),
     source: undefined,
     warranty: undefined,
+    warrantyMonths: row.warranty_months ? Number(row.warranty_months) : undefined,
     warrantyExpiresAt: undefined,
     notes: row.notes || undefined,
     archived: row.archived || false,
@@ -171,6 +173,7 @@ export const receivablesStore = {
       payments: data.payments || [],
       source: data.source,
       warranty: data.warranty,
+      warrantyMonths: (data as any).warrantyMonths,
       warrantyExpiresAt: data.warrantyExpiresAt,
       notes: data.notes,
       archived: false,
@@ -203,6 +206,7 @@ export const receivablesStore = {
         payments: receivable.payments || [],
         coupon_code: receivable.couponCode || null,
         coupon_discount: receivable.couponDiscount || null,
+        warranty_months: receivable.warrantyMonths || 3,
         notes: receivable.notes || null,
         archived: receivable.archived || false,
         created_at: receivable.createdAt,

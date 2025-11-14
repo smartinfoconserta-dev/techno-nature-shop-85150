@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, ShoppingBag, DollarSign, Clock, Shield, Loader2, FileText, Notebook, Plus, Trash2 } from "lucide-react";
+import { LogOut, ShoppingBag, DollarSign, Clock, Shield, Loader2, FileText, Notebook, Plus, Trash2, XCircle } from "lucide-react";
 import { calculateWarranty } from "@/lib/warrantyHelper";
 import { format } from "date-fns";
 import { CustomerStatsChart } from "@/components/customer/CustomerStatsChart";
@@ -16,6 +16,7 @@ import { AddNotebookItemDialog } from "@/components/customer/AddNotebookItemDial
 import { CustomerRequestsList } from "@/components/customer/CustomerRequestsList";
 import { DeletePortalReceivableDialog } from "@/components/customer/DeletePortalReceivableDialog";
 import SearchBar from "@/components/SearchBar";
+import WarrantyBadge from "@/components/admin/WarrantyBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { generateCustomerPortalPDF } from "@/lib/generateCustomerPortalPDF";
@@ -42,12 +43,20 @@ interface Receivable {
   status: "pending" | "partial" | "paid";
   payments: any[];
   warranty?: number;
+  warrantyMonths?: number;
   warrantyExpiresAt?: string;
   notes?: string;
   archived: boolean;
   createdAt: string;
   updatedAt: string;
+  autoArchived?: boolean;
 }
+
+// Helper para converter meses em dias
+const convertMonthsToDays = (months?: number): number => {
+  if (!months || months === 0) return 0;
+  return months * 30;
+};
 
 const CustomerPortal = () => {
   const navigate = useNavigate();
@@ -418,10 +427,6 @@ const CustomerPortal = () => {
                 ) : (
                   <div className="space-y-4">
                     {filteredReceivables.map(receivable => {
-                      const warranty = receivable.warranty && receivable.warrantyExpiresAt
-                        ? calculateWarranty(receivable.createdAt, receivable.warranty)
-                        : null;
-
                       return (
                         <Card key={receivable.id} className="border">
                           <CardContent className="pt-6">
@@ -433,6 +438,24 @@ const CustomerPortal = () => {
                                 </p>
                               </div>
                               {getStatusBadge(receivable.status)}
+                            </div>
+
+                            {/* Badge de Garantia - SEMPRE EXIBIR */}
+                            <div className="flex items-center gap-2 mb-3 p-3 bg-muted/50 rounded-lg">
+                              <Shield className="h-4 w-4 text-muted-foreground" />
+                              <span className="text-sm text-muted-foreground mr-2">Garantia:</span>
+                              {receivable.warrantyMonths && receivable.warrantyMonths > 0 ? (
+                                <WarrantyBadge 
+                                  saleDate={receivable.createdAt}
+                                  warrantyDays={convertMonthsToDays(receivable.warrantyMonths)}
+                                  size="default"
+                                />
+                              ) : (
+                                <Badge variant="outline" className="gap-1">
+                                  <XCircle className="w-3 h-3" />
+                                  Sem garantia
+                                </Badge>
+                              )}
                             </div>
 
                             <div className="grid grid-cols-2 gap-3 mb-3">
@@ -455,25 +478,6 @@ const CustomerPortal = () => {
                                 </div>
                               )}
                             </div>
-
-                            {/* Garantia */}
-                            {warranty && (
-                              <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
-                                <Shield className="h-4 w-4 text-muted-foreground" />
-                                <div className="flex-1">
-                                  <p className="text-sm font-medium">Garantia ({warranty.warrantyDays} dias)</p>
-                                  {warranty.isActive ? (
-                                    <p className="text-xs text-green-600">
-                                      {warranty.daysRemaining} dias restantes
-                                    </p>
-                                  ) : warranty.warrantyDays === 0 ? (
-                                    <p className="text-xs text-muted-foreground">Sem garantia</p>
-                                  ) : (
-                                    <p className="text-xs text-red-600">Garantia expirada</p>
-                                  )}
-                                </div>
-                              </div>
-                            )}
 
                             {/* Histórico de Pagamentos */}
                             {receivable.payments.length > 0 && (
@@ -511,10 +515,6 @@ const CustomerPortal = () => {
                 ) : (
                   <div className="space-y-4">
                     {archivedReceivables.map(receivable => {
-                      const warranty = receivable.warranty && receivable.warrantyExpiresAt
-                        ? calculateWarranty(receivable.createdAt, receivable.warranty)
-                        : null;
-
                       return (
                         <Card key={receivable.id} className="border">
                           <CardContent className="pt-6">
@@ -527,10 +527,6 @@ const CustomerPortal = () => {
                               </div>
                               <div className="flex items-center gap-2">
                                 {getStatusBadge(receivable.status)}
-                                <Badge variant="outline" className="gap-1">
-                                  <Shield className="w-3 h-3" />
-                                  Garantia Vencida
-                                </Badge>
                                 <Button
                                   variant="ghost"
                                   size="sm"
@@ -543,6 +539,24 @@ const CustomerPortal = () => {
                                   <Trash2 className="w-4 h-4 text-destructive" />
                                 </Button>
                               </div>
+                            </div>
+
+                            {/* Badge de Garantia - SEMPRE EXIBIR */}
+                            <div className="flex items-center gap-2 mb-3 p-3 bg-muted/50 rounded-lg">
+                              <Shield className="h-4 w-4 text-muted-foreground" />
+                              <span className="text-sm text-muted-foreground mr-2">Garantia:</span>
+                              {receivable.warrantyMonths && receivable.warrantyMonths > 0 ? (
+                                <WarrantyBadge 
+                                  saleDate={receivable.createdAt}
+                                  warrantyDays={convertMonthsToDays(receivable.warrantyMonths)}
+                                  size="default"
+                                />
+                              ) : (
+                                <Badge variant="outline" className="gap-1 text-muted-foreground">
+                                  <XCircle className="w-3 h-3" />
+                                  Sem garantia
+                                </Badge>
+                              )}
                             </div>
 
                             <div className="grid grid-cols-2 gap-3 mb-3">
@@ -565,25 +579,6 @@ const CustomerPortal = () => {
                                 </div>
                               )}
                             </div>
-
-                            {/* Garantia */}
-                            {warranty && (
-                              <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
-                                <Shield className="h-4 w-4 text-muted-foreground" />
-                                <div className="flex-1">
-                                  <p className="text-sm font-medium">Garantia ({warranty.warrantyDays} dias)</p>
-                                  {warranty.isActive ? (
-                                    <p className="text-xs text-green-600">
-                                      {warranty.daysRemaining} dias restantes
-                                    </p>
-                                  ) : warranty.warrantyDays === 0 ? (
-                                    <p className="text-xs text-muted-foreground">Sem garantia</p>
-                                  ) : (
-                                    <p className="text-xs text-red-600">Garantia expirada</p>
-                                  )}
-                                </div>
-                              </div>
-                            )}
 
                             {/* Histórico de Pagamentos */}
                             {receivable.payments.length > 0 && (
