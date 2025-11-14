@@ -12,7 +12,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { DollarSign, Calendar, Eye, AlertCircle, Edit, FileDown, Trash2, Pencil } from "lucide-react";
+import { DollarSign, Calendar, Eye, AlertCircle, Edit, FileDown, Trash2, Pencil, CheckCircle2, Archive } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -387,22 +387,24 @@ const CustomerReceivablesDialog = ({
               <Card>
                 <CardContent className="pt-4">
                   <div className="flex items-center gap-3">
-                    <Button
-                      size="sm"
-                      variant={activeTab === "active" ? "default" : "outline"}
-                      onClick={() => setActiveTab("active")}
-                      className="flex-1"
-                    >
-                      📋 ATIVAS
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant={activeTab === "archived" ? "default" : "outline"}
-                      onClick={() => setActiveTab("archived")}
-                      className="flex-1"
-                    >
-                      📦 HISTÓRICO
-                    </Button>
+            <Button
+              size="sm"
+              variant={activeTab === "active" ? "default" : "outline"}
+              onClick={() => setActiveTab("active")}
+              className="flex-1 gap-2"
+            >
+              <CheckCircle2 className="h-4 w-4" />
+              ATIVAS
+            </Button>
+            <Button
+              size="sm"
+              variant={activeTab === "archived" ? "default" : "outline"}
+              onClick={() => setActiveTab("archived")}
+              className="flex-1 gap-2"
+            >
+              <Archive className="h-4 w-4" />
+              HISTÓRICO
+            </Button>
                   </div>
                 </CardContent>
               </Card>
