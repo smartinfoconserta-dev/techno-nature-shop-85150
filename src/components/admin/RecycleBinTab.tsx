@@ -189,8 +189,8 @@ export default function RecycleBinTab() {
   };
 
   const renderItemCard = (item: any, type: string, nameKey: string) => {
-    const daysRemaining = getDaysRemaining(item.deletedAt || item.created_at);
     const deletedDate = item.deletedAt || item.created_at;
+    const daysRemaining = deletedDate ? getDaysRemaining(deletedDate) : 0;
 
     return (
       <Card key={item.id} className="mb-4">
@@ -199,7 +199,7 @@ export default function RecycleBinTab() {
             <div className="flex-1 min-w-0">
               <h3 className="font-semibold text-lg mb-2 truncate">{item[nameKey]}</h3>
               <div className="space-y-1 text-sm text-muted-foreground">
-                <p>Excluído em: {format(new Date(deletedDate), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR })}</p>
+                <p>Excluído em: {deletedDate ? format(new Date(deletedDate), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR }) : "Data desconhecida"}</p>
                 <div className="flex items-center gap-2">
                   <Badge variant={daysRemaining > 7 ? "secondary" : "destructive"}>
                     {daysRemaining} {daysRemaining === 1 ? "dia restante" : "dias restantes"}
