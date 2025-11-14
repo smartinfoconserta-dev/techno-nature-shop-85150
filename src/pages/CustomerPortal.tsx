@@ -247,46 +247,64 @@ const CustomerPortal = () => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b bg-card">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold">Portal do Cliente</h1>
-            <p className="text-sm text-muted-foreground">{customer.name}</p>
+        <div className="container mx-auto px-4">
+          {/* Título no topo */}
+          <div className="pt-3 pb-2 border-b">
+            <h1 className="text-lg font-semibold text-center">Portal do Cliente</h1>
           </div>
-          <div className="flex gap-2">
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <Notebook className="h-4 w-4 mr-2" />
-                  <span className="hidden md:inline">Minha Caderneta</span>
-                  <span className="md:hidden">Novo Item</span>
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto">
-                <SheetHeader>
-                  <SheetTitle>Minha Caderneta</SheetTitle>
-                </SheetHeader>
-                <div className="space-y-4 mt-4">
-                  <CustomerRequestsList refreshKey={refreshKey} />
-                  <Button 
-                    onClick={() => setShowAddDialog(true)} 
-                    className="w-full"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Adicionar Novo Item
-                  </Button>
-                </div>
-              </SheetContent>
-            </Sheet>
+          
+          {/* Nome + Botões */}
+          <div className="py-3 flex justify-between items-center gap-3">
+            <p className="text-xs text-muted-foreground truncate">{customer.name}</p>
             
-            <Button variant="outline" onClick={handlePrintPDF} size="sm">
-              <Printer className="h-4 w-4 mr-2" />
-              <span className="hidden md:inline">Imprimir PDF</span>
-              <span className="md:hidden">PDF</span>
-            </Button>
-            <Button variant="outline" onClick={handleLogout} size="sm">
-              <LogOut className="h-4 w-4 mr-2" />
-              Sair
-            </Button>
+            <div className="flex gap-1.5 flex-shrink-0">
+              {/* Novo Item - com texto */}
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-8 px-3">
+                    <Notebook className="h-3.5 w-3.5 mr-1.5" />
+                    <span className="text-xs">Novo Item</span>
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto">
+                  <SheetHeader>
+                    <SheetTitle>Minha Caderneta</SheetTitle>
+                  </SheetHeader>
+                  <div className="space-y-4 mt-4">
+                    <CustomerRequestsList refreshKey={refreshKey} />
+                    <Button 
+                      onClick={() => setShowAddDialog(true)} 
+                      className="w-full"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Adicionar Novo Item
+                    </Button>
+                  </div>
+                </SheetContent>
+              </Sheet>
+              
+              {/* PDF - apenas ícone */}
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handlePrintPDF}
+                className="h-8 w-8 p-0"
+                title="Imprimir PDF"
+              >
+                <Printer className="h-3.5 w-3.5" />
+              </Button>
+              
+              {/* Sair - apenas ícone */}
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleLogout}
+                className="h-8 w-8 p-0"
+                title="Sair"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+              </Button>
+            </div>
           </div>
         </div>
       </header>
