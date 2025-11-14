@@ -26,7 +26,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { CalendarIcon, Check } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { CalendarIcon, Check, ChevronDown } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -39,6 +40,8 @@ import WarrantySelector from "./WarrantySelector";
 
 const formSchema = z.object({
   productName: z.string().min(1, "Nome do produto é obrigatório"),
+  brand: z.string().optional(),
+  category: z.string().optional(),
   costPrice: z.number().optional(),
   salePrice: z.number().min(0.01, "Preço de venda deve ser maior que 0"),
   saleDate: z.date().optional(),
@@ -73,6 +76,7 @@ export function AddManualReceivableDialog({
   const [couponValidated, setCouponValidated] = useState(false);
   const [couponDiscount, setCouponDiscount] = useState(0);
   const [couponError, setCouponError] = useState("");
+  const [showAdvanced, setShowAdvanced] = useState(false);
   
   const catalogProducts = productsStore.getAvailableProducts();
 
@@ -80,6 +84,8 @@ export function AddManualReceivableDialog({
     resolver: zodResolver(formSchema),
     defaultValues: {
       productName: "",
+      brand: "",
+      category: "",
       costPrice: 0,
       salePrice: 0,
       initialCash: 0,
@@ -99,6 +105,7 @@ export function AddManualReceivableDialog({
       setCouponValidated(false);
       setCouponDiscount(0);
       setCouponError("");
+      setShowAdvanced(false);
       form.reset();
     }
   }, [open, form]);
@@ -206,6 +213,8 @@ export function AddManualReceivableDialog({
         customerName: customer.name,
         productId: finalProductId,
         productName: data.productName,
+        brand: data.brand,
+        category: data.category,
         costPrice: data.costPrice || 0,
         salePrice: data.salePrice,
         totalAmount: data.salePrice,
@@ -669,6 +678,101 @@ export function AddManualReceivableDialog({
                 </FormItem>
               )}
             />
+
+            {/* Seção Avançada - Vincular ao Catálogo */}
+            <Collapsible open={showAdvanced} onOpenChange={setShowAdvanced}>
+              <CollapsibleTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full justify-between"
+                >
+                  <span className="flex items-center gap-2">
+                    🔽 Avançado: Vincular ao Catálogo
+                  </span>
+                  <ChevronDown
+                    className={cn(
+                      "h-4 w-4 transition-transform",
+                      showAdvanced && "rotate-180"
+                    )}
+                  />
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="space-y-4 pt-4">
+                <div className="space-y-3 bg-muted/50 p-4 rounded-lg">
+                  <p className="text-sm text-muted-foreground">
+                    Se você já cadastrou este produto no seu catálogo, pode vincular a venda ao registro existente.
+                  </p>
+                  
+                  <RadioGroup 
+                    value={productSource} 
+                    onValueChange={(v) => {
+                      setProductSource(v as "manual" | "catalog");
+                      if (v === "manual") {
+                        setSelectedProductId("");
+                      }
+                    }}
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="manual" id="manual" />
+                      <Label htmlFor="manual" className="font-normal cursor-pointer">
+                        📝 Venda Manual (sem vínculo)
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="catalog" id="catalog" />
+                      <Label htmlFor="catalog" className="font-normal cursor-pointer">
+                        🏪 Vincular ao Catálogo
+                      </Label>
+                    </div>
+                  </RadioGroup>
+
+                  {productSource === "catalog" && (
+                    <div className="space-y-2 pt-2">
+                      <Label>Selecione o Produto *</Label>
+                      <Select 
+                        value={selectedProductId} 
+                        onValueChange={(productId) => {
+                          setSelectedProductId(productId);
+                          const product = catalogProducts.find(p => p.id === productId);
+                          if (product) {
+                            const totalExpenses = product.expenses.reduce((sum, e) => sum + e.value, 0);
+                            form.setValue("productName", product.name);
+                            form.setValue("brand", product.brand || "");
+                            form.setValue("category", product.category || "");
+                            form.setValue("costPrice", totalExpenses);
+                            form.setValue("salePrice", product.price);
+                          }
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione um produto..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {catalogProducts.length === 0 ? (
+                            <SelectItem value="_empty" disabled>
+                              Nenhum produto disponível
+                            </SelectItem>
+                          ) : (
+                            catalogProducts.map(product => (
+                              <SelectItem key={product.id} value={product.id}>
+                                {product.name} - R$ {product.price.toFixed(2)}
+                              </SelectItem>
+                            ))
+                          )}
+                        </SelectContent>
+                      </Select>
+                      {selectedProductId && (
+                        <p className="text-sm text-green-600 dark:text-green-400 flex items-center gap-1">
+                          <Check className="h-4 w-4" />
+                          Produto vinculado ao catálogo
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
 
             <DialogFooter>
               <Button

@@ -15,6 +15,8 @@ export interface Receivable {
   customerName: string;
   productId: string;
   productName: string;
+  brand?: string;
+  category?: string;
   costPrice?: number;
   salePrice?: number;
   profit?: number;
@@ -82,6 +84,8 @@ function mapRowToReceivable(row: any): Receivable {
     customerName: row.customer_name,
     productId: row.product_id || "",
     productName: row.product_name,
+    brand: row.brand || undefined,
+    category: row.category || undefined,
     costPrice: row.cost_price ? Number(row.cost_price) : undefined,
     salePrice: row.sale_price ? Number(row.sale_price) : undefined,
     profit: row.profit ? Number(row.profit) : undefined,
@@ -209,8 +213,8 @@ export const receivablesStore = {
         customer_name: receivable.customerName,
         product_name: receivable.productName,
         product_id: receivable.productId || null,
-        brand: null,
-        category: null,
+        brand: receivable.brand || null,
+        category: receivable.category || null,
         base_price: receivable.salePrice || 0,
         cost_price: receivable.costPrice || null,
         sale_price: receivable.salePrice || null,
