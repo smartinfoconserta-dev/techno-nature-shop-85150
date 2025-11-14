@@ -62,7 +62,7 @@ serve(async (req) => {
       );
     }
 
-    const { productName, salePrice, notes } = await req.json();
+    const { productName, salePrice, notes, warrantyMonths } = await req.json();
 
     if (!productName || !salePrice) {
       console.error("Missing required fields");
@@ -72,6 +72,8 @@ serve(async (req) => {
       );
     }
 
+    const finalWarrantyMonths = warrantyMonths !== undefined ? warrantyMonths : 3;
+
     const { data: request, error: insertError } = await supabase
       .from("customer_requests")
       .insert({
@@ -79,6 +81,7 @@ serve(async (req) => {
         customer_name: customer.name,
         product_name: productName,
         sale_price: salePrice,
+        warranty_months: finalWarrantyMonths,
         status: "pending",
         notes: notes || null,
       })
