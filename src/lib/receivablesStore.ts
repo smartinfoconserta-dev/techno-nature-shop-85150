@@ -225,7 +225,7 @@ export const receivablesStore = {
         payments: receivable.payments || [],
         coupon_code: receivable.couponCode || null,
         coupon_discount: receivable.couponDiscount || null,
-        warranty_months: receivable.warrantyMonths ?? 3,
+        warranty_months: receivable.warrantyMonths ?? 90, // Default 90 dias
         notes: receivable.notes || null,
         archived: receivable.archived || false,
         created_at: receivable.createdAt,
