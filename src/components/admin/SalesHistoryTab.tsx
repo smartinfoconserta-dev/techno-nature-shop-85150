@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { TrendingUp, DollarSign, Package, Percent, Pencil, FileText, XCircle, Search } from "lucide-react";
+import { TrendingUp, DollarSign, Package, Percent, Pencil, FileText, XCircle, Search, Shield } from "lucide-react";
 import EditSaleDialog from "./EditSaleDialog";
 import WarrantyBadge from "./WarrantyBadge";
 import { calculateWarranty } from "@/lib/warrantyHelper";
@@ -82,6 +82,19 @@ const SalesHistoryTab = () => {
     
     // Carregar histórico unificado
     await loadUnifiedHistory();
+  };
+
+  // Helper para obter dias de garantia corretos
+  const getWarrantyDays = (sale: HistorySale): number => {
+    // Para receivables, warranty pode estar em meses, precisa converter
+    if (sale.type === "receivable" && sale.warranty) {
+      // Se warranty for maior que 365, provavelmente já está em dias
+      // Senão, assumir que está em meses e converter
+      return sale.warranty > 365 ? sale.warranty : sale.warranty * 30;
+    }
+    
+    // Para produtos e quick sales, warranty já está em dias
+    return sale.warranty || 90;
   };
 
   const loadUnifiedHistory = async () => {
@@ -568,8 +581,16 @@ const SalesHistoryTab = () => {
                             <span className="text-muted-foreground"> ({sale.buyerCpf})</span>
                           )}
                         </p>
-                        {sale.saleDate && (sale.type === "catalog" || sale.type === "quick") && (
-                          <WarrantyBadge saleDate={sale.saleDate} />
+                        {sale.saleDate && (
+                          <div className="flex items-center gap-2">
+                            <Shield className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm text-muted-foreground">Garantia:</span>
+                            <WarrantyBadge 
+                              saleDate={sale.saleDate}
+                              warrantyDays={getWarrantyDays(sale)}
+                              size="sm"
+                            />
+                          </div>
                         )}
                       </div>
 
