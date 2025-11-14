@@ -5,29 +5,23 @@ import ProductCard from "@/components/ProductCard";
 import ProductDetailsDialog from "@/components/ProductDetailsDialog";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowUp, Menu } from "lucide-react";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { ArrowUp } from "lucide-react";
 import { brandsStore } from "@/lib/brandsStore";
 import { productsStore } from "@/lib/productsStore";
 import { categoriesStore } from "@/lib/categoriesStore";
-import { CategoryMenu } from "@/components/CategoryMenu";
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
-import { cn } from "@/lib/utils";
 import heroImage from "@/assets/hero-banner.jpg";
 
 const Index = () => {
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
-  const [selectedCategoryName, setSelectedCategoryName] = useState("");
-  const [categoryBreadcrumb, setCategoryBreadcrumb] = useState<Array<{id: string, name: string}>>([]);
+  const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedBrand, setSelectedBrand] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [categories, setCategories] = useState<string[]>([]);
   const [brands, setBrands] = useState<string[]>([]);
   const [products, setProducts] = useState(productsStore.getAvailableProducts());
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [deepLinkProductId, setDeepLinkProductId] = useState<string | null>(null);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
   // Estados para filtros
   const [minPrice, setMinPrice] = useState(0);
@@ -41,6 +35,7 @@ const Index = () => {
     const init = async () => {
       setIsLoading(true);
       await productsStore.refreshFromBackend();
+      await loadCategories();
       loadProducts();
       setIsLoading(false);
     };
@@ -75,11 +70,16 @@ const Index = () => {
 
   useEffect(() => {
     loadBrands();
-  }, [selectedCategoryName]);
+  }, [selectedCategory]);
+
+  const loadCategories = async () => {
+    const categoryNames = await categoriesStore.getCategoryNames();
+    setCategories(categoryNames);
+  };
 
   const loadBrands = async () => {
-    if (selectedCategoryName) {
-      const categoryBrands = await brandsStore.getBrandsByCategory(selectedCategoryName);
+    if (selectedCategory !== "all") {
+      const categoryBrands = await brandsStore.getBrandsByCategory(selectedCategory);
       setBrands(categoryBrands.map(b => b.name));
     } else {
       setBrands([]);
@@ -100,28 +100,15 @@ const Index = () => {
     }
   };
 
-  const handleSelectCategory = async (categoryId: string | null, categoryName: string) => {
-    setSelectedCategoryId(categoryId);
-    setSelectedCategoryName(categoryName);
+  const handleSelectCategory = (category: string) => {
+    setSelectedCategory(category);
     setSelectedBrand("all");
-    setMobileMenuOpen(false);
-    
-    // Atualizar breadcrumb
-    if (categoryId) {
-      const path = await categoriesStore.getCategoryPath(categoryId);
-      setCategoryBreadcrumb(path.map(c => ({ id: c.id, name: c.name })));
-    } else {
-      setCategoryBreadcrumb([]);
-    }
-    
     scrollToTop();
   };
 
   const filteredProducts = useMemo(() => {
     let filtered = products.filter(product => {
-      // Filtro de categoria agora é por nome
-      const categoryMatch = !selectedCategoryName || product.category === selectedCategoryName;
-      
+      const categoryMatch = selectedCategory === "all" || product.category === selectedCategory;
       const brandMatch = selectedBrand === "all" || product.brand === selectedBrand;
       const searchLower = searchQuery.toLowerCase();
       const searchMatch = searchQuery === "" || 
@@ -133,7 +120,7 @@ const Index = () => {
       
       // Filtros específicos de notebooks
       let notebookMatch = true;
-      if (selectedCategoryName.toLowerCase().includes("notebook")) {
+      if (selectedCategory.toLowerCase().includes("notebook")) {
         if (selectedProcessor !== "all") {
           notebookMatch = notebookMatch && product.specifications?.processor === selectedProcessor;
         }
@@ -162,13 +149,7 @@ const Index = () => {
     }
     
     return filtered;
-  }, [products, selectedCategoryName, selectedBrand, searchQuery, minPrice, maxPrice, sortBy, selectedProcessor, selectedRam, hasDedicatedGpu]);
-
-  const productCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    // Calcular contagem de produtos por categoria se necessário
-    return counts;
-  }, [products]);
+  }, [products, selectedCategory, selectedBrand, searchQuery, minPrice, maxPrice, sortBy, selectedProcessor, selectedRam, hasDedicatedGpu]);
 
   const scrollToTop = () => {
     window.scrollTo({
@@ -178,9 +159,7 @@ const Index = () => {
   };
 
   const handleResetFilters = () => {
-    setSelectedCategoryId(null);
-    setSelectedCategoryName("");
-    setCategoryBreadcrumb([]);
+    setSelectedCategory("all");
     setSelectedBrand("all");
     setSearchQuery("");
     setMinPrice(0);
@@ -191,16 +170,6 @@ const Index = () => {
     setHasDedicatedGpu(null);
     scrollToTop();
   };
-
-  const SidebarContent = () => (
-    <div className="h-full p-4 bg-card border-r">
-      <CategoryMenu 
-        selectedCategoryId={selectedCategoryId}
-        onSelectCategory={handleSelectCategory}
-        productCounts={productCounts}
-      />
-    </div>
-  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -214,175 +183,154 @@ const Index = () => {
         </div>
         
         <div className="relative z-10 h-full flex items-center justify-center">
-          <div className="text-center space-y-3 px-4">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold drop-shadow-2xl text-gray-50 mx-[12px]">
-              Ramon Tech Solutions
+          <div className="text-center text-white px-4">
+            <h1 className="text-3xl md:text-5xl font-bold mb-3 drop-shadow-lg">
+              Soluções em Tecnologia
             </h1>
-            <p className="text-lg md:text-xl drop-shadow-lg text-slate-50">
-              Catálogo Digital de Tecnologia
+            <p className="text-base md:text-xl drop-shadow-md">
+              Qualidade e inovação em cada produto
             </p>
           </div>
         </div>
       </section>
-      
-      {/* Layout com Sidebar */}
-      <div className="flex w-full">
-        {/* Sidebar Desktop */}
-        <aside className="hidden lg:block w-64 xl:w-72 sticky top-0 h-[calc(100vh-320px)] overflow-y-auto">
-          <SidebarContent />
-        </aside>
 
-        {/* Sidebar Mobile (Sheet) */}
-        <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-          <SheetTrigger asChild>
-            <Button 
-              variant="outline" 
-              size="icon" 
-              className="fixed bottom-4 left-4 z-40 lg:hidden shadow-lg"
+      {/* Categorias Horizontais */}
+      <section className="bg-muted/30 border-b sticky top-16 z-30 backdrop-blur-sm">
+        <div className="container mx-auto px-4 py-3">
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+            <Button
+              variant={selectedCategory === "all" ? "default" : "outline"}
+              size="sm"
+              onClick={() => handleSelectCategory("all")}
+              className="whitespace-nowrap"
             >
-              <Menu className="h-5 w-5" />
+              Todas as Categorias
             </Button>
-          </SheetTrigger>
-          <SheetContent side="left" className="w-72 p-0">
-            <div className="h-full overflow-y-auto">
-              <SidebarContent />
-            </div>
-          </SheetContent>
-        </Sheet>
-        
-        {/* Conteúdo Principal */}
-        <main className="flex-1 container mx-auto px-4 py-6">
-          {/* Breadcrumb */}
-          {categoryBreadcrumb.length > 0 && (
-            <div className="mb-4">
-              <Breadcrumb>
-                <BreadcrumbList>
-                  <BreadcrumbItem>
-                    <BreadcrumbLink 
-                      onClick={() => handleSelectCategory(null, "")}
-                      className="cursor-pointer hover:text-primary"
-                    >
-                      Início
-                    </BreadcrumbLink>
-                  </BreadcrumbItem>
-                  {categoryBreadcrumb.map((cat, index) => (
-                    <div key={cat.id} className="flex items-center gap-2">
-                      <BreadcrumbSeparator />
-                      <BreadcrumbItem>
-                        <BreadcrumbLink
-                          onClick={() => handleSelectCategory(cat.id, cat.name)}
-                          className={cn(
-                            "cursor-pointer hover:text-primary",
-                            index === categoryBreadcrumb.length - 1 && "font-semibold text-primary"
-                          )}
-                        >
-                          {cat.name}
-                        </BreadcrumbLink>
-                      </BreadcrumbItem>
-                    </div>
-                  ))}
-                </BreadcrumbList>
-              </Breadcrumb>
-            </div>
-          )}
-
-          <div className="mb-6 space-y-4">
-            <div className="flex items-center gap-3">
-              <ProductFilters 
-                searchQuery={searchQuery}
-                onSearchChange={setSearchQuery}
-                selectedBrand={selectedBrand} 
-                onBrandChange={setSelectedBrand} 
-                brands={brands} 
-                sortBy={sortBy}
-                onSortChange={setSortBy}
-                minPrice={minPrice}
-                maxPrice={maxPrice}
-                onMinPriceChange={setMinPrice}
-                onMaxPriceChange={setMaxPrice}
-                selectedProcessor={selectedProcessor}
-                onProcessorChange={setSelectedProcessor}
-                selectedRam={selectedRam}
-                onRamChange={setSelectedRam}
-                hasDedicatedGpu={hasDedicatedGpu}
-                onDedicatedGpuChange={setHasDedicatedGpu}
-                selectedCategory={selectedCategoryName}
-              />
-              <p className="text-sm text-muted-foreground whitespace-nowrap">
-                {filteredProducts.length} {filteredProducts.length === 1 ? 'produto' : 'produtos'}
-              </p>
-            </div>
+            {categories.map((category) => (
+              <Button
+                key={category}
+                variant={selectedCategory === category ? "default" : "outline"}
+                size="sm"
+                onClick={() => handleSelectCategory(category)}
+                className="whitespace-nowrap"
+              >
+                {category}
+              </Button>
+            ))}
           </div>
-          
+        </div>
+      </section>
+
+      {/* Main Content */}
+      <main className="container mx-auto px-4 py-8">
+        <ProductFilters
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          selectedCategory={selectedCategory}
+          selectedBrand={selectedBrand}
+          onBrandChange={setSelectedBrand}
+          brands={brands}
+          minPrice={minPrice}
+          maxPrice={maxPrice}
+          onMinPriceChange={setMinPrice}
+          onMaxPriceChange={setMaxPrice}
+          sortBy={sortBy}
+          onSortChange={setSortBy}
+          selectedProcessor={selectedProcessor}
+          onProcessorChange={setSelectedProcessor}
+          selectedRam={selectedRam}
+          onRamChange={setSelectedRam}
+          hasDedicatedGpu={hasDedicatedGpu}
+          onDedicatedGpuChange={setHasDedicatedGpu}
+        />
+
+        {/* Products Grid */}
+        <div className="mt-8">
           {isLoading ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4 pb-20">
-              {[1, 2, 3, 4, 5, 6].map(i => (
-                <div key={i} className="space-y-3">
-                  <Skeleton className="h-48 w-full" />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="space-y-4">
+                  <Skeleton className="h-48 w-full rounded-lg" />
                   <Skeleton className="h-4 w-3/4" />
                   <Skeleton className="h-4 w-1/2" />
                 </div>
               ))}
             </div>
           ) : filteredProducts.length === 0 ? (
-            <div className="text-center py-20">
-              <p className="text-muted-foreground text-lg">
-                Nenhum produto encontrado
-              </p>
-              <p className="text-sm text-muted-foreground mt-2">
-                {products.length === 0 
-                  ? "Catálogo em breve. Novos produtos serão adicionados em breve." 
-                  : "Tente ajustar os filtros ou buscar por outro termo"}
-              </p>
-              {products.length === 0 && (
-                <Button onClick={handleRefreshCatalog} disabled={isRefreshing} className="mt-4">
-                  {isRefreshing ? "Atualizando..." : "Atualizar catálogo"}
-                </Button>
-              )}
+            <div className="text-center py-16 text-muted-foreground">
+              <p className="text-lg">Nenhum produto encontrado.</p>
+              <Button 
+                variant="link" 
+                onClick={handleResetFilters}
+                className="mt-2"
+              >
+                Limpar filtros
+              </Button>
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4 pb-20">
-              {filteredProducts.map(product => (
-                <ProductCard 
-                  key={product.id} 
-                  id={product.id} 
-                  images={product.images} 
-                  name={product.name} 
-                  brand={product.brand} 
-                  category={product.category} 
-                  specs={product.specs} 
-                  description={product.description} 
-                  price={product.price} 
-                  costPrice={product.costPrice} 
-                  discountPrice={product.discountPrice} 
-                  passOnCashDiscount={product.passOnCashDiscount} 
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {filteredProducts.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  id={product.id}
+                  images={product.images}
+                  name={product.name}
+                  brand={product.brand}
+                  category={product.category}
+                  specs={product.specs}
+                  description={product.description}
+                  price={product.price}
+                  costPrice={product.costPrice}
+                  discountPrice={product.discountPrice}
+                  passOnCashDiscount={product.passOnCashDiscount}
                 />
               ))}
             </div>
           )}
-        </main>
-      </div>
-      
-      <footer className="bg-muted py-6 mt-8">
-        <div className="container mx-auto px-4 text-center">
-          <p className="text-xs text-muted-foreground">
-            Catálogo digital — Ramon Tech Solutions  
-          </p>
+        </div>
+      </main>
+
+      {/* Footer */}
+      <footer className="mt-16 py-6 border-t bg-muted/20">
+        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
+          <p>© 2024 Sua Empresa. Todos os direitos reservados.</p>
         </div>
       </footer>
 
-      {/* Botão Voltar ao Topo */}
+      {/* Scroll to Top Button */}
       {showScrollTop && (
-        <Button 
-          onClick={scrollToTop} 
-          size="icon" 
-          className="fixed bottom-4 right-4 z-50 shadow-lg" 
-          aria-label="Voltar ao topo"
+        <Button
+          className="fixed bottom-8 right-8 rounded-full h-12 w-12 shadow-lg z-50"
+          size="icon"
+          onClick={scrollToTop}
         >
           <ArrowUp className="h-5 w-5" />
         </Button>
       )}
 
+      {deepLinkProductId && (() => {
+        const product = products.find(p => p.id === deepLinkProductId);
+        if (!product) return null;
+        
+        return (
+          <ProductDetailsDialog
+            open={!!deepLinkProductId}
+            onOpenChange={(open) => {
+              if (!open) setDeepLinkProductId(null);
+            }}
+            id={product.id}
+            images={product.images}
+            name={product.name}
+            brand={product.brand}
+            specs={product.specs}
+            description={product.description}
+            price={product.price}
+            costPrice={product.costPrice}
+            discountPrice={product.discountPrice}
+            passOnCashDiscount={product.passOnCashDiscount}
+          />
+        );
+      })()}
     </div>
   );
 };
