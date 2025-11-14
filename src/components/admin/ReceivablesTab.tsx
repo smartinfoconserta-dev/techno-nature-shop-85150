@@ -584,7 +584,7 @@ const ReceivablesTab = () => {
                     onGeneratePDF={async (customerId) => {
                       const customer = await customersStore.getCustomerById(customerId);
                       if (customer) {
-                        const receivables = receivablesStore.getReceivablesByCustomerId(customerId);
+                        const receivables = receivablesStore.getReceivablesByCustomer(customerId);
                         generateCustomerReportPDF(customer, receivables);
                         toast({ title: "PDF gerado com sucesso!" });
                       }
