@@ -1,35 +1,44 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
 import ProductCard from "@/components/ProductCard";
 import { productsStore } from "@/lib/productsStore";
-import { categoriesStore } from "@/lib/categoriesStore";
+import { categoriesStore, Category } from "@/lib/categoriesStore";
 import type { Product } from "@/lib/productsStore";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import * as Icons from "lucide-react";
 
 interface CategorySectionProps {
   categoryName: string;
   onViewAll: (category: string) => void;
 }
 
-const categoryIcons: Record<string, string> = {
-  "Notebooks": "💻",
-  "Celulares": "📱",
-  "Tablets": "📱",
-  "Smartwatches": "⌚",
-  "Fones de Ouvido": "🎧",
-  "Acessórios": "🔌",
-};
-
 const CategorySection = ({ categoryName, onViewAll }: CategorySectionProps) => {
   const [products, setProducts] = useState<Product[]>([]);
+  const [subCategories, setSubCategories] = useState<Category[]>([]);
+  const [parentCategory, setParentCategory] = useState<Category | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
 
   useEffect(() => {
-    const loadProducts = async () => {
-      // Só faz refresh se o cache estiver vazio
+    const loadData = async () => {
+      const allCategories = await categoriesStore.getAllCategories();
+      const currentCategory = allCategories.find(c => c.name === categoryName);
+      
+      if (currentCategory) {
+        const subs = await categoriesStore.getSubCategories(currentCategory.id);
+        setSubCategories(subs);
+        if (subs.length > 0) {
+          setParentCategory(currentCategory);
+        }
+      }
+      
       const currentProducts = productsStore.getAllProducts();
       if (currentProducts.length === 0) {
         await productsStore.refreshFromBackend();
@@ -44,7 +53,7 @@ const CategorySection = ({ categoryName, onViewAll }: CategorySectionProps) => {
       setProducts(filtered);
     };
     
-    loadProducts();
+    loadData();
   }, [categoryName]);
 
   useEffect(() => {
@@ -79,15 +88,52 @@ const CategorySection = ({ categoryName, onViewAll }: CategorySectionProps) => {
     return null;
   }
 
-  const icon = categoriesStore.getCategoryIcon(categoryName);
+  const getCategoryIcon = (category: Category) => {
+    const IconComponent = Icons[category.icon as keyof typeof Icons] as React.ComponentType<{ className?: string }>;
+    return IconComponent || Icons.Package;
+  };
+
+  const currentIcon = parentCategory ? getCategoryIcon(parentCategory) : Icons.Package;
+  const CurrentIcon = currentIcon as React.ComponentType<{ className?: string }>;
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl md:text-2xl font-bold flex items-center gap-2">
-          <span className="text-2xl md:text-3xl">{categoryIcons[categoryName] || "📦"}</span>
-          {categoryName}
-        </h2>
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-primary/10 rounded-md">
+            <CurrentIcon className="w-6 h-6 md:w-7 md:h-7 text-primary" />
+          </div>
+          <h2 className="text-xl md:text-2xl font-bold">
+            {categoryName}
+          </h2>
+          
+          {subCategories.length > 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-1">
+                  Subcategorias
+                  <ChevronDown className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                {subCategories.map((sub) => {
+                  const SubIcon = getCategoryIcon(sub);
+                  return (
+                    <DropdownMenuItem
+                      key={sub.id}
+                      onClick={() => onViewAll(sub.name)}
+                      className="gap-2 cursor-pointer"
+                    >
+                      <SubIcon className="w-4 h-4" />
+                      {sub.name}
+                    </DropdownMenuItem>
+                  );
+                })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
+        
         <Button 
           variant="link" 
           onClick={() => onViewAll(categoryName)}
@@ -97,7 +143,6 @@ const CategorySection = ({ categoryName, onViewAll }: CategorySectionProps) => {
         </Button>
       </div>
 
-      {/* Desktop: Grid de 3 colunas */}
       <div className="hidden md:grid md:grid-cols-3 gap-4">
         {products.map((product) => (
           <ProductCard 
@@ -117,27 +162,25 @@ const CategorySection = ({ categoryName, onViewAll }: CategorySectionProps) => {
         ))}
       </div>
 
-      {/* Mobile: Scroll horizontal com botões de navegação */}
-      <div className="relative md:hidden">
+      <div className="md:hidden relative">
         {canScrollLeft && (
           <Button
-            variant="ghost"
+            variant="outline"
             size="icon"
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-background/80 backdrop-blur-sm shadow-lg"
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 rounded-full shadow-md bg-background"
             onClick={() => scroll('left')}
           >
-            <ChevronLeft className="h-5 w-5" />
+            <ChevronLeft className="h-4 w-4" />
           </Button>
         )}
         
         <div 
           ref={scrollRef}
+          className="flex gap-4 overflow-x-auto scrollbar-hide scroll-smooth snap-x snap-mandatory px-1"
           onScroll={checkScrollButtons}
-          className="flex gap-3 pb-4 overflow-x-auto scroll-smooth snap-x snap-mandatory hide-scrollbar"
-          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {products.map((product) => (
-            <div key={product.id} className="inline-block min-w-[160px] snap-start">
+            <div key={product.id} className="min-w-[280px] snap-start">
               <ProductCard 
                 id={product.id}
                 images={product.images}
@@ -154,15 +197,15 @@ const CategorySection = ({ categoryName, onViewAll }: CategorySectionProps) => {
             </div>
           ))}
         </div>
-
+        
         {canScrollRight && (
           <Button
-            variant="ghost"
+            variant="outline"
             size="icon"
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-background/80 backdrop-blur-sm shadow-lg"
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 rounded-full shadow-md bg-background"
             onClick={() => scroll('right')}
           >
-            <ChevronRight className="h-5 w-5" />
+            <ChevronRight className="h-4 w-4" />
           </Button>
         )}
       </div>

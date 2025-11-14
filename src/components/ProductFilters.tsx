@@ -1,72 +1,87 @@
-import { useState, useEffect } from "react";
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetFooter } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Filter, X, Search, ArrowUpDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
-import { settingsStore } from "@/lib/settingsStore";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-  SheetFooter,
-} from "@/components/ui/sheet";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Filter, ChevronDown, ChevronUp } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { useState, useEffect } from "react";
+import { settingsStore } from "@/lib/settingsStore";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 interface ProductFiltersProps {
-  selectedCategory: string;
-  onCategoryChange: (category: string) => void;
+  searchQuery: string;
+  onSearchChange: (query: string) => void;
   selectedBrand: string;
   onBrandChange: (brand: string) => void;
   brands: string[];
-  categories: string[];
-  priceRange: [number, number];
-  onPriceRangeChange: (range: [number, number]) => void;
+  sortBy: string;
+  onSortChange: (sort: string) => void;
+  minPrice: number;
   maxPrice: number;
-  filterSearch: string;
-  onFilterSearchChange: (search: string) => void;
-  priceSort: "none" | "asc" | "desc";
-  onPriceSortChange: (sort: "none" | "asc" | "desc") => void;
-  selectedProcessors: string[];
-  onProcessorsChange: (processors: string[]) => void;
-  selectedRAMs: string[];
-  onRAMsChange: (rams: string[]) => void;
-  hasDedicatedGPU: boolean | null;
-  onDedicatedGPUChange: (value: boolean | null) => void;
+  onMinPriceChange: (price: number) => void;
+  onMaxPriceChange: (price: number) => void;
+  selectedProcessor: string;
+  onProcessorChange: (processor: string) => void;
+  selectedRam: string;
+  onRamChange: (ram: string) => void;
+  hasDedicatedGpu: boolean | null;
+  onDedicatedGpuChange: (value: boolean | null) => void;
+  selectedCategory: string;
 }
 
-const ProductFilters = ({ 
-  selectedCategory, 
-  onCategoryChange, 
-  selectedBrand, 
+export default function ProductFilters({
+  searchQuery,
+  onSearchChange,
+  selectedBrand,
   onBrandChange,
   brands,
-  categories,
-  priceRange,
-  onPriceRangeChange,
+  sortBy,
+  onSortChange,
+  minPrice,
   maxPrice,
-  filterSearch,
-  onFilterSearchChange,
-  priceSort,
-  onPriceSortChange,
-  selectedProcessors,
-  onProcessorsChange,
-  selectedRAMs,
-  onRAMsChange,
-  hasDedicatedGPU,
-  onDedicatedGPUChange,
-}: ProductFiltersProps) => {
+  onMinPriceChange,
+  onMaxPriceChange,
+  selectedProcessor,
+  onProcessorChange,
+  selectedRam,
+  onRamChange,
+  hasDedicatedGpu,
+  onDedicatedGpuChange,
+  selectedCategory,
+}: ProductFiltersProps) {
   const [processorOptions, setProcessorOptions] = useState<string[]>([]);
   const [ramOptions, setRamOptions] = useState<string[]>([]);
+  const [open, setOpen] = useState(false);
+
+  // Estados temporários locais
+  const [tempSearchQuery, setTempSearchQuery] = useState(searchQuery);
+  const [tempSelectedBrand, setTempSelectedBrand] = useState(selectedBrand);
+  const [tempSortBy, setTempSortBy] = useState(sortBy);
+  const [tempMinPrice, setTempMinPrice] = useState(minPrice);
+  const [tempMaxPrice, setTempMaxPrice] = useState(maxPrice);
+  const [tempSelectedProcessor, setTempSelectedProcessor] = useState(selectedProcessor);
+  const [tempSelectedRam, setTempSelectedRam] = useState(selectedRam);
+  const [tempHasDedicatedGpu, setTempHasDedicatedGpu] = useState(hasDedicatedGpu);
+
+  // Estados de expansão das seções
+  const [brandsOpen, setBrandsOpen] = useState(false);
+  const [priceRangeOpen, setPriceRangeOpen] = useState(false);
+  const [processorOpen, setProcessorOpen] = useState(false);
+  const [ramOpen, setRamOpen] = useState(false);
+  const [gpuOpen, setGpuOpen] = useState(false);
+
+  useEffect(() => {
+    setTempSearchQuery(searchQuery);
+    setTempSelectedBrand(selectedBrand);
+    setTempSortBy(sortBy);
+    setTempMinPrice(minPrice);
+    setTempMaxPrice(maxPrice);
+    setTempSelectedProcessor(selectedProcessor);
+    setTempSelectedRam(selectedRam);
+    setTempHasDedicatedGpu(hasDedicatedGpu);
+  }, [searchQuery, selectedBrand, sortBy, minPrice, maxPrice, selectedProcessor, selectedRam, hasDedicatedGpu]);
 
   useEffect(() => {
     const loadSpecOptions = async () => {
@@ -76,238 +91,302 @@ const ProductFilters = ({
     };
     loadSpecOptions();
   }, []);
-  const activeFiltersCount = 
-    (selectedBrand !== "all" ? 1 : 0) + 
-    (priceRange[0] > 0 || priceRange[1] < maxPrice ? 1 : 0) +
-    (filterSearch !== "" ? 1 : 0) +
-    (priceSort !== "none" ? 1 : 0) +
-    (selectedProcessors.length > 0 ? 1 : 0) +
-    (selectedRAMs.length > 0 ? 1 : 0) +
-    (hasDedicatedGPU !== null ? 1 : 0);
+
+  const activeFiltersCount = [
+    tempSearchQuery,
+    tempSelectedBrand !== "all",
+    tempSortBy !== "newest",
+    tempMinPrice > 0,
+    tempMaxPrice < 999999,
+    tempSelectedProcessor !== "all",
+    tempSelectedRam !== "all",
+    tempHasDedicatedGpu !== null,
+  ].filter(Boolean).length;
+
+  const handleApplyFilters = () => {
+    onSearchChange(tempSearchQuery);
+    onBrandChange(tempSelectedBrand);
+    onSortChange(tempSortBy);
+    onMinPriceChange(tempMinPrice);
+    onMaxPriceChange(tempMaxPrice);
+    onProcessorChange(tempSelectedProcessor);
+    onRamChange(tempSelectedRam);
+    onDedicatedGpuChange(tempHasDedicatedGpu);
+    setOpen(false);
+  };
 
   const handleClear = () => {
-    onBrandChange("all");
-    onPriceRangeChange([0, maxPrice]);
-    onFilterSearchChange("");
-    onPriceSortChange("none");
-    onProcessorsChange([]);
-    onRAMsChange([]);
-    onDedicatedGPUChange(null);
+    setTempSearchQuery("");
+    setTempSelectedBrand("all");
+    setTempSortBy("newest");
+    setTempMinPrice(0);
+    setTempMaxPrice(999999);
+    setTempSelectedProcessor("all");
+    setTempSelectedRam("all");
+    setTempHasDedicatedGpu(null);
   };
 
   const formatPrice = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(value);
   };
 
-  const formatPriceInput = (value: number): string => {
+  const formatPriceInput = (value: number) => {
     if (value === 0) return "";
     return value.toString();
   };
 
-  const parsePriceInput = (value: string): number => {
-    const parsed = parseInt(value.replace(/\D/g, ''), 10);
-    return isNaN(parsed) ? 0 : parsed;
+  const parsePriceInput = (value: string) => {
+    if (!value) return 0;
+    const numValue = parseFloat(value.replace(/\D/g, ""));
+    return isNaN(numValue) ? 0 : numValue;
   };
 
-  const handleMinPriceChange = (value: string) => {
-    const minPrice = parsePriceInput(value);
-    onPriceRangeChange([minPrice, priceRange[1]]);
+  const handleMinPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = parsePriceInput(e.target.value);
+    setTempMinPrice(newValue);
   };
 
-  const handleMaxPriceChange = (value: string) => {
-    const maxPrice = parsePriceInput(value);
-    onPriceRangeChange([priceRange[0], maxPrice]);
+  const handleMaxPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = parsePriceInput(e.target.value);
+    setTempMaxPrice(newValue);
   };
 
   return (
-    <Sheet>
+    <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button variant="outline" className="gap-2">
+        <Button variant="outline" className="gap-2 relative">
           <Filter className="h-4 w-4" />
           Filtros
           {activeFiltersCount > 0 && (
-            <Badge variant="default" className="ml-1 h-5 w-5 p-0 flex items-center justify-center rounded-full">
+            <Badge variant="secondary" className="ml-1">
               {activeFiltersCount}
             </Badge>
           )}
         </Button>
       </SheetTrigger>
-      <SheetContent side="left" className="w-80 sm:w-96">
+      <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
         <SheetHeader>
-          <SheetTitle>Filtros</SheetTitle>
+          <SheetTitle>Filtros de Produtos</SheetTitle>
         </SheetHeader>
-        
-        <ScrollArea className="h-[calc(100vh-180px)] pr-4 mt-6">
-          <div className="space-y-6">
-            <div>
-              <h3 className="font-semibold mb-3">Buscar Produto</h3>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Digite para buscar..."
-                  value={filterSearch}
-                  onChange={(e) => onFilterSearchChange(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
-            </div>
 
-            <div>
-              <h3 className="font-semibold mb-3 flex items-center gap-2">
-                <ArrowUpDown className="h-4 w-4" />
-                Ordenar por Preço
-              </h3>
-              <Select value={priceSort} onValueChange={onPriceSortChange}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Sem ordenação</SelectItem>
-                  <SelectItem value="asc">Menor preço primeiro</SelectItem>
-                  <SelectItem value="desc">Maior preço primeiro</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <h3 className="font-semibold mb-3">Faixa de Preço</h3>
-              <div className="space-y-3">
-                <div>
-                  <label className="text-xs text-muted-foreground mb-1 block">Preço mínimo</label>
-                  <Input
-                    type="text"
-                    inputMode="numeric"
-                    placeholder="R$ 0"
-                    value={formatPriceInput(priceRange[0])}
-                    onChange={(e) => handleMinPriceChange(e.target.value)}
-                    className="w-full"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs text-muted-foreground mb-1 block">Preço máximo</label>
-                  <Input
-                    type="text"
-                    inputMode="numeric"
-                    placeholder={`R$ ${maxPrice}`}
-                    value={formatPriceInput(priceRange[1])}
-                    onChange={(e) => handleMaxPriceChange(e.target.value)}
-                    className="w-full"
-                  />
-                </div>
-                {(priceRange[0] > 0 || priceRange[1] < maxPrice) && (
-                  <p className="text-xs text-muted-foreground">
-                    De {formatPrice(priceRange[0])} até {formatPrice(priceRange[1])}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            <div>
-              <h3 className="font-semibold mb-3">Marcas</h3>
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  size="sm"
-                  variant={selectedBrand === "all" ? "default" : "outline"}
-                  onClick={() => onBrandChange("all")}
-                >
-                  Todas
-                </Button>
-                {brands.map((brand) => (
-                  <Button
-                    key={brand}
-                    size="sm"
-                    variant={selectedBrand === brand ? "default" : "outline"}
-                    onClick={() => onBrandChange(brand)}
-                  >
-                    {brand}
-                  </Button>
-                ))}
-              </div>
-            </div>
-
-            {/* Filtros de Notebooks */}
-            {selectedCategory === "Notebooks" && (
-              <>
-                <div>
-                  <h3 className="font-semibold mb-3">Processador</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {processorOptions.map((proc) => (
-                      <Button
-                        key={proc}
-                        size="sm"
-                        variant={selectedProcessors.includes(proc) ? "default" : "outline"}
-                        onClick={() => {
-                          if (selectedProcessors.includes(proc)) {
-                            onProcessorsChange(selectedProcessors.filter(p => p !== proc));
-                          } else {
-                            onProcessorsChange([...selectedProcessors, proc]);
-                          }
-                        }}
-                      >
-                        {proc}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="font-semibold mb-3">Memória RAM</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {ramOptions.map((memory) => (
-                      <Button
-                        key={memory}
-                        size="sm"
-                        variant={selectedRAMs.includes(memory) ? "default" : "outline"}
-                        onClick={() => {
-                          if (selectedRAMs.includes(memory)) {
-                            onRAMsChange(selectedRAMs.filter(r => r !== memory));
-                          } else {
-                            onRAMsChange([...selectedRAMs, memory]);
-                          }
-                        }}
-                      >
-                        {memory}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="font-semibold mb-3">Placa de Vídeo</h3>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="dedicated-gpu"
-                      checked={hasDedicatedGPU === true}
-                      onCheckedChange={(checked) => onDedicatedGPUChange(checked ? true : null)}
-                    />
-                    <label htmlFor="dedicated-gpu" className="text-sm cursor-pointer">
-                      Com placa de vídeo dedicada
-                    </label>
-                  </div>
-                </div>
-              </>
-            )}
+        <div className="space-y-6 py-6">
+          {/* Busca */}
+          <div className="space-y-2">
+            <Label htmlFor="search">Buscar produto</Label>
+            <Input
+              id="search"
+              placeholder="Nome do produto..."
+              value={tempSearchQuery}
+              onChange={(e) => setTempSearchQuery(e.target.value)}
+            />
           </div>
-        </ScrollArea>
 
-        <SheetFooter className="absolute bottom-0 left-0 right-0 p-6 bg-background border-t">
-          <Button
-            variant="outline"
-            onClick={handleClear}
-            className="w-full"
-          >
-            <X className="h-4 w-4 mr-2" />
+          {/* Ordenação */}
+          <div className="space-y-2">
+            <Label htmlFor="sort">Ordenar por</Label>
+            <Select value={tempSortBy} onValueChange={setTempSortBy}>
+              <SelectTrigger id="sort">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="newest">Mais recentes</SelectItem>
+                <SelectItem value="oldest">Mais antigos</SelectItem>
+                <SelectItem value="price-asc">Menor preço</SelectItem>
+                <SelectItem value="price-desc">Maior preço</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Faixa de Preço */}
+          <Collapsible open={priceRangeOpen} onOpenChange={setPriceRangeOpen}>
+            <CollapsibleTrigger className="flex items-center justify-between w-full py-2">
+              <Label className="cursor-pointer">Faixa de Preço</Label>
+              {priceRangeOpen ? (
+                <ChevronUp className="h-4 w-4" />
+              ) : (
+                <ChevronDown className="h-4 w-4" />
+              )}
+            </CollapsibleTrigger>
+            <CollapsibleContent className="space-y-4 pt-2">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="min-price" className="text-sm">
+                    Mínimo
+                  </Label>
+                  <Input
+                    id="min-price"
+                    type="number"
+                    placeholder="R$ 0"
+                    value={formatPriceInput(tempMinPrice)}
+                    onChange={handleMinPriceChange}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="max-price" className="text-sm">
+                    Máximo
+                  </Label>
+                  <Input
+                    id="max-price"
+                    type="number"
+                    placeholder="Sem limite"
+                    value={tempMaxPrice === 999999 ? "" : formatPriceInput(tempMaxPrice)}
+                    onChange={handleMaxPriceChange}
+                  />
+                </div>
+              </div>
+              <div className="text-sm text-muted-foreground">
+                {formatPrice(tempMinPrice)} - {tempMaxPrice === 999999 ? "Sem limite" : formatPrice(tempMaxPrice)}
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+
+          {/* Marcas */}
+          <Collapsible open={brandsOpen} onOpenChange={setBrandsOpen}>
+            <CollapsibleTrigger className="flex items-center justify-between w-full py-2">
+              <Label className="cursor-pointer">Marcas</Label>
+              {brandsOpen ? (
+                <ChevronUp className="h-4 w-4" />
+              ) : (
+                <ChevronDown className="h-4 w-4" />
+              )}
+            </CollapsibleTrigger>
+            <CollapsibleContent className="space-y-2 pt-2">
+              <Button
+                variant={tempSelectedBrand === "all" ? "default" : "outline"}
+                className="w-full justify-start"
+                onClick={() => setTempSelectedBrand("all")}
+              >
+                Todas as marcas
+              </Button>
+              {brands.map((brand) => (
+                <Button
+                  key={brand}
+                  variant={tempSelectedBrand === brand ? "default" : "outline"}
+                  className="w-full justify-start"
+                  onClick={() => setTempSelectedBrand(brand)}
+                >
+                  {brand}
+                </Button>
+              ))}
+            </CollapsibleContent>
+          </Collapsible>
+
+          {/* Filtros específicos para Notebooks */}
+          {selectedCategory === "Notebooks" && (
+            <>
+              {/* Processador */}
+              <Collapsible open={processorOpen} onOpenChange={setProcessorOpen}>
+                <CollapsibleTrigger className="flex items-center justify-between w-full py-2">
+                  <Label className="cursor-pointer">Processador</Label>
+                  {processorOpen ? (
+                    <ChevronUp className="h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
+                  )}
+                </CollapsibleTrigger>
+                <CollapsibleContent className="space-y-2 pt-2">
+                  <Button
+                    variant={tempSelectedProcessor === "all" ? "default" : "outline"}
+                    className="w-full justify-start"
+                    onClick={() => setTempSelectedProcessor("all")}
+                  >
+                    Todos os processadores
+                  </Button>
+                  {processorOptions.map((processor) => (
+                    <Button
+                      key={processor}
+                      variant={tempSelectedProcessor === processor ? "default" : "outline"}
+                      className="w-full justify-start"
+                      onClick={() => setTempSelectedProcessor(processor)}
+                    >
+                      {processor}
+                    </Button>
+                  ))}
+                </CollapsibleContent>
+              </Collapsible>
+
+              {/* RAM */}
+              <Collapsible open={ramOpen} onOpenChange={setRamOpen}>
+                <CollapsibleTrigger className="flex items-center justify-between w-full py-2">
+                  <Label className="cursor-pointer">Memória RAM</Label>
+                  {ramOpen ? (
+                    <ChevronUp className="h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
+                  )}
+                </CollapsibleTrigger>
+                <CollapsibleContent className="space-y-2 pt-2">
+                  <Button
+                    variant={tempSelectedRam === "all" ? "default" : "outline"}
+                    className="w-full justify-start"
+                    onClick={() => setTempSelectedRam("all")}
+                  >
+                    Todas as memórias
+                  </Button>
+                  {ramOptions.map((ram) => (
+                    <Button
+                      key={ram}
+                      variant={tempSelectedRam === ram ? "default" : "outline"}
+                      className="w-full justify-start"
+                      onClick={() => setTempSelectedRam(ram)}
+                    >
+                      {ram}
+                    </Button>
+                  ))}
+                </CollapsibleContent>
+              </Collapsible>
+
+              {/* Placa de Vídeo Dedicada */}
+              <Collapsible open={gpuOpen} onOpenChange={setGpuOpen}>
+                <CollapsibleTrigger className="flex items-center justify-between w-full py-2">
+                  <Label className="cursor-pointer">Placa de Vídeo</Label>
+                  {gpuOpen ? (
+                    <ChevronUp className="h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
+                  )}
+                </CollapsibleTrigger>
+                <CollapsibleContent className="space-y-3 pt-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="dedicated-gpu" className="text-sm">
+                      Apenas com placa dedicada
+                    </Label>
+                    <Switch
+                      id="dedicated-gpu"
+                      checked={tempHasDedicatedGpu === true}
+                      onCheckedChange={(checked) => setTempHasDedicatedGpu(checked ? true : null)}
+                    />
+                  </div>
+                  {tempHasDedicatedGpu !== null && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                      onClick={() => setTempHasDedicatedGpu(null)}
+                    >
+                      Limpar filtro
+                    </Button>
+                  )}
+                </CollapsibleContent>
+              </Collapsible>
+            </>
+          )}
+        </div>
+
+        <SheetFooter className="gap-2">
+          <Button variant="outline" onClick={handleClear} className="flex-1">
             Limpar Filtros
+          </Button>
+          <Button onClick={handleApplyFilters} className="flex-1">
+            Aplicar Filtros
           </Button>
         </SheetFooter>
       </SheetContent>
     </Sheet>
   );
-};
-
-export default ProductFilters;
+}

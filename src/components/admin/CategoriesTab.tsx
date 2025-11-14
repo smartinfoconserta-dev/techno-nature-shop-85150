@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { categoriesStore, Category } from "@/lib/categoriesStore";
 import CategoryForm from "./CategoryForm";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, ChevronRight } from "lucide-react";
 import * as Icons from "lucide-react";
 import {
   AlertDialog,
@@ -16,35 +16,50 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
 
 const CategoriesTab = () => {
   const [categories, setCategories] = useState<Category[]>([]);
+  const [parentCategories, setParentCategories] = useState<Category[]>([]);
+  const [subcategoriesByParent, setSubcategoriesByParent] = useState<Record<string, Category[]>>({});
   const [formOpen, setFormOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
+  const [selectedParentForNew, setSelectedParentForNew] = useState<string | null>(null);
 
   useEffect(() => {
     loadCategories();
   }, []);
 
   const loadCategories = async () => {
-    const cats = await categoriesStore.getAllCategories();
-    setCategories(cats);
+    const allCats = await categoriesStore.getAllCategories();
+    setCategories(allCats);
+
+    const parents = await categoriesStore.getParentCategories();
+    setParentCategories(parents);
+
+    const subsBySeparent: Record<string, Category[]> = {};
+    for (const parent of parents) {
+      const subs = await categoriesStore.getSubCategories(parent.id);
+      subsBySeparent[parent.id] = subs;
+    }
+    setSubcategoriesByParent(subsBySeparent);
   };
 
-  const handleSubmit = (name: string, icon: string) => {
+  const handleSubmit = async (name: string, icon: string, parentCategoryId: string | null = null) => {
     try {
       if (editingCategory) {
-        categoriesStore.updateCategory(editingCategory.id, name, icon);
+        await categoriesStore.updateCategory(editingCategory.id, name, icon);
         toast.success("Categoria atualizada com sucesso!");
       } else {
-        categoriesStore.addCategory(name, icon);
+        await categoriesStore.addCategory(name, icon, parentCategoryId || selectedParentForNew);
         toast.success("Categoria adicionada com sucesso!");
       }
-      loadCategories();
+      await loadCategories();
       setFormOpen(false);
       setEditingCategory(null);
+      setSelectedParentForNew(null);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Erro ao salvar categoria");
     }
@@ -60,19 +75,25 @@ const CategoriesTab = () => {
     setDeleteDialogOpen(true);
   };
 
-  const handleDeleteConfirm = () => {
+  const handleDeleteConfirm = async () => {
     if (!categoryToDelete) return;
     
     try {
-      categoriesStore.deleteCategory(categoryToDelete.id);
+      await categoriesStore.deleteCategory(categoryToDelete.id);
       toast.success("Categoria excluída com sucesso!");
-      loadCategories();
+      await loadCategories();
     } catch (error) {
       toast.error("Erro ao excluir categoria");
     } finally {
       setDeleteDialogOpen(false);
       setCategoryToDelete(null);
     }
+  };
+
+  const handleAddSubcategory = (parentId: string) => {
+    setSelectedParentForNew(parentId);
+    setEditingCategory(null);
+    setFormOpen(true);
   };
 
   return (
@@ -87,6 +108,7 @@ const CategoriesTab = () => {
         <Button
           onClick={() => {
             setEditingCategory(null);
+            setSelectedParentForNew(null);
             setFormOpen(true);
           }}
         >
@@ -95,63 +117,117 @@ const CategoriesTab = () => {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {categories.map((category) => {
-          const IconComponent = Icons[category.icon as keyof typeof Icons] as React.ComponentType<{ className?: string }>;
+      <div className="space-y-6">
+        {/* Categorias Pai */}
+        {parentCategories.map((parent) => {
+          const ParentIconComponent = Icons[parent.icon as keyof typeof Icons] as React.ComponentType<{ className?: string }>;
+          const subs = subcategoriesByParent[parent.id] || [];
+
           return (
-            <Card key={category.id} className="p-4">
-              <div className="flex items-center justify-between">
+            <Card key={parent.id} className="p-4">
+              {/* Categoria Pai */}
+              <div className="flex items-center justify-between mb-4 pb-4 border-b">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-primary/10 rounded-md">
-                    <IconComponent className="w-5 h-5 text-primary" />
+                    <ParentIconComponent className="w-5 h-5 text-primary" />
                   </div>
                   <div>
-                    <h3 className="font-semibold">{category.name}</h3>
-                    <p className="text-xs text-muted-foreground">{category.icon}</p>
+                    <h3 className="font-semibold text-lg">{parent.name}</h3>
+                    <p className="text-xs text-muted-foreground">{parent.icon}</p>
                   </div>
+                  <Badge variant="secondary">{subs.length} subcategorias</Badge>
                 </div>
                 <div className="flex gap-2">
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => handleEdit(category)}
+                    onClick={() => handleEdit(parent)}
                   >
                     <Pencil className="w-4 h-4" />
                   </Button>
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => handleDeleteClick(category)}
+                    onClick={() => handleDeleteClick(parent)}
                   >
-                    <Trash2 className="w-4 h-4 text-destructive" />
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleAddSubcategory(parent.id)}
+                  >
+                    <Plus className="w-4 h-4 mr-1" />
+                    Subcategoria
                   </Button>
                 </div>
               </div>
+
+              {/* Subcategorias */}
+              {subs.length > 0 && (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 ml-8">
+                  {subs.map((sub) => {
+                    const SubIconComponent = Icons[sub.icon as keyof typeof Icons] as React.ComponentType<{ className?: string }>;
+                    return (
+                      <div key={sub.id} className="flex items-center justify-between p-3 border rounded-md bg-muted/30">
+                        <div className="flex items-center gap-2">
+                          <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                          <div className="p-1.5 bg-background rounded-md">
+                            <SubIconComponent className="w-4 h-4" />
+                          </div>
+                          <span className="text-sm font-medium">{sub.name}</span>
+                        </div>
+                        <div className="flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7"
+                            onClick={() => handleEdit(sub)}
+                          >
+                            <Pencil className="w-3 h-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7"
+                            onClick={() => handleDeleteClick(sub)}
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </Card>
           );
         })}
       </div>
 
-      {categories.length === 0 && (
-        <div className="text-center py-12 text-muted-foreground">
-          Nenhuma categoria cadastrada ainda
-        </div>
+      {formOpen && (
+        <CategoryForm
+          isOpen={formOpen}
+          onClose={() => {
+            setFormOpen(false);
+            setEditingCategory(null);
+            setSelectedParentForNew(null);
+          }}
+          onSubmit={handleSubmit}
+          initialData={editingCategory ? {
+            name: editingCategory.name,
+            icon: editingCategory.icon,
+            parentCategoryId: editingCategory.parentCategoryId,
+          } : undefined}
+          parentCategories={parentCategories}
+          selectedParentForNew={selectedParentForNew}
+        />
       )}
-
-      <CategoryForm
-        open={formOpen}
-        onOpenChange={(open) => {
-          setFormOpen(open);
-          if (!open) setEditingCategory(null);
-        }}
-        onSubmit={handleSubmit}
-        editingCategory={editingCategory}
-      />
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Excluir categoria?</AlertDialogTitle>
+            <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
             <AlertDialogDescription>
               Tem certeza que deseja excluir a categoria "{categoryToDelete?.name}"?
               Esta ação não pode ser desfeita.
