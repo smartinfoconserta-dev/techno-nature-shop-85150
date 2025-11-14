@@ -6,7 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, ShoppingBag, DollarSign, Clock, Shield, Loader2, FileText, Notebook, Plus, Trash2, XCircle, CheckCircle2, Archive } from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { LogOut, ShoppingBag, DollarSign, Clock, Shield, Loader2, FileText, Notebook, Plus, Trash2, XCircle, CheckCircle2, Archive, ChevronDown } from "lucide-react";
 import { calculateWarranty } from "@/lib/warrantyHelper";
 import { format } from "date-fns";
 import { CustomerStatsChart } from "@/components/customer/CustomerStatsChart";
@@ -251,6 +253,30 @@ const CustomerPortal = () => {
             <p className="text-sm text-muted-foreground">{customer.name}</p>
           </div>
           <div className="flex gap-2">
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Notebook className="h-4 w-4 mr-2" />
+                  Minha Caderneta
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto">
+                <SheetHeader>
+                  <SheetTitle>Minha Caderneta</SheetTitle>
+                </SheetHeader>
+                <div className="mt-4">
+                  <Button 
+                    onClick={() => setShowAddDialog(true)} 
+                    className="w-full mb-4"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Adicionar Item
+                  </Button>
+                  <CustomerRequestsList key={refreshKey} refreshKey={refreshKey} />
+                </div>
+              </SheetContent>
+            </Sheet>
+            
             <Button variant="outline" onClick={handlePrintPDF} size="sm">
               <FileText className="h-4 w-4 mr-2" />
               Imprimir PDF
@@ -300,12 +326,9 @@ const CustomerPortal = () => {
           />
         </div>
 
-        {/* Gráficos */}
-        <CustomerStatsChart receivables={receivables} />
-
         {/* Card de Crédito Disponível */}
         {customer.creditBalance && customer.creditBalance > 0 && (
-          <Card className="border-green-500">
+          <Card className="border-green-500 mb-8">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium flex items-center gap-2">
                 <DollarSign className="h-4 w-4" />
@@ -323,27 +346,8 @@ const CustomerPortal = () => {
           </Card>
         )}
 
-        {/* Minha Caderneta */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
-                <Notebook className="w-5 h-5" />
-                Minha Caderneta
-              </CardTitle>
-              <Button onClick={() => setShowAddDialog(true)}>
-                <Plus className="w-4 h-4 mr-2" />
-                Adicionar Item
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <CustomerRequestsList key={refreshKey} refreshKey={refreshKey} />
-          </CardContent>
-        </Card>
-
         {/* Lista de Compras */}
-        <Card>
+        <Card className="mb-8">
           <CardHeader>
             <CardTitle>Minhas Compras</CardTitle>
           </CardHeader>
@@ -418,6 +422,28 @@ const CustomerPortal = () => {
             </Tabs>
           </CardContent>
         </Card>
+
+        {/* Gráficos - Collapsible (fechado por padrão) */}
+        <Collapsible defaultOpen={false}>
+          <Card>
+            <CollapsibleTrigger asChild>
+              <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    📊 Estatísticas e Histórico
+                  </CardTitle>
+                  <ChevronDown className="h-4 w-4 transition-transform duration-200 data-[state=open]:rotate-180" />
+                </div>
+              </CardHeader>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent className="pt-0">
+                <CustomerStatsChart receivables={receivables} />
+              </CardContent>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
+
       </main>
 
       <AddNotebookItemDialog
