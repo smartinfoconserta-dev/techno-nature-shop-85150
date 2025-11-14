@@ -11,7 +11,8 @@ import { calculateWarranty } from "@/lib/warrantyHelper";
 import { format } from "date-fns";
 import { CustomerStatsChart } from "@/components/customer/CustomerStatsChart";
 import { SummaryCard } from "@/components/customer/SummaryCard";
-import { PurchaseFilters } from "@/components/customer/PurchaseFilters";
+import { Input } from "@/components/ui/input";
+import { Search } from "lucide-react";
 import { AddNotebookItemDialog } from "@/components/customer/AddNotebookItemDialog";
 import { CustomerRequestsList } from "@/components/customer/CustomerRequestsList";
 import { DeletePortalReceivableDialog } from "@/components/customer/DeletePortalReceivableDialog";
@@ -68,10 +69,6 @@ const CustomerPortal = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeSearchTerm, setActiveSearchTerm] = useState("");
   const [archivedSearchTerm, setArchivedSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [periodFilter, setPeriodFilter] = useState("all");
-  const [warrantyFilter, setWarrantyFilter] = useState("all");
-  const [brandFilter, setBrandFilter] = useState("all");
   const [loading, setLoading] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [selectedReceivable, setSelectedReceivable] = useState<Receivable | null>(null);
@@ -161,21 +158,11 @@ const CustomerPortal = () => {
     if (filteredReceivables.length === 0) {
       toast({
         title: "Nenhuma compra para imprimir",
-        description: "Nenhuma compra encontrada para o período selecionado.",
+        description: "Nenhuma compra encontrada.",
         variant: "destructive",
       });
       return;
     }
-
-    // Mapear valor do filtro para texto legível
-    const periodLabels: Record<string, string> = {
-      all: "Todos os períodos",
-      "30days": "Último mês",
-      "90days": "Últimos 3 meses",
-      "180days": "Últimos 6 meses",
-    };
-
-    const periodLabel = periodLabels[periodFilter] || "Todos os períodos";
 
     // Calcular totais baseados nos filtros
     const pdfTotals = {
@@ -192,7 +179,7 @@ const CustomerPortal = () => {
         phone: customer.phone,
       },
       filteredReceivables,
-      periodLabel
+      "Todas as compras"
     );
 
     toast({
@@ -210,54 +197,16 @@ const CustomerPortal = () => {
   const totalPago = receivables.reduce((sum, r) => sum + r.paidAmount, 0);
   const totalDevedor = receivables.reduce((sum, r) => sum + r.remainingAmount, 0);
 
-  // Extrair marcas únicas para o filtro
-  const uniqueBrands = Array.from(new Set(
-    receivables.map(r => r.brand).filter(Boolean)
-  )) as string[];
-
-  // Filtrar compras
+  // Filtrar compras apenas pela busca
   const filteredReceivables = receivables.filter(r => {
-    // Busca por nome, valor ou marca
-    if (searchTerm) {
-      const search = searchTerm.toLowerCase();
-      const matchesName = r.productName.toLowerCase().includes(search);
-      const matchesBrand = r.brand?.toLowerCase().includes(search);
-      const matchesValue = r.totalAmount.toString().includes(search);
-      
-      if (!matchesName && !matchesBrand && !matchesValue) return false;
-    }
+    if (!searchTerm) return true;
     
-    // Filtro por status
-    if (statusFilter !== "all" && r.status !== statusFilter) {
-      return false;
-    }
+    const search = searchTerm.toLowerCase();
+    const matchesName = r.productName.toLowerCase().includes(search);
+    const matchesBrand = r.brand?.toLowerCase().includes(search);
+    const matchesValue = r.totalAmount.toString().includes(search);
     
-    // Filtro por período
-    if (periodFilter !== "all") {
-      const now = new Date();
-      const createdDate = new Date(r.createdAt);
-      const daysAgo = Math.ceil((now.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24));
-      
-      if (periodFilter === "30days" && daysAgo > 30) return false;
-      if (periodFilter === "90days" && daysAgo > 90) return false;
-      if (periodFilter === "180days" && daysAgo > 180) return false;
-    }
-    
-    // Filtro por marca
-    if (brandFilter !== "all" && r.brand !== brandFilter) {
-      return false;
-    }
-    
-    // Filtro por garantia
-    if (warrantyFilter !== "all" && r.warranty && r.createdAt) {
-      const warranty = calculateWarranty(r.createdAt, r.warranty);
-      
-      if (warrantyFilter === "active" && !warranty.isActive) return false;
-      if (warrantyFilter === "expiring" && (!warranty.isActive || warranty.daysRemaining > 7)) return false;
-      if (warrantyFilter === "expired" && warranty.isActive) return false;
-    }
-    
-    return true;
+    return matchesName || matchesBrand || matchesValue;
   });
 
   // Calcular progresso de pagamento
@@ -411,20 +360,16 @@ const CustomerPortal = () => {
               </TabsList>
 
               <TabsContent value="active" className="mt-0">
-                {/* Filtros */}
-                <PurchaseFilters
-                  searchTerm={searchTerm}
-                  onSearchChange={setSearchTerm}
-                  statusFilter={statusFilter}
-                  onStatusFilterChange={setStatusFilter}
-                  periodFilter={periodFilter}
-                  onPeriodFilterChange={setPeriodFilter}
-                  warrantyFilter={warrantyFilter}
-                  onWarrantyFilterChange={setWarrantyFilter}
-                  brandFilter={brandFilter}
-                  onBrandFilterChange={setBrandFilter}
-                  brands={uniqueBrands}
-                />
+                {/* Campo de busca */}
+                <div className="mb-4 relative">
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar produto, valor, marca..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
 
                 {filteredReceivables.length === 0 ? (
                   <p className="text-center text-muted-foreground py-8">
