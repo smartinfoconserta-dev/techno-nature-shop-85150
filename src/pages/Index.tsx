@@ -45,7 +45,7 @@ const Index = () => {
         cat.name.toLowerCase().includes('notebook')
       );
       if (notebooksCategory) {
-        setSelectedCategory(notebooksCategory.id);
+        setSelectedCategory(notebooksCategory.name);
       }
       
       // 3. Carregar produtos
@@ -180,7 +180,7 @@ const Index = () => {
       cat.name.toLowerCase().includes('notebook')
     );
     if (notebooksCategory) {
-      setSelectedCategory(notebooksCategory.id);
+      setSelectedCategory(notebooksCategory.name);
     }
     setSelectedBrand("all");
     setSearchQuery("");
