@@ -9,21 +9,30 @@ interface Props {
 }
 
 export const CustomerStatsChart = ({ receivables }: Props) => {
-  // Filtrar receivables do mês atual para o gráfico de pizza
+  // Calcular pagamentos feitos NESTE MÊS (independente de quando a compra foi feita)
   const now = new Date();
-  const currentMonthReceivables = receivables.filter(r => {
-    const createdDate = new Date(r.createdAt);
-    return createdDate.getMonth() === now.getMonth() 
-      && createdDate.getFullYear() === now.getFullYear();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+
+  // Somar todos os pagamentos feitos NESTE MÊS
+  let totalPagoEsteMes = 0;
+  receivables.forEach(r => {
+    if (r.payments && r.payments.length > 0) {
+      r.payments.forEach((payment: any) => {
+        const paymentDate = new Date(payment.paidAt);
+        if (paymentDate.getMonth() === currentMonth && paymentDate.getFullYear() === currentYear) {
+          totalPagoEsteMes += payment.amount;
+        }
+      });
+    }
   });
 
-  // Dados do gráfico de pizza: Pago vs Pendente (apenas mês atual)
-  const totalPagoMes = currentMonthReceivables.reduce((sum, r) => sum + r.paidAmount, 0);
-  const totalPendenteMes = currentMonthReceivables.reduce((sum, r) => sum + r.remainingAmount, 0);
-  
+  // Saldo Devedor = TODAS as dívidas ativas (não importa quando foi criada)
+  const totalSaldoDevedor = receivables.reduce((sum, r) => sum + r.remainingAmount, 0);
+
   const pieData = [
-    { name: "Pago (este mês)", value: totalPagoMes, color: "hsl(var(--chart-2))" },
-    { name: "Saldo Devedor", value: totalPendenteMes, color: "hsl(var(--chart-1))" }
+    { name: "Pago (este mês)", value: totalPagoEsteMes, color: "hsl(142 76% 36%)" }, // Verde
+    { name: "Saldo Devedor", value: totalSaldoDevedor, color: "hsl(0 84% 60%)" }  // Vermelho
   ];
 
   // Dados do gráfico de barras: histórico dos últimos 6 meses
@@ -56,7 +65,7 @@ export const CustomerStatsChart = ({ receivables }: Props) => {
       <Card>
         <CardHeader>
           <CardTitle className="text-base">
-            Status dos Pagamentos - {format(new Date(), "MMMM/yyyy", { locale: ptBR })}
+            Status dos Pagamentos
           </CardTitle>
         </CardHeader>
         <CardContent>
