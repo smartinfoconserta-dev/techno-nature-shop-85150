@@ -10,6 +10,7 @@ import { brandsStore } from "@/lib/brandsStore";
 import { productsStore } from "@/lib/productsStore";
 import { categoriesStore } from "@/lib/categoriesStore";
 import heroImage from "@/assets/hero-banner.jpg";
+import { CategoryMenuExample } from "@/components/CategoryMenuExample";
 const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedBrand, setSelectedBrand] = useState("all");
@@ -170,6 +171,20 @@ const Index = () => {
   };
   return <div className="min-h-screen bg-background">
       <Header searchValue={searchQuery} onSearchChange={setSearchQuery} onReset={handleResetFilters} />
+      
+      {/* Exemplo visual do CategoryMenu */}
+      <div className="container mx-auto px-4 py-8">
+        <div className="mb-8 p-6 bg-primary/5 border-2 border-primary/20 rounded-lg">
+          <h2 className="text-xl font-bold mb-2 text-primary">🎨 Preview: Menu de Categorias Hierárquico</h2>
+          <p className="text-sm text-muted-foreground mb-4">
+            Este é um exemplo de como ficaria o menu lateral de categorias. 
+            Clique nas setas para expandir/colapsar e nas categorias para selecionar.
+          </p>
+          <div className="flex justify-center">
+            <CategoryMenuExample />
+          </div>
+        </div>
+      </div>
       
       {/* Hero Banner com Background Completo */}
       <section className="relative h-[30vh] min-h-[250px] max-h-[320px] overflow-hidden animate-fade-in">
