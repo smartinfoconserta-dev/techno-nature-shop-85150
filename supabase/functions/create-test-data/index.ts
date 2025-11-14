@@ -12,7 +12,80 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
+    // Verificar se é apenas para limpar dados
+    const body = await req.json().catch(() => ({}));
+    const action = body.action;
+
+    if (action === 'clear') {
+      console.log('🗑️ Limpando dados de teste...');
+
+      // Deletar vendas rápidas de teste
+      await fetch(`${supabaseUrl}/rest/v1/quick_sales?or=(product_name.ilike.*[VR]*,product_name.ilike.*[CAD]*,product_name.ilike.*Teste*)`, {
+        method: 'DELETE',
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
+        },
+      });
+
+      // Deletar cadernetas de teste
+      await fetch(`${supabaseUrl}/rest/v1/receivables?or=(product_name.ilike.*[CAD]*,product_name.ilike.*Teste*)`, {
+        method: 'DELETE',
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
+        },
+      });
+
+      // Deletar solicitações de teste
+      await fetch(`${supabaseUrl}/rest/v1/customer_requests?product_name=ilike.*Teste*`, {
+        method: 'DELETE',
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
+        },
+      });
+
+      console.log('✅ Dados de teste removidos');
+      return new Response(JSON.stringify({ success: true, message: 'Dados de teste removidos' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      });
+    }
+
     console.log('🧪 Iniciando criação de dados de teste...');
+
+    // 🗑️ LIMPAR DADOS DE TESTE ANTIGOS ANTES DE CRIAR NOVOS
+    console.log('🗑️ Limpando dados de teste antigos...');
+
+    // Deletar vendas rápidas de teste
+    await fetch(`${supabaseUrl}/rest/v1/quick_sales?or=(product_name.ilike.*[VR]*,product_name.ilike.*[CAD]*,product_name.ilike.*Teste*)`, {
+      method: 'DELETE',
+      headers: {
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`,
+      },
+    });
+
+    // Deletar cadernetas de teste
+    await fetch(`${supabaseUrl}/rest/v1/receivables?or=(product_name.ilike.*[CAD]*,product_name.ilike.*Teste*)`, {
+      method: 'DELETE',
+      headers: {
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`,
+      },
+    });
+
+    // Deletar solicitações de teste
+    await fetch(`${supabaseUrl}/rest/v1/customer_requests?product_name=ilike.*Teste*`, {
+      method: 'DELETE',
+      headers: {
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`,
+      },
+    });
+
+    console.log('✅ Dados de teste antigos removidos');
 
     // 1. Buscar ou criar um cliente de teste
     const customersRes = await fetch(`${supabaseUrl}/rest/v1/customers?limit=1`, {
