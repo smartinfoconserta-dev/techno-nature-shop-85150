@@ -559,7 +559,7 @@ export const customersStore = {
   async restoreCustomer(id: string): Promise<void> {
     const { error } = await supabase
       .from("customers")
-      .update({ deleted_at: null })
+      .update({ deleted_at: null } as any)
       .eq("id", id);
 
     if (error) throw error;

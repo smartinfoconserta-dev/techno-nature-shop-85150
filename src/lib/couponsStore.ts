@@ -191,7 +191,7 @@ export const couponsStore = {
     // SOFT DELETE
     const { error } = await supabase
       .from("coupons")
-      .update({ deleted_at: new Date().toISOString() })
+      .update({ deleted_at: new Date().toISOString() } as any)
       .eq("id", id);
 
     if (error) {
@@ -203,7 +203,7 @@ export const couponsStore = {
   async restoreCoupon(id: string): Promise<void> {
     const { error } = await supabase
       .from("coupons")
-      .update({ deleted_at: null })
+      .update({ deleted_at: null } as any)
       .eq("id", id);
 
     if (error) {

@@ -54,6 +54,8 @@ const CustomerPortal = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [periodFilter, setPeriodFilter] = useState("all");
+  const [warrantyFilter, setWarrantyFilter] = useState("all");
+  const [brandFilter, setBrandFilter] = useState("all");
   const [loading, setLoading] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -181,11 +183,21 @@ const CustomerPortal = () => {
   const totalPago = receivables.reduce((sum, r) => sum + r.paidAmount, 0);
   const totalDevedor = receivables.reduce((sum, r) => sum + r.remainingAmount, 0);
 
+  // Extrair marcas únicas para o filtro
+  const uniqueBrands = Array.from(new Set(
+    receivables.map(r => r.brand).filter(Boolean)
+  )) as string[];
+
   // Filtrar compras
   const filteredReceivables = receivables.filter(r => {
-    // Filtro por nome do produto
-    if (searchTerm && !r.productName.toLowerCase().includes(searchTerm.toLowerCase())) {
-      return false;
+    // Busca por nome, valor ou marca
+    if (searchTerm) {
+      const search = searchTerm.toLowerCase();
+      const matchesName = r.productName.toLowerCase().includes(search);
+      const matchesBrand = r.brand?.toLowerCase().includes(search);
+      const matchesValue = r.totalAmount.toString().includes(search);
+      
+      if (!matchesName && !matchesBrand && !matchesValue) return false;
     }
     
     // Filtro por status
@@ -202,6 +214,20 @@ const CustomerPortal = () => {
       if (periodFilter === "30days" && daysAgo > 30) return false;
       if (periodFilter === "90days" && daysAgo > 90) return false;
       if (periodFilter === "180days" && daysAgo > 180) return false;
+    }
+    
+    // Filtro por marca
+    if (brandFilter !== "all" && r.brand !== brandFilter) {
+      return false;
+    }
+    
+    // Filtro por garantia
+    if (warrantyFilter !== "all" && r.warranty && r.createdAt) {
+      const warranty = calculateWarranty(r.createdAt, r.warranty);
+      
+      if (warrantyFilter === "active" && !warranty.isActive) return false;
+      if (warrantyFilter === "expiring" && (!warranty.isActive || warranty.daysRemaining > 7)) return false;
+      if (warrantyFilter === "expired" && warranty.isActive) return false;
     }
     
     return true;
@@ -353,6 +379,11 @@ const CustomerPortal = () => {
               onStatusFilterChange={setStatusFilter}
               periodFilter={periodFilter}
               onPeriodFilterChange={setPeriodFilter}
+              warrantyFilter={warrantyFilter}
+              onWarrantyFilterChange={setWarrantyFilter}
+              brandFilter={brandFilter}
+              onBrandFilterChange={setBrandFilter}
+              brands={uniqueBrands}
             />
 
             {filteredReceivables.length === 0 ? (
