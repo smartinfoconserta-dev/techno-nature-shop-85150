@@ -217,7 +217,7 @@ const Index = () => {
       </section>
 
       {/* Categorias Horizontais */}
-      <section className="bg-muted/30 border-b sticky top-16 z-30 backdrop-blur-sm">
+      <section className="bg-muted/30 border-b">
         <div className="container mx-auto px-4 py-3">
           <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
             {categoryTree.map((category) => (
