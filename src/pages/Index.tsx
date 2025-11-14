@@ -181,7 +181,9 @@ const Index = () => {
               Ramon Tech Solutions  
             </h1>
             <p className="text-base md:text-xl drop-shadow-md">
-              Qualidade e inovação em cada produto
+              Catálogo Digital de tecnologias
+
+   
             </p>
           </div>
         </div>
