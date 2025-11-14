@@ -358,12 +358,11 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="processor">Processador</Label>
-              <Select value={processor} onValueChange={setProcessor}>
+              <Select value={processor || undefined} onValueChange={setProcessor}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione" />
+                  <SelectValue placeholder="Nenhum selecionado" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Nenhum</SelectItem>
                   <SelectItem value="i3">Intel Core i3</SelectItem>
                   <SelectItem value="i5">Intel Core i5</SelectItem>
                   <SelectItem value="i7">Intel Core i7</SelectItem>
@@ -374,12 +373,11 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
 
             <div className="space-y-2">
               <Label htmlFor="ram">Memória RAM</Label>
-              <Select value={ram} onValueChange={setRam}>
+              <Select value={ram || undefined} onValueChange={setRam}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione" />
+                  <SelectValue placeholder="Nenhum selecionado" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Nenhum</SelectItem>
                   <SelectItem value="4GB">4GB</SelectItem>
                   <SelectItem value="8GB">8GB</SelectItem>
                   <SelectItem value="16GB">16GB</SelectItem>
