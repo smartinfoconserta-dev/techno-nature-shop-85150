@@ -124,75 +124,77 @@ const CategoriesTab = () => {
           const subs = subcategoriesByParent[parent.id] || [];
 
           return (
-            <Card key={parent.id} className="p-4">
+            <Card key={parent.id} className="p-3 md:p-4">
               {/* Categoria Pai */}
-              <div className="flex items-center justify-between mb-4 pb-4 border-b">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-primary/10 rounded-md">
-                    <ParentIconComponent className="w-5 h-5 text-primary" />
+              <div className="flex flex-col md:flex-row md:items-center justify-between mb-3 pb-3 border-b gap-3">
+                <div className="flex items-center gap-2 md:gap-3 flex-1">
+                  <div className="p-1.5 md:p-2 bg-primary/10 rounded-md flex-shrink-0">
+                    <ParentIconComponent className="w-4 h-4 md:w-5 md:h-5 text-primary" />
                   </div>
-                  <div>
-                    <h3 className="font-semibold text-lg">{parent.name}</h3>
-                    <p className="text-xs text-muted-foreground">{parent.icon}</p>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-base md:text-lg truncate">{parent.name}</h3>
+                    <Badge variant="secondary" className="text-xs mt-1">{subs.length} subcategorias</Badge>
                   </div>
-                  <Badge variant="secondary">{subs.length} subcategorias</Badge>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-1.5 md:gap-2 flex-shrink-0">
                   <Button
                     variant="ghost"
                     size="icon"
+                    className="h-8 w-8 md:h-9 md:w-9"
                     onClick={() => handleEdit(parent)}
                   >
-                    <Pencil className="w-4 h-4" />
+                    <Pencil className="w-3.5 h-3.5 md:w-4 md:h-4" />
                   </Button>
                   <Button
                     variant="ghost"
                     size="icon"
+                    className="h-8 w-8 md:h-9 md:w-9"
                     onClick={() => handleDeleteClick(parent)}
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
                   </Button>
                   <Button
                     variant="outline"
                     size="sm"
+                    className="h-8 md:h-9"
                     onClick={() => handleAddSubcategory(parent.id)}
                   >
-                    <Plus className="w-4 h-4 mr-1" />
-                    Subcategoria
+                    <Plus className="w-3.5 h-3.5 md:w-4 md:h-4 md:mr-1" />
+                    <span className="hidden md:inline">Subcategoria</span>
                   </Button>
                 </div>
               </div>
 
               {/* Subcategorias */}
               {subs.length > 0 && (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 ml-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 ml-0 md:ml-8">
                   {subs.map((sub) => {
                     const SubIconComponent = Icons[sub.icon as keyof typeof Icons] as React.ComponentType<{ className?: string }>;
                     return (
-                      <div key={sub.id} className="flex items-center justify-between p-3 border rounded-md bg-muted/30">
-                        <div className="flex items-center gap-2">
-                          <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                          <div className="p-1.5 bg-background rounded-md">
-                            <SubIconComponent className="w-4 h-4" />
+                      <div key={sub.id} className="flex items-center justify-between p-2 md:p-3 border rounded-md bg-muted/30">
+                        <div className="flex items-center gap-1.5 md:gap-2 flex-1 min-w-0">
+                          <ChevronRight className="w-3 h-3 md:w-4 md:h-4 text-muted-foreground flex-shrink-0" />
+                          <div className="p-1 md:p-1.5 bg-background rounded-md flex-shrink-0">
+                            <SubIconComponent className="w-3 h-3 md:w-4 md:h-4" />
                           </div>
-                          <span className="text-sm font-medium">{sub.name}</span>
+                          <span className="text-xs md:text-sm font-medium truncate">{sub.name}</span>
                         </div>
-                        <div className="flex gap-1">
+                        <div className="flex gap-0.5 md:gap-1 flex-shrink-0">
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-7 w-7"
+                            className="h-6 w-6 md:h-7 md:w-7"
                             onClick={() => handleEdit(sub)}
                           >
-                            <Pencil className="w-3 h-3" />
+                            <Pencil className="w-2.5 h-2.5 md:w-3 md:h-3" />
                           </Button>
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-7 w-7"
+                            className="h-6 w-6 md:h-7 md:w-7"
                             onClick={() => handleDeleteClick(sub)}
                           >
-                            <Trash2 className="w-3 h-3" />
+                            <Trash2 className="w-2.5 h-2.5 md:w-3 md:h-3" />
                           </Button>
                         </div>
                       </div>

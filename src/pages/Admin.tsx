@@ -117,7 +117,7 @@ const Admin = () => {
           {/* Tabs Mobile - Apenas em telas pequenas */}
           <div className="md:hidden border-b border-border bg-card sticky top-[73px] z-10">
             <div className="overflow-x-auto">
-              <div className="inline-flex p-1 gap-1 min-w-full">
+              <div className="inline-flex p-0.5 gap-0.5 min-w-full">
                 {[
                   { value: "dashboard", label: "📊 Dashboard" },
                   { value: "products", label: "📦 Produtos" },
@@ -133,7 +133,7 @@ const Admin = () => {
                   <button
                     key={tab.value}
                     onClick={() => setActiveTab(tab.value)}
-                    className={`px-4 py-2 rounded-md text-sm font-medium whitespace-nowrap transition-colors ${
+                    className={`px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition-colors ${
                       activeTab === tab.value
                         ? "bg-primary text-primary-foreground"
                         : "bg-transparent text-muted-foreground hover:bg-muted"
@@ -147,7 +147,7 @@ const Admin = () => {
           </div>
 
           {/* Conteúdo das Tabs */}
-          <main className="flex-1 container mx-auto px-4 py-6 md:py-8">
+          <main className="flex-1 container mx-auto px-3 py-4 md:px-4 md:py-8">
             {activeTab === "dashboard" && <DashboardTab onTabChange={setActiveTab} />}
             {activeTab === "products" && <ProductsMainTab />}
             {activeTab === "quick-sales" && <QuickSalesTab />}

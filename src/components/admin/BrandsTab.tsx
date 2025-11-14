@@ -85,24 +85,24 @@ const BrandsTab = () => {
     .sort((a, b) => a.name.localeCompare(b.name));
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-foreground">Gerenciar Marcas</h2>
-        <Button onClick={() => { setEditingBrand(null); setShowForm(true); }}>
-          <Plus className="mr-2 h-4 w-4" />
+    <div className="space-y-4 md:space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <h2 className="text-xl md:text-2xl font-bold text-foreground">Gerenciar Marcas</h2>
+        <Button onClick={() => { setEditingBrand(null); setShowForm(true); }} size="sm" className="md:size-default">
+          <Plus className="mr-1.5 md:mr-2 h-3.5 w-3.5 md:h-4 md:w-4" />
           Nova Marca
         </Button>
       </div>
 
-      <div className="space-y-8">
-        <div className="space-y-4">
-          <div className="flex items-center gap-2 text-lg font-semibold text-foreground">
-            <Smartphone className="h-5 w-5" />
+      <div className="space-y-6 md:space-y-8">
+        <div className="space-y-3 md:space-y-4">
+          <div className="flex items-center gap-2 text-base md:text-lg font-semibold text-foreground">
+            <Smartphone className="h-4 w-4 md:h-5 md:w-5" />
             CELULARES
           </div>
-          <div className="space-y-2">
+          <div className="space-y-1.5 md:space-y-2">
             {cellphoneBrands.length === 0 ? (
-              <p className="text-muted-foreground text-sm">Nenhuma marca de celular cadastrada</p>
+              <p className="text-muted-foreground text-xs md:text-sm">Nenhuma marca de celular cadastrada</p>
             ) : (
               cellphoneBrands.map(brand => (
                 <BrandListItem
@@ -116,14 +116,14 @@ const BrandsTab = () => {
           </div>
         </div>
 
-        <div className="space-y-4">
-          <div className="flex items-center gap-2 text-lg font-semibold text-foreground">
-            <Laptop className="h-5 w-5" />
+        <div className="space-y-3 md:space-y-4">
+          <div className="flex items-center gap-2 text-base md:text-lg font-semibold text-foreground">
+            <Laptop className="h-4 w-4 md:h-5 md:w-5" />
             NOTEBOOKS
           </div>
-          <div className="space-y-2">
+          <div className="space-y-1.5 md:space-y-2">
             {notebookBrands.length === 0 ? (
-              <p className="text-muted-foreground text-sm">Nenhuma marca de notebook cadastrada</p>
+              <p className="text-muted-foreground text-xs md:text-sm">Nenhuma marca de notebook cadastrada</p>
             ) : (
               notebookBrands.map(brand => (
                 <BrandListItem
