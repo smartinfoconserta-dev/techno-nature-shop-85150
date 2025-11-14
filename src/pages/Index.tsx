@@ -13,7 +13,7 @@ import { categoriesStore, CategoryTreeNode } from "@/lib/categoriesStore";
 import heroImage from "@/assets/hero-banner.jpg";
 
 const Index = () => {
-  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedBrand, setSelectedBrand] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryTree, setCategoryTree] = useState<CategoryTreeNode[]>([]);
@@ -69,6 +69,20 @@ const Index = () => {
     }
   }, [deepLinkProductId, products]);
 
+  // Buscar e definir categoria Notebooks como inicial
+  useEffect(() => {
+    const findNotebooksCategory = async () => {
+      const tree = await categoriesStore.getCategoryTree();
+      const notebooksCategory = tree.find(cat => 
+        cat.name.toLowerCase().includes('notebook')
+      );
+      if (notebooksCategory) {
+        setSelectedCategory(notebooksCategory.id);
+      }
+    };
+    findNotebooksCategory();
+  }, []);
+
   useEffect(() => {
     loadBrands();
   }, [selectedCategory]);
@@ -79,7 +93,7 @@ const Index = () => {
   };
 
   const loadBrands = async () => {
-    if (selectedCategory !== "all") {
+    if (selectedCategory) {
       const categoryBrands = await brandsStore.getBrandsByCategory(selectedCategory);
       setBrands(categoryBrands.map(b => b.name));
     } else {
@@ -109,7 +123,7 @@ const Index = () => {
 
   const filteredProducts = useMemo(() => {
     let filtered = products.filter(product => {
-      const categoryMatch = selectedCategory === "all" || product.category === selectedCategory;
+      const categoryMatch = !selectedCategory || product.category === selectedCategory;
       const brandMatch = selectedBrand === "all" || product.brand === selectedBrand;
       const searchLower = searchQuery.toLowerCase();
       const searchMatch = searchQuery === "" || 
@@ -159,8 +173,14 @@ const Index = () => {
     });
   };
 
-  const handleResetFilters = () => {
-    setSelectedCategory("all");
+  const handleResetFilters = async () => {
+    const tree = await categoriesStore.getCategoryTree();
+    const notebooksCategory = tree.find(cat => 
+      cat.name.toLowerCase().includes('notebook')
+    );
+    if (notebooksCategory) {
+      setSelectedCategory(notebooksCategory.id);
+    }
     setSelectedBrand("all");
     setSearchQuery("");
     setMinPrice(0);
@@ -196,17 +216,9 @@ const Index = () => {
       </section>
 
       {/* Categorias Horizontais */}
-      <section className="bg-muted/30 border-b sticky top-16 z-30 backdrop-blur-sm">
+      <section className="bg-muted/30 border-b fixed top-16 left-0 right-0 z-30 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-3">
           <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-            <Button
-              variant={selectedCategory === "all" ? "default" : "outline"}
-              size="sm"
-              onClick={() => handleSelectCategory("all")}
-              className="whitespace-nowrap"
-            >
-              Todas as Categorias
-            </Button>
             {categoryTree.map((category) => (
               <CategoryDropdownButton
                 key={category.id}
@@ -220,7 +232,7 @@ const Index = () => {
       </section>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-8 pt-24">
         <ProductFilters
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
