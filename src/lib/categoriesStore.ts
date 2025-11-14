@@ -6,6 +6,11 @@ export interface Category {
   icon: string;
   createdAt: string;
   parentCategoryId: string | null;
+  displayOrder?: number;
+}
+
+export interface CategoryTreeNode extends Category {
+  children: CategoryTreeNode[];
 }
 
 export const categoriesStore = {
@@ -27,7 +32,100 @@ export const categoriesStore = {
       icon: cat.icon,
       createdAt: cat.created_at,
       parentCategoryId: cat.parent_category_id,
+      displayOrder: cat.display_order || 0,
     }));
+  },
+
+  async getCategoryTree(): Promise<CategoryTreeNode[]> {
+    const allCategories = await this.getAllCategories();
+    const categoryMap = new Map<string, CategoryTreeNode>();
+    
+    // Criar mapa de todas as categorias
+    allCategories.forEach(cat => {
+      categoryMap.set(cat.id, { ...cat, children: [] });
+    });
+    
+    // Construir árvore
+    const tree: CategoryTreeNode[] = [];
+    allCategories.forEach(cat => {
+      const node = categoryMap.get(cat.id)!;
+      if (cat.parentCategoryId) {
+        const parent = categoryMap.get(cat.parentCategoryId);
+        if (parent) {
+          parent.children.push(node);
+        }
+      } else {
+        tree.push(node);
+      }
+    });
+    
+    // Ordenar por display_order e nome
+    const sortNodes = (nodes: CategoryTreeNode[]) => {
+      nodes.sort((a, b) => {
+        if (a.displayOrder !== b.displayOrder) {
+          return (a.displayOrder || 0) - (b.displayOrder || 0);
+        }
+        return a.name.localeCompare(b.name);
+      });
+      nodes.forEach(node => sortNodes(node.children));
+    };
+    sortNodes(tree);
+    
+    return tree;
+  },
+
+  async getCategoryPath(categoryId: string): Promise<Category[]> {
+    const path: Category[] = [];
+    let currentId: string | null = categoryId;
+    
+    while (currentId) {
+      const { data, error } = await supabase
+        .from("categories")
+        .select("*")
+        .eq("id", currentId)
+        .is("deleted_at", null)
+        .single();
+      
+      if (error || !data) break;
+      
+      const category: Category = {
+        id: data.id,
+        name: data.name,
+        icon: data.icon,
+        createdAt: data.created_at,
+        parentCategoryId: data.parent_category_id,
+        displayOrder: data.display_order || 0,
+      };
+      
+      path.unshift(category);
+      currentId = data.parent_category_id;
+    }
+    
+    return path;
+  },
+
+  async hasChildren(categoryId: string): Promise<boolean> {
+    const { data, error } = await supabase
+      .from("categories")
+      .select("id")
+      .eq("parent_category_id", categoryId)
+      .is("deleted_at", null)
+      .limit(1);
+    
+    if (error) return false;
+    return data.length > 0;
+  },
+
+  async getAllCategoryIdsRecursive(categoryId: string): Promise<string[]> {
+    const ids = [categoryId];
+    const children = await this.getSubCategories(categoryId);
+    
+    for (const child of children) {
+      const childIds = await this.getAllCategoryIdsRecursive(child.id);
+      ids.push(...childIds);
+    }
+    
+    return ids;
   },
 
   async getCategoryNames(): Promise<string[]> {
