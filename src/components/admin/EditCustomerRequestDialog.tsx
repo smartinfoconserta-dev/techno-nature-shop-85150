@@ -79,7 +79,7 @@ export const EditCustomerRequestDialog = ({ request, open, onOpenChange, onSucce
   const handleReject = async () => {
     setLoading(true);
     try {
-      await customerRequestsStore.deleteRequest(request.id);
+      await customerRequestsStore.permanentlyDeleteRequest(request.id);
       toast.success("Solicitação rejeitada e excluída");
       onOpenChange(false);
       onSuccess();
@@ -170,6 +170,9 @@ export const EditCustomerRequestDialog = ({ request, open, onOpenChange, onSucce
 
       // Marcar solicitação como confirmada e vincular ao receivable
       await customerRequestsStore.confirmAndConvert(request.id, receivable.id);
+      
+      // Deletar permanentemente a solicitação após converter
+      await customerRequestsStore.permanentlyDeleteRequest(request.id);
 
       toast.success("✅ Solicitação confirmada e convertida em venda!");
       onOpenChange(false);

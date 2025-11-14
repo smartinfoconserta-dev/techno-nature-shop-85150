@@ -48,8 +48,8 @@ const NotebookRequestsTab = () => {
     if (!deletingId) return;
 
     try {
-      await customerRequestsStore.deleteRequest(deletingId);
-      toast.success("Solicitação deletada");
+      await customerRequestsStore.permanentlyDeleteRequest(deletingId);
+      toast.success("Solicitação deletada permanentemente");
       setDeletingId(null);
       loadRequests();
     } catch (error) {

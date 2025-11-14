@@ -25,9 +25,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Info, Plus, X, Save, Settings as SettingsIcon } from "lucide-react";
+import { Info, Plus, X, Save, Settings as SettingsIcon, TestTube } from "lucide-react";
 import { toast } from "sonner";
 import ChangePasswordCard from "./ChangePasswordCard";
+import { supabase } from "@/integrations/supabase/client";
 
 const SettingsTab = () => {
   const [digitalTaxRate, setDigitalTaxRate] = useState(6);
@@ -39,6 +40,7 @@ const SettingsTab = () => {
   const [newInstallments, setNewInstallments] = useState("");
   const [newRate, setNewRate] = useState("");
   const [editingRates, setEditingRates] = useState<Record<number, string>>({});
+  const [creatingTestData, setCreatingTestData] = useState(false);
 
   useEffect(() => {
     loadSettings();
@@ -79,6 +81,20 @@ const SettingsTab = () => {
   const confirmCashTaxChange = () => {
     setIncludeCashInTax(pendingCashTaxValue);
     setShowCashTaxWarning(false);
+  };
+
+  const handleCreateTestData = async () => {
+    setCreatingTestData(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('create-test-data');
+      if (error) throw error;
+      toast.success('✅ Dados de teste criados com sucesso!');
+    } catch (error) {
+      console.error(error);
+      toast.error('Erro ao criar dados de teste');
+    } finally {
+      setCreatingTestData(false);
+    }
   };
 
   const handleUpdateRate = (installments: number, newRate: number) => {
@@ -168,6 +184,32 @@ const SettingsTab = () => {
 
       {/* Seção 0: Alteração de Senha */}
       <ChangePasswordCard />
+
+      {/* Seção 0.5: Dados de Teste */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TestTube className="h-5 w-5" />
+            🧪 Dados de Teste
+          </CardTitle>
+          <CardDescription>
+            Crie dados fictícios para testar o sistema (vendas rápidas, cadernetas, etc.)
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button 
+            onClick={handleCreateTestData} 
+            disabled={creatingTestData}
+            variant="outline"
+            className="w-full"
+          >
+            {creatingTestData ? "Criando dados..." : "🧪 Criar Dados de Teste"}
+          </Button>
+          <p className="text-xs text-muted-foreground mt-2">
+            Isso criará vendas rápidas, cadernetas e solicitações convertidas com diferentes status de pagamento e garantia
+          </p>
+        </CardContent>
+      </Card>
 
       {/* Seção 1: Impostos */}
       <Card>
