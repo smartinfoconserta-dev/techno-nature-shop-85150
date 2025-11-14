@@ -233,7 +233,7 @@ const Index = () => {
       </section>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 pt-4 pb-8">
         <ProductFilters
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
