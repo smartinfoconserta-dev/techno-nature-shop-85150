@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Filter, X, Search, ArrowUpDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -33,6 +34,12 @@ interface ProductFiltersProps {
   onFilterSearchChange: (search: string) => void;
   priceSort: "none" | "asc" | "desc";
   onPriceSortChange: (sort: "none" | "asc" | "desc") => void;
+  selectedProcessors: string[];
+  onProcessorsChange: (processors: string[]) => void;
+  selectedRAMs: string[];
+  onRAMsChange: (rams: string[]) => void;
+  hasDedicatedGPU: boolean | null;
+  onDedicatedGPUChange: (value: boolean | null) => void;
 }
 
 const ProductFilters = ({ 
@@ -48,19 +55,31 @@ const ProductFilters = ({
   filterSearch,
   onFilterSearchChange,
   priceSort,
-  onPriceSortChange
+  onPriceSortChange,
+  selectedProcessors,
+  onProcessorsChange,
+  selectedRAMs,
+  onRAMsChange,
+  hasDedicatedGPU,
+  onDedicatedGPUChange,
 }: ProductFiltersProps) => {
   const activeFiltersCount = 
     (selectedBrand !== "all" ? 1 : 0) + 
     (priceRange[0] > 0 || priceRange[1] < maxPrice ? 1 : 0) +
     (filterSearch !== "" ? 1 : 0) +
-    (priceSort !== "none" ? 1 : 0);
+    (priceSort !== "none" ? 1 : 0) +
+    (selectedProcessors.length > 0 ? 1 : 0) +
+    (selectedRAMs.length > 0 ? 1 : 0) +
+    (hasDedicatedGPU !== null ? 1 : 0);
 
   const handleClear = () => {
     onBrandChange("all");
     onPriceRangeChange([0, maxPrice]);
     onFilterSearchChange("");
     onPriceSortChange("none");
+    onProcessorsChange([]);
+    onRAMsChange([]);
+    onDedicatedGPUChange(null);
   };
 
   const formatPrice = (value: number) => {
@@ -197,6 +216,69 @@ const ProductFilters = ({
                 ))}
               </div>
             </div>
+
+            {/* Filtros de Notebooks */}
+            {selectedCategory === "Notebooks" && (
+              <>
+                <div>
+                  <h3 className="font-semibold mb-3">Processador</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {['i3', 'i5', 'i7', 'i9'].map((proc) => (
+                      <Button
+                        key={proc}
+                        size="sm"
+                        variant={selectedProcessors.includes(proc) ? "default" : "outline"}
+                        onClick={() => {
+                          if (selectedProcessors.includes(proc)) {
+                            onProcessorsChange(selectedProcessors.filter(p => p !== proc));
+                          } else {
+                            onProcessorsChange([...selectedProcessors, proc]);
+                          }
+                        }}
+                      >
+                        {proc.toUpperCase()}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold mb-3">Memória RAM</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {['4GB', '8GB', '16GB'].map((memory) => (
+                      <Button
+                        key={memory}
+                        size="sm"
+                        variant={selectedRAMs.includes(memory) ? "default" : "outline"}
+                        onClick={() => {
+                          if (selectedRAMs.includes(memory)) {
+                            onRAMsChange(selectedRAMs.filter(r => r !== memory));
+                          } else {
+                            onRAMsChange([...selectedRAMs, memory]);
+                          }
+                        }}
+                      >
+                        {memory}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold mb-3">Placa de Vídeo</h3>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="dedicated-gpu"
+                      checked={hasDedicatedGPU === true}
+                      onCheckedChange={(checked) => onDedicatedGPUChange(checked ? true : null)}
+                    />
+                    <label htmlFor="dedicated-gpu" className="text-sm cursor-pointer">
+                      Com placa de vídeo dedicada
+                    </label>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </ScrollArea>
 

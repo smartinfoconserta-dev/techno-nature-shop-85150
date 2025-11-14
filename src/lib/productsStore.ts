@@ -16,6 +16,12 @@ export interface PaymentBreakdown {
   card: number;
 }
 
+export interface ProductSpecifications {
+  processor?: 'i3' | 'i5' | 'i7' | 'i9';
+  ram?: '4GB' | '8GB' | '16GB';
+  dedicatedGPU?: boolean;
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -43,6 +49,7 @@ export interface Product {
   warrantyExpiresAt?: string;
   expenses: ProductExpense[];
   createdAt: string;
+  specifications?: ProductSpecifications;
 }
 
 // Lightweight sync cache with background refresh
@@ -64,13 +71,23 @@ function saveProductsCache() {
 }
 
 function mapRowToProduct(row: any): Product {
+  // Parse specifications from JSONB if it exists
+  let specifications: ProductSpecifications | undefined;
+  if (row.specifications && typeof row.specifications === 'object') {
+    specifications = {
+      processor: row.specifications.processor,
+      ram: row.specifications.ram,
+      dedicatedGPU: row.specifications.dedicatedGPU,
+    };
+  }
+
   return {
     id: row.id,
     name: row.name,
     brand: row.brand,
     category: row.category,
     images: row.images || [],
-    specs: row.specifications || "",
+    specs: typeof row.specifications === 'string' ? row.specifications : "",
     description: row.description || "",
     price: Number(row.base_price),
     costPrice: row.base_price ? Number(row.base_price) : undefined,
@@ -99,6 +116,7 @@ function mapRowToProduct(row: any): Product {
       createdAt: exp.createdAt || new Date().toISOString(),
     })),
     createdAt: row.created_at || new Date().toISOString(),
+    specifications,
   };
 }
 
