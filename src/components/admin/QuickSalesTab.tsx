@@ -21,7 +21,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Zap, DollarSign, TrendingUp, Package, Receipt, Edit, Plus, Search } from "lucide-react";
+import { Zap, DollarSign, TrendingUp, Package, Receipt, Edit, Plus, Search, CheckCircle2, Archive, TestTube } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import { AddQuickSaleDialog } from "./AddQuickSaleDialog";
 import { EditQuickSaleDialog } from "./EditQuickSaleDialog";
 import WarrantyBadge from "./WarrantyBadge";
@@ -30,6 +32,8 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 const QuickSalesTab = () => {
+  const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState<"active" | "archived">("active");
   const [sales, setSales] = useState<QuickSale[]>([]);
   const [selectedMonth, setSelectedMonth] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState<string>("");
@@ -42,6 +46,7 @@ const QuickSalesTab = () => {
   });
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editSaleId, setEditSaleId] = useState<string | null>(null);
+  const [creatingTestData, setCreatingTestData] = useState(false);
 
   useEffect(() => {
     const currentMonth = format(new Date(), "yyyy-MM");
@@ -49,8 +54,15 @@ const QuickSalesTab = () => {
     loadData(currentMonth);
   }, []);
 
+  useEffect(() => {
+    loadData(selectedMonth);
+  }, [activeTab]);
+
   const loadData = (monthString: string) => {
-    const monthlySales = quickSalesStore.getQuickSalesByMonth(monthString);
+    const allSales = activeTab === "active"
+      ? quickSalesStore.getActiveQuickSales()
+      : quickSalesStore.getArchivedQuickSales();
+    const monthlySales = allSales.filter((s) => s.saleDate.startsWith(monthString));
     setSales(monthlySales);
 
     const totals = quickSalesStore.getMonthlyTotals(monthString);
@@ -102,6 +114,32 @@ const QuickSalesTab = () => {
 
   const formatCurrency = (value: number) => {
     return `R$ ${value.toFixed(2)}`;
+  };
+
+  const handleCreateTestData = async () => {
+    setCreatingTestData(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-test-data");
+      
+      if (error) throw error;
+      
+      toast({
+        title: "✅ Dados de teste criados",
+        description: data?.message || "Vendas de teste criadas com sucesso!",
+      });
+      
+      await quickSalesStore.refreshFromBackend();
+      loadData(selectedMonth);
+    } catch (error) {
+      console.error("Erro ao criar dados de teste:", error);
+      toast({
+        title: "❌ Erro ao criar dados",
+        description: "Não foi possível criar os dados de teste.",
+        variant: "destructive",
+      });
+    } finally {
+      setCreatingTestData(false);
+    }
   };
 
   // Filtrar vendas por busca avançada e garantia

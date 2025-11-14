@@ -6,7 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DollarSign, Calendar, Eye, Trash2, AlertCircle, UserPlus, Edit, FileDown, ShoppingCart, CheckCircle2, Archive } from "lucide-react";
+import { DollarSign, Calendar, Eye, Trash2, AlertCircle, UserPlus, Edit, FileDown, ShoppingCart, CheckCircle2, Archive, TestTube } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { generateCustomerReportPDF } from "@/lib/generateCustomerReportPDF";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -58,6 +59,7 @@ const ReceivablesTab = () => {
   const [customerToEdit, setCustomerToEdit] = useState<Customer | null>(null);
   const [showCustomerPaymentDialog, setShowCustomerPaymentDialog] = useState(false);
   const [showQuickSaleDialog, setShowQuickSaleDialog] = useState(false);
+  const [creatingTestData, setCreatingTestData] = useState(false);
 
   useEffect(() => {
     loadReceivables();
