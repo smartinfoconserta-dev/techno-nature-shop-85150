@@ -21,7 +21,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Zap, DollarSign, TrendingUp, Package, Receipt, Edit, Plus, Search, CheckCircle2, Archive, TestTube } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Zap, DollarSign, TrendingUp, Package, Receipt, Edit, Plus, Search, CheckCircle2, Archive, TestTube, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { AddQuickSaleDialog } from "./AddQuickSaleDialog";
@@ -47,6 +57,8 @@ const QuickSalesTab = () => {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editSaleId, setEditSaleId] = useState<string | null>(null);
   const [creatingTestData, setCreatingTestData] = useState(false);
+  const [clearingTestData, setClearingTestData] = useState(false);
+  const [showClearDialog, setShowClearDialog] = useState(false);
 
   useEffect(() => {
     const currentMonth = format(new Date(), "yyyy-MM");
@@ -139,6 +151,36 @@ const QuickSalesTab = () => {
       });
     } finally {
       setCreatingTestData(false);
+    }
+  };
+
+  const handleClearTestData = async () => {
+    setClearingTestData(true);
+    try {
+      const { error } = await supabase.functions.invoke("create-test-data", {
+        body: { action: "clear" },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Vendas de teste removidas",
+        description: "Todas as vendas de teste foram apagadas.",
+      });
+
+      // Recarregar dados
+      await quickSalesStore.refreshFromBackend();
+      loadData(selectedMonth);
+    } catch (error: any) {
+      console.error("Erro ao remover dados de teste:", error);
+      toast({
+        title: "Erro ao remover dados de teste",
+        description: error.message || "Tente novamente mais tarde.",
+        variant: "destructive",
+      });
+    } finally {
+      setClearingTestData(false);
+      setShowClearDialog(false);
     }
   };
 
@@ -237,6 +279,24 @@ const QuickSalesTab = () => {
             />
           </div>
 
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleCreateTestData}
+            disabled={creatingTestData}
+          >
+            <TestTube className="h-4 w-4 mr-2" />
+            {creatingTestData ? "Criando..." : "Criar Dados de Teste"}
+          </Button>
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() => setShowClearDialog(true)}
+            disabled={clearingTestData}
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            {clearingTestData ? "Removendo..." : "Remover Vendas de Teste"}
+          </Button>
           <Button onClick={() => setShowAddDialog(true)}>
             <Plus className="h-4 w-4 mr-2" />
             Nova Venda
@@ -457,6 +517,27 @@ const QuickSalesTab = () => {
         saleId={editSaleId}
         onSuccess={() => loadData(selectedMonth)}
       />
+
+      <AlertDialog open={showClearDialog} onOpenChange={setShowClearDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remover todas as vendas de teste?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação irá apagar permanentemente todas as vendas que contêm "Teste", "[VR]" ou "[CAD]" no nome do produto.
+              Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleClearTestData}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Remover Tudo
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
