@@ -76,9 +76,15 @@ jobs:
           security: loose
           local-dir: dist/
           server-dir: ${{ steps.resolve-path.outputs.remote_dir }}
-          dangerous-clean-slate: true
+          dangerous-clean-slate: false
+          timeout: 900000
           dry-run: false
           log-level: verbose
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+            **/.vscode/**
 
       # 7.1️⃣ Verificar resultado do deploy
       - name: ✅ Status do Deploy
