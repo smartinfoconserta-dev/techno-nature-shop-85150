@@ -462,4 +462,88 @@ export const receivablesStore = {
   getReceivableByProductId(productId: string): Receivable | undefined {
     return this.getAllReceivables().find((r) => r.productId === productId);
   },
+
+  async updatePayment(
+    receivableId: string,
+    paymentId: string,
+    updates: Partial<ReceivablePayment>
+  ): Promise<void> {
+    const receivable = this.getAllReceivables().find((r) => r.id === receivableId);
+    if (!receivable) throw new Error("Recebível não encontrado");
+
+    const paymentIndex = receivable.payments.findIndex((p) => p.id === paymentId);
+    if (paymentIndex === -1) throw new Error("Pagamento não encontrado");
+
+    // Atualizar pagamento
+    receivable.payments[paymentIndex] = {
+      ...receivable.payments[paymentIndex],
+      ...updates,
+    };
+
+    // Recalcular totais
+    const totalPaid = receivable.payments.reduce((sum, p) => sum + p.amount, 0);
+    receivable.paidAmount = totalPaid;
+    receivable.remainingAmount = receivable.totalAmount - totalPaid;
+    receivable.status =
+      totalPaid === 0 ? "pending" : totalPaid >= receivable.totalAmount ? "paid" : "partial";
+
+    // Salvar no backend
+    const { error } = await supabase
+      .from("receivables")
+      .update({
+        payments: receivable.payments,
+        paid_amount: receivable.paidAmount,
+        remaining_amount: receivable.remainingAmount,
+        status: receivable.status,
+      })
+      .eq("id", receivableId);
+
+    if (error) {
+      console.error("Erro ao atualizar pagamento:", error);
+      throw new Error(error.message || "Erro ao atualizar pagamento");
+    }
+
+    // Atualizar cache
+    receivablesCache = receivablesCache.map((r) =>
+      r.id === receivableId ? receivable : r
+    );
+    saveReceivablesCache();
+  },
+
+  async removePayment(receivableId: string, paymentId: string): Promise<void> {
+    const receivable = this.getAllReceivables().find((r) => r.id === receivableId);
+    if (!receivable) throw new Error("Recebível não encontrado");
+
+    // Remover pagamento
+    receivable.payments = receivable.payments.filter((p) => p.id !== paymentId);
+
+    // Recalcular totais
+    const totalPaid = receivable.payments.reduce((sum, p) => sum + p.amount, 0);
+    receivable.paidAmount = totalPaid;
+    receivable.remainingAmount = receivable.totalAmount - totalPaid;
+    receivable.status =
+      totalPaid === 0 ? "pending" : totalPaid >= receivable.totalAmount ? "paid" : "partial";
+
+    // Salvar no backend
+    const { error } = await supabase
+      .from("receivables")
+      .update({
+        payments: receivable.payments,
+        paid_amount: receivable.paidAmount,
+        remaining_amount: receivable.remainingAmount,
+        status: receivable.status,
+      })
+      .eq("id", receivableId);
+
+    if (error) {
+      console.error("Erro ao remover pagamento:", error);
+      throw new Error(error.message || "Erro ao remover pagamento");
+    }
+
+    // Atualizar cache
+    receivablesCache = receivablesCache.map((r) =>
+      r.id === receivableId ? receivable : r
+    );
+    saveReceivablesCache();
+  },
 };
