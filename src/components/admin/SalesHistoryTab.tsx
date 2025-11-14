@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { TrendingUp, DollarSign, Package, Percent, Pencil, FileText, XCircle, Search, Shield } from "lucide-react";
@@ -69,6 +70,7 @@ const SalesHistoryTab = () => {
   const [cancelingProduct, setCancelingProduct] = useState<Product | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [showRefundDialog, setShowRefundDialog] = useState(false);
+  const [activeTab, setActiveTab] = useState<"active" | "archived">("active");
 
   useEffect(() => {
     loadData();
@@ -95,6 +97,27 @@ const SalesHistoryTab = () => {
     
     // Para produtos e quick sales, warranty já está em dias
     return sale.warranty || 90;
+  };
+
+  // Verificar se uma venda deve ser arquivada automaticamente
+  const isAutoArchived = (sale: HistorySale): boolean => {
+    if (!sale.saleDate) return false;
+    
+    const warrantyDays = getWarrantyDays(sale);
+    const warranty = calculateWarranty(sale.saleDate, warrantyDays);
+    
+    // Verificar se está paga
+    let isPaid = false;
+    if (sale.type === "receivable") {
+      const receivable = sale.originalData as Receivable;
+      isPaid = receivable.status === "paid";
+    } else {
+      // Produtos do catálogo e quick sales são sempre considerados pagos
+      isPaid = true;
+    }
+    
+    // Regra: Paga + Garantia Vencida = Arquivada
+    return isPaid && !warranty.isActive;
   };
 
   const loadUnifiedHistory = async () => {
@@ -385,35 +408,48 @@ const SalesHistoryTab = () => {
     }
   };
 
-  const filteredSales = unifiedSales.filter(sale => {
-    // Filtro de tipo
+
+  // Filtrar vendas baseado na aba ativa, busca, tipo e garantia
+  const filteredSales = unifiedSales.filter((sale) => {
+    // Filtrar por aba (ativas ou arquivadas)
+    const archived = isAutoArchived(sale);
+    if (activeTab === "active" && archived) return false;
+    if (activeTab === "archived" && !archived) return false;
+    
+    // Filtro de tipo de venda
     if (typeFilter !== "all" && sale.type !== typeFilter) {
       return false;
     }
     
-    // Filtro de busca
+    // Filtro de busca (nome do produto, comprador ou CPF)
     if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase().trim();
-      const matchesName = sale.productName.toLowerCase().includes(query);
-      const matchesBuyer = sale.buyerName?.toLowerCase().includes(query);
-      const matchesCpf = sale.buyerCpf?.toLowerCase().includes(query);
+      const searchLower = searchQuery.toLowerCase().trim();
+      const matchesName = sale.productName.toLowerCase().includes(searchLower);
+      const matchesBuyer = sale.buyerName?.toLowerCase().includes(searchLower);
+      const matchesCpf = sale.buyerCpf?.toLowerCase().includes(searchLower);
       
       if (!matchesName && !matchesBuyer && !matchesCpf) {
         return false;
       }
     }
     
-    // Filtro de garantia (apenas para catálogo e quick sales)
-    if (warrantyFilter !== "all" && (sale.type === "catalog" || sale.type === "quick")) {
+    // Filtro de garantia
+    if (warrantyFilter !== "all") {
       if (!sale.saleDate) return false;
       
-      const warranty = calculateWarranty(sale.saleDate);
+      const warrantyDays = getWarrantyDays(sale);
+      const warranty = calculateWarranty(sale.saleDate, warrantyDays);
       if (warrantyFilter === "active") return warranty.isActive;
       if (warrantyFilter === "expired") return !warranty.isActive;
     }
     
     return true;
   });
+
+  // Calcular contadores para as abas
+  const activeCount = unifiedSales.filter(sale => !isAutoArchived(sale)).length;
+  const archivedCount = unifiedSales.filter(sale => isAutoArchived(sale)).length;
+
 
   return (
     <div className="space-y-6">
@@ -424,17 +460,28 @@ const SalesHistoryTab = () => {
         </p>
       </div>
 
+      {/* Tabs para Ativas e Arquivadas */}
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "active" | "archived")}>
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="active">
+            Ativas ({activeCount})
+          </TabsTrigger>
+          <TabsTrigger value="archived">
+            Arquivadas ({archivedCount})
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Campo de Busca */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="🔍 Buscar por produto, comprador ou CPF..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10"
-        />
-      </div>
+        <TabsContent value={activeTab} className="space-y-4 mt-4">
+          {/* Campo de Busca */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder={activeTab === "active" ? "🔍 Buscar por produto, comprador ou CPF..." : "🔍 Buscar nas arquivadas..."}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
 
       {/* Filtros de tipo de venda */}
       <div className="flex flex-wrap gap-2">
@@ -468,33 +515,33 @@ const SalesHistoryTab = () => {
         </Button>
       </div>
 
-      {/* Filtros de garantia */}
-      <div className="flex flex-wrap gap-2">
-        <Button
-          variant={warrantyFilter === "all" ? "default" : "outline"}
-          size="sm"
-          onClick={() => setWarrantyFilter("all")}
-        >
-          Todas
-        </Button>
-        <Button
-          variant={warrantyFilter === "active" ? "default" : "outline"}
-          size="sm"
-          onClick={() => setWarrantyFilter("active")}
-        >
-          ✅ Na garantia
-        </Button>
-        <Button
-          variant={warrantyFilter === "expired" ? "default" : "outline"}
-          size="sm"
-          onClick={() => setWarrantyFilter("expired")}
-        >
-          ❌ Expiradas
-        </Button>
-      </div>
+          {/* Filtros de garantia */}
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant={warrantyFilter === "all" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setWarrantyFilter("all")}
+            >
+              Todas
+            </Button>
+            <Button
+              variant={warrantyFilter === "active" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setWarrantyFilter("active")}
+            >
+              ✅ Na garantia
+            </Button>
+            <Button
+              variant={warrantyFilter === "expired" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setWarrantyFilter("expired")}
+            >
+              ❌ Expiradas
+            </Button>
+          </div>
 
-      {/* Lista de vendas unificadas */}
-      <div className="space-y-4">
+          {/* Lista de vendas unificadas */}
+          <div className="space-y-4">
         {unifiedSales.length === 0 ? (
           <Card>
             <CardHeader>
@@ -744,6 +791,8 @@ const SalesHistoryTab = () => {
           })
         )}
       </div>
+        </TabsContent>
+      </Tabs>
 
       {editingProduct && (
         <EditSaleDialog
