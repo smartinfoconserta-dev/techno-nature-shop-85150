@@ -11,7 +11,6 @@ import { brandsStore } from "@/lib/brandsStore";
 import { productsStore } from "@/lib/productsStore";
 import { categoriesStore, CategoryTreeNode } from "@/lib/categoriesStore";
 import heroImage from "@/assets/hero-banner.jpg";
-
 const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedBrand, setSelectedBrand] = useState("all");
@@ -23,7 +22,7 @@ const Index = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [deepLinkProductId, setDeepLinkProductId] = useState<string | null>(null);
-  
+
   // Estados para filtros
   const [minPrice, setMinPrice] = useState(0);
   const [maxPrice, setMaxPrice] = useState(999999);
@@ -31,27 +30,23 @@ const Index = () => {
   const [selectedProcessor, setSelectedProcessor] = useState("all");
   const [selectedRam, setSelectedRam] = useState("all");
   const [hasDedicatedGpu, setHasDedicatedGpu] = useState<boolean | null>(null);
-
   useEffect(() => {
     const init = async () => {
       setIsLoading(true);
-      
+
       // 1. Carregar categorias primeiro
       const tree = await categoriesStore.getCategoryTree();
       setCategoryTree(tree);
-      
+
       // 2. Encontrar e definir Notebooks como categoria inicial
-      const notebooksCategory = tree.find(cat => 
-        cat.name.toLowerCase().includes('notebook')
-      );
+      const notebooksCategory = tree.find(cat => cat.name.toLowerCase().includes('notebook'));
       if (notebooksCategory) {
         setSelectedCategory(notebooksCategory.name);
       }
-      
+
       // 3. Carregar produtos
       await productsStore.refreshFromBackend();
       loadProducts();
-      
       setIsLoading(false);
     };
     init();
@@ -63,7 +58,6 @@ const Index = () => {
       setDeepLinkProductId(productId);
     }
   }, []);
-
   useEffect(() => {
     const handleScroll = () => {
       setShowScrollTop(window.scrollY > 400);
@@ -71,7 +65,6 @@ const Index = () => {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
-
   useEffect(() => {
     if (deepLinkProductId && products.length > 0) {
       const product = products.find(p => p.id === deepLinkProductId);
@@ -82,17 +75,13 @@ const Index = () => {
       }
     }
   }, [deepLinkProductId, products]);
-
-
   useEffect(() => {
     loadBrands();
   }, [selectedCategory]);
-
   const loadCategories = async () => {
     const tree = await categoriesStore.getCategoryTree();
     setCategoryTree(tree);
   };
-
   const loadBrands = async () => {
     if (selectedCategory) {
       const categoryBrands = await brandsStore.getBrandsByCategory(selectedCategory);
@@ -101,11 +90,9 @@ const Index = () => {
       setBrands([]);
     }
   };
-
   const loadProducts = () => {
     setProducts(productsStore.getAvailableProducts());
   };
-
   const handleRefreshCatalog = async () => {
     setIsRefreshing(true);
     try {
@@ -115,41 +102,32 @@ const Index = () => {
       setIsRefreshing(false);
     }
   };
-
   const handleSelectCategory = (category: string) => {
     setSelectedCategory(category);
     setSelectedBrand("all");
     scrollToTop();
   };
-
   const filteredProducts = useMemo(() => {
     let filtered = products.filter(product => {
       const categoryMatch = !selectedCategory || product.category === selectedCategory;
       const brandMatch = selectedBrand === "all" || product.brand === selectedBrand;
       const searchLower = searchQuery.toLowerCase();
-      const searchMatch = searchQuery === "" || 
-        product.name.toLowerCase().includes(searchLower) || 
-        product.brand.toLowerCase().includes(searchLower) || 
-        product.specs.toLowerCase().includes(searchLower);
-      
+      const searchMatch = searchQuery === "" || product.name.toLowerCase().includes(searchLower) || product.brand.toLowerCase().includes(searchLower) || product.specs.toLowerCase().includes(searchLower);
       const priceMatch = product.price >= minPrice && product.price <= maxPrice;
-      
+
       // Filtros específicos de notebooks
       let notebookMatch = true;
       if (selectedCategory.toLowerCase().includes("notebook")) {
         if (selectedProcessor !== "all") {
           notebookMatch = notebookMatch && product.specifications?.processor === selectedProcessor;
         }
-        
         if (selectedRam !== "all") {
           notebookMatch = notebookMatch && product.specifications?.ram === selectedRam;
         }
-        
         if (hasDedicatedGpu === true) {
-          notebookMatch = notebookMatch && (product.specifications?.dedicatedGPU === true);
+          notebookMatch = notebookMatch && product.specifications?.dedicatedGPU === true;
         }
       }
-      
       return categoryMatch && brandMatch && searchMatch && priceMatch && notebookMatch;
     });
 
@@ -163,22 +141,17 @@ const Index = () => {
     } else {
       filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     }
-    
     return filtered;
   }, [products, selectedCategory, selectedBrand, searchQuery, minPrice, maxPrice, sortBy, selectedProcessor, selectedRam, hasDedicatedGpu]);
-
   const scrollToTop = () => {
     window.scrollTo({
       top: 0,
       behavior: "smooth"
     });
   };
-
   const handleResetFilters = async () => {
     const tree = await categoriesStore.getCategoryTree();
-    const notebooksCategory = tree.find(cat => 
-      cat.name.toLowerCase().includes('notebook')
-    );
+    const notebooksCategory = tree.find(cat => cat.name.toLowerCase().includes('notebook'));
     if (notebooksCategory) {
       setSelectedCategory(notebooksCategory.name);
     }
@@ -192,9 +165,7 @@ const Index = () => {
     setHasDedicatedGpu(null);
     scrollToTop();
   };
-
-  return (
-    <div className="min-h-screen bg-background">
+  return <div className="min-h-screen bg-background">
       <Header searchValue={searchQuery} onSearchChange={setSearchQuery} onReset={handleResetFilters} />
       
       {/* Hero Banner */}
@@ -207,7 +178,7 @@ const Index = () => {
         <div className="relative z-10 h-full flex items-center justify-center">
           <div className="text-center text-white px-4">
             <h1 className="text-3xl md:text-5xl font-bold mb-3 drop-shadow-lg">
-              Soluções em Tecnologia
+              Ramon Tech Solutions  
             </h1>
             <p className="text-base md:text-xl drop-shadow-md">
               Qualidade e inovação em cada produto
@@ -220,84 +191,33 @@ const Index = () => {
       <section className="bg-muted/30 border-b">
         <div className="container mx-auto px-4 py-3">
           <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-            {categoryTree.map((category) => (
-              <CategoryDropdownButton
-                key={category.id}
-                category={category}
-                selectedCategory={selectedCategory}
-                onSelectCategory={handleSelectCategory}
-              />
-            ))}
+            {categoryTree.map(category => <CategoryDropdownButton key={category.id} category={category} selectedCategory={selectedCategory} onSelectCategory={handleSelectCategory} />)}
           </div>
         </div>
       </section>
 
       {/* Main Content */}
       <main className="container mx-auto px-4 pt-4 pb-8">
-        <ProductFilters
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          selectedCategory={selectedCategory}
-          selectedBrand={selectedBrand}
-          onBrandChange={setSelectedBrand}
-          brands={brands}
-          minPrice={minPrice}
-          maxPrice={maxPrice}
-          onMinPriceChange={setMinPrice}
-          onMaxPriceChange={setMaxPrice}
-          sortBy={sortBy}
-          onSortChange={setSortBy}
-          selectedProcessor={selectedProcessor}
-          onProcessorChange={setSelectedProcessor}
-          selectedRam={selectedRam}
-          onRamChange={setSelectedRam}
-          hasDedicatedGpu={hasDedicatedGpu}
-          onDedicatedGpuChange={setHasDedicatedGpu}
-        />
+        <ProductFilters searchQuery={searchQuery} onSearchChange={setSearchQuery} selectedCategory={selectedCategory} selectedBrand={selectedBrand} onBrandChange={setSelectedBrand} brands={brands} minPrice={minPrice} maxPrice={maxPrice} onMinPriceChange={setMinPrice} onMaxPriceChange={setMaxPrice} sortBy={sortBy} onSortChange={setSortBy} selectedProcessor={selectedProcessor} onProcessorChange={setSelectedProcessor} selectedRam={selectedRam} onRamChange={setSelectedRam} hasDedicatedGpu={hasDedicatedGpu} onDedicatedGpuChange={setHasDedicatedGpu} />
 
         {/* Products Grid */}
         <div className="mt-8">
-          {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} className="space-y-4">
+          {isLoading ? <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {Array.from({
+            length: 8
+          }).map((_, i) => <div key={i} className="space-y-4">
                   <Skeleton className="h-48 w-full rounded-lg" />
                   <Skeleton className="h-4 w-3/4" />
                   <Skeleton className="h-4 w-1/2" />
-                </div>
-              ))}
-            </div>
-          ) : filteredProducts.length === 0 ? (
-            <div className="text-center py-16 text-muted-foreground">
+                </div>)}
+            </div> : filteredProducts.length === 0 ? <div className="text-center py-16 text-muted-foreground">
               <p className="text-lg">Nenhum produto encontrado.</p>
-              <Button 
-                variant="link" 
-                onClick={handleResetFilters}
-                className="mt-2"
-              >
+              <Button variant="link" onClick={handleResetFilters} className="mt-2">
                 Limpar filtros
               </Button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {filteredProducts.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  id={product.id}
-                  images={product.images}
-                  name={product.name}
-                  brand={product.brand}
-                  category={product.category}
-                  specs={product.specs}
-                  description={product.description}
-                  price={product.price}
-                  costPrice={product.costPrice}
-                  discountPrice={product.discountPrice}
-                  passOnCashDiscount={product.passOnCashDiscount}
-                />
-              ))}
-            </div>
-          )}
+            </div> : <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {filteredProducts.map(product => <ProductCard key={product.id} id={product.id} images={product.images} name={product.name} brand={product.brand} category={product.category} specs={product.specs} description={product.description} price={product.price} costPrice={product.costPrice} discountPrice={product.discountPrice} passOnCashDiscount={product.passOnCashDiscount} />)}
+            </div>}
         </div>
       </main>
 
@@ -309,41 +229,17 @@ const Index = () => {
       </footer>
 
       {/* Scroll to Top Button */}
-      {showScrollTop && (
-        <Button
-          className="fixed bottom-8 right-8 rounded-full h-12 w-12 shadow-lg z-50"
-          size="icon"
-          onClick={scrollToTop}
-        >
+      {showScrollTop && <Button className="fixed bottom-8 right-8 rounded-full h-12 w-12 shadow-lg z-50" size="icon" onClick={scrollToTop}>
           <ArrowUp className="h-5 w-5" />
-        </Button>
-      )}
+        </Button>}
 
       {deepLinkProductId && (() => {
-        const product = products.find(p => p.id === deepLinkProductId);
-        if (!product) return null;
-        
-        return (
-          <ProductDetailsDialog
-            open={!!deepLinkProductId}
-            onOpenChange={(open) => {
-              if (!open) setDeepLinkProductId(null);
-            }}
-            id={product.id}
-            images={product.images}
-            name={product.name}
-            brand={product.brand}
-            specs={product.specs}
-            description={product.description}
-            price={product.price}
-            costPrice={product.costPrice}
-            discountPrice={product.discountPrice}
-            passOnCashDiscount={product.passOnCashDiscount}
-          />
-        );
-      })()}
-    </div>
-  );
+      const product = products.find(p => p.id === deepLinkProductId);
+      if (!product) return null;
+      return <ProductDetailsDialog open={!!deepLinkProductId} onOpenChange={open => {
+        if (!open) setDeepLinkProductId(null);
+      }} id={product.id} images={product.images} name={product.name} brand={product.brand} specs={product.specs} description={product.description} price={product.price} costPrice={product.costPrice} discountPrice={product.discountPrice} passOnCashDiscount={product.passOnCashDiscount} />;
+    })()}
+    </div>;
 };
-
 export default Index;
