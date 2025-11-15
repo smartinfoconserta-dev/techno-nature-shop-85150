@@ -10,7 +10,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Product } from "@/lib/productsStore";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, CalendarIcon } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 
 interface EditSaleDialogProps {
   product: Product;
@@ -38,6 +43,7 @@ const EditSaleDialog = ({
   const [buyerCpf, setBuyerCpf] = useState("");
   const [salePrice, setSalePrice] = useState("");
   const [saleDate, setSaleDate] = useState("");
+  const [saleDateOpen, setSaleDateOpen] = useState(false);
   const [invoiceUrl, setInvoiceUrl] = useState("");
   const [cash, setCash] = useState("");
   const [pix, setPix] = useState("");
@@ -157,14 +163,35 @@ const EditSaleDialog = ({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="saleDate">Data da venda</Label>
-            <Input
-              id="saleDate"
-              type="date"
-              value={saleDate}
-              onChange={(e) => setSaleDate(e.target.value)}
-              required
-            />
+            <Label>Data da venda</Label>
+            <Popover open={saleDateOpen} onOpenChange={setSaleDateOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !saleDate && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {saleDate ? format(new Date(saleDate), "dd/MM/yyyy", { locale: ptBR }) : "Selecionar data"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={saleDate ? new Date(saleDate) : undefined}
+                  onSelect={(date) => {
+                    if (date) {
+                      setSaleDate(format(date, "yyyy-MM-dd"));
+                      setSaleDateOpen(false);
+                    }
+                  }}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
           </div>
 
           <div className="space-y-2">

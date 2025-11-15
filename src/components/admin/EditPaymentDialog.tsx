@@ -7,6 +7,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Receivable, ReceivablePayment } from "@/lib/receivablesStore";
 import { Separator } from "@/components/ui/separator";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 
 interface EditPaymentDialogProps {
   open: boolean;
@@ -19,6 +25,7 @@ interface EditPaymentDialogProps {
 const EditPaymentDialog = ({ open, onOpenChange, payment, receivable, onConfirm }: EditPaymentDialogProps) => {
   const [amount, setAmount] = useState("");
   const [paymentDate, setPaymentDate] = useState("");
+  const [paymentDateOpen, setPaymentDateOpen] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "pix" | "card">("cash");
   const [notes, setNotes] = useState("");
 
@@ -110,13 +117,35 @@ const EditPaymentDialog = ({ open, onOpenChange, payment, receivable, onConfirm 
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="date">Data do Pagamento</Label>
-              <Input
-                id="date"
-                type="date"
-                value={paymentDate}
-                onChange={(e) => setPaymentDate(e.target.value)}
-              />
+              <Label>Data do Pagamento</Label>
+              <Popover open={paymentDateOpen} onOpenChange={setPaymentDateOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !paymentDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {paymentDate ? format(new Date(paymentDate), "dd/MM/yyyy", { locale: ptBR }) : "Selecionar data"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={paymentDate ? new Date(paymentDate) : undefined}
+                    onSelect={(date) => {
+                      if (date) {
+                        setPaymentDate(format(date, "yyyy-MM-dd"));
+                        setPaymentDateOpen(false);
+                      }
+                    }}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
 
             <div className="space-y-2">
