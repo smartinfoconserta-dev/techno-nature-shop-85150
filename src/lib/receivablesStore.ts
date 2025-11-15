@@ -160,7 +160,9 @@ export const receivablesStore = {
     data: Omit<Receivable, "id" | "status" | "remainingAmount" | "profit" | "createdAt" | "updatedAt"> & { createdAt?: string }
   ): Promise<Receivable> {
     if (!data.customerId) throw new Error("Cliente é obrigatório");
-    if (!data.productId) throw new Error("Produto é obrigatório");
+    if ((!data.productId || data.productId === "") && (!data.productName || data.productName.trim() === "")) {
+      throw new Error("Produto é obrigatório");
+    }
     if (data.totalAmount <= 0) throw new Error("Valor total deve ser maior que zero");
     if (data.paidAmount < 0) throw new Error("Valor pago não pode ser negativo");
     if (data.paidAmount > data.totalAmount) throw new Error("Valor pago não pode ser maior que o total");
