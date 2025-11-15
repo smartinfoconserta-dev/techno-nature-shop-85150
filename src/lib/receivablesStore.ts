@@ -295,6 +295,18 @@ export const receivablesStore = {
     saveReceivablesCache();
     await this.refreshFromBackend();
 
+    // 🆕 SINCRONIZAR PRODUTO SE EXISTIR
+    if (updated.productId) {
+      const { productsStore } = await import("./productsStore");
+      await productsStore.syncPaymentFromReceivable(updated.productId, {
+        paidAmount: newPaidAmount,
+        remainingAmount: newRemainingAmount,
+        status: newStatus,
+        warranty: updated.warranty,
+      });
+      console.log(`✅ Sincronizado pagamento: receivable ${receivableId} → produto ${updated.productId}`);
+    }
+
     return updated;
   },
 

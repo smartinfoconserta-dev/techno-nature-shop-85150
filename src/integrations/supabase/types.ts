@@ -359,12 +359,15 @@ export type Database = {
           margin: number | null
           name: string
           notes: string | null
+          paid_amount: number | null
           pass_on_cash_discount: boolean | null
           payment_breakdown: Json | null
           payment_method: string | null
+          payment_status: string | null
           product_order: number | null
           profit: number | null
           receivable_id: string | null
+          remaining_amount: number | null
           sale_price: number | null
           sold: boolean
           sold_date: string | null
@@ -391,12 +394,15 @@ export type Database = {
           margin?: number | null
           name: string
           notes?: string | null
+          paid_amount?: number | null
           pass_on_cash_discount?: boolean | null
           payment_breakdown?: Json | null
           payment_method?: string | null
+          payment_status?: string | null
           product_order?: number | null
           profit?: number | null
           receivable_id?: string | null
+          remaining_amount?: number | null
           sale_price?: number | null
           sold?: boolean
           sold_date?: string | null
@@ -423,12 +429,15 @@ export type Database = {
           margin?: number | null
           name?: string
           notes?: string | null
+          paid_amount?: number | null
           pass_on_cash_discount?: boolean | null
           payment_breakdown?: Json | null
           payment_method?: string | null
+          payment_status?: string | null
           product_order?: number | null
           profit?: number | null
           receivable_id?: string | null
+          remaining_amount?: number | null
           sale_price?: number | null
           sold?: boolean
           sold_date?: string | null

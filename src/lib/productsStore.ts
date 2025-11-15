@@ -627,6 +627,43 @@ export const productsStore = {
     return updated;
   },
 
+  /**
+   * Sincroniza dados de pagamento do receivable para o produto
+   * Chamado automaticamente quando há mudanças no receivable
+   */
+  async syncPaymentFromReceivable(
+    productId: string,
+    data: {
+      paidAmount: number;
+      remainingAmount: number;
+      status: string;
+      warranty?: number;
+    }
+  ): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from("products")
+        .update({
+          paid_amount: data.paidAmount,
+          remaining_amount: data.remainingAmount,
+          payment_status: data.status,
+          warranty_days: data.warranty ?? undefined,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", productId);
+
+      if (error) {
+        console.error("❌ Erro ao sincronizar produto com receivable:", error);
+        throw error;
+      }
+
+      console.log(`✅ Produto ${productId} sincronizado com receivable`);
+      await this.refreshFromBackend();
+    } catch (e) {
+      console.error("❌ Falha na sincronização produto ↔ receivable:", e);
+    }
+  },
+
   computeTotals() {
     const soldProducts = this.getSoldProducts();
 

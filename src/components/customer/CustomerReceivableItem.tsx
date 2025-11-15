@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import WarrantyBadge from "@/components/admin/WarrantyBadge";
+import { getWarrantyDays } from "@/lib/warrantyHelper";
 
 interface CustomerReceivableItemProps {
   receivable: {
@@ -31,8 +32,8 @@ export const CustomerReceivableItem = ({
   onDelete,
   getStatusBadge 
 }: CustomerReceivableItemProps) => {
-  // Usar ?? em vez de || para respeitar warranty = 0 (sem garantia)
-  const warrantyDays = receivable.warranty ?? 0;
+  // Usar helper centralizado para garantia consistente
+  const warrantyDays = getWarrantyDays({ warranty: receivable.warranty });
 
   return (
     <div className="p-3 md:p-4 border rounded-lg hover:shadow-sm transition-shadow bg-card">

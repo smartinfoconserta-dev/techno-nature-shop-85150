@@ -11,7 +11,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { TrendingUp, DollarSign, Package, Percent, CheckCircle2, Archive, Search } from "lucide-react";
 import EditSaleDialog from "./EditSaleDialog";
-import { calculateWarranty } from "@/lib/warrantyHelper";
+import { calculateWarranty, getWarrantyDays } from "@/lib/warrantyHelper";
 import SaleHistoryItem from "./SaleHistoryItem";
 import { toast } from "sonner";
 import { FilterBar } from "./FilterBar";
@@ -87,11 +87,9 @@ const SalesHistoryTab = () => {
     await loadUnifiedHistory();
   };
 
-  // Helper para obter dias de garantia corretos
-  const getWarrantyDays = (sale: HistorySale): number => {
-    // Warranty já está sempre em dias para todos os tipos
-    // Usar ?? em vez de || para respeitar warranty = 0 (sem garantia)
-    return sale.warranty ?? 90;
+  // Helper centralizado de garantia importado de warrantyHelper
+  const getWarrantyDaysHelper = (sale: HistorySale): number => {
+    return getWarrantyDays({ warranty: sale.warranty });
   };
 
   // Verificar se uma venda deve ser arquivada automaticamente
@@ -423,7 +421,7 @@ const SalesHistoryTab = () => {
     if (warrantyFilter !== "all") {
       if (!sale.saleDate) return false;
       
-      const warrantyDays = getWarrantyDays(sale);
+      const warrantyDays = getWarrantyDaysHelper(sale);
       
       // Se não tem garantia (0 dias), não deve aparecer em "ativas" nem "expiradas"
       if (warrantyDays === 0) return false;
