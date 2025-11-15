@@ -240,7 +240,7 @@ const ProductDetailsDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="relative max-w-4xl max-h-[90vh] p-0 overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] p-0 overflow-y-auto">
         <DialogTitle className="sr-only">{name}</DialogTitle>
         <DialogDescription className="sr-only">
           Detalhes completos do produto {name} - {brand}
@@ -250,13 +250,13 @@ const ProductDetailsDialog = ({
         <div className="grid md:grid-cols-2 gap-4 p-4">
           {/* Galeria de imagens */}
           <div>
-            <div className="relative isolate">
+            
               <Carousel setApi={setApi}>
                 <CarouselContent>
                   {images?.length ? (
                     images.map((src, idx) => (
                       <CarouselItem key={idx}>
-                        <div className="relative z-0 aspect-square rounded-md overflow-hidden bg-muted">
+                        <div className="aspect-square rounded-md overflow-hidden bg-muted">
                           <img
                             src={src}
                             alt={`${name} - imagem ${idx + 1}`}
@@ -275,7 +275,6 @@ const ProductDetailsDialog = ({
                 <CarouselPrevious className="left-2 top-1/2 -translate-y-1/2 z-10" />
                 <CarouselNext className="right-2 top-1/2 -translate-y-1/2 z-10" />
               </Carousel>
-            </div>
             <div className="mt-2 text-xs text-muted-foreground">{current + 1} / {images?.length || 1}</div>
           </div>
 
@@ -504,10 +503,10 @@ const ProductDetailsDialog = ({
         </div>
         <button
           onClick={() => onOpenChange(false)}
-          className="absolute right-3 top-3 z-50 rounded-full p-1.5 bg-white border border-gray-200 shadow-md transition-colors hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 pointer-events-auto"
+          className="absolute right-3 top-3 z-[100] rounded-full p-1.5 bg-background border border-border shadow-md transition-colors hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 pointer-events-auto"
           aria-label="Fechar"
         >
-          <X className="h-4 w-4 text-gray-700" />
+          <X className="h-4 w-4 text-foreground" />
         </button>
       </DialogContent>
 
