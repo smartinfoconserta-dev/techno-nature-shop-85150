@@ -407,7 +407,7 @@ const ProductDetailsDialog = ({
                     <ChevronDown className="w-4 h-4 text-muted-foreground" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-80">
+                <PopoverContent className="w-80" side="bottom" align="start" sideOffset={8}>
                   <div className="relative">
                     <div 
                       className="max-h-[360px] w-full overflow-y-auto pr-1 scroll-smooth overscroll-contain touch-pan-y
@@ -430,11 +430,11 @@ const ProductDetailsDialog = ({
                             setSelectedPayment(null);
                             setPaymentPopoverOpen(false);
                           }}
-                          className="w-full justify-start text-sm h-auto py-2"
+                          className="group w-full justify-start text-sm h-auto py-2 text-foreground hover:bg-muted hover:text-foreground"
                         >
                   <div className="text-left">
                     <div className="font-medium">Ver preço original</div>
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-xs text-muted-foreground group-hover:text-foreground">
                       R$ {displayPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                     </div>
                   </div>
@@ -448,11 +448,11 @@ const ProductDetailsDialog = ({
                     setSelectedPayment({ type: 'cash', cashValue });
                     setPaymentPopoverOpen(false);
                   }}
-                  className="w-full justify-start text-sm h-auto py-2"
+                  className="group w-full justify-start text-sm h-auto py-2 text-foreground hover:bg-muted hover:text-foreground"
                 >
                   <div className="text-left">
-                    <div className="font-medium text-accent">💰 À vista (5% desconto)</div>
-                    <div className="text-xs text-muted-foreground">
+                    <div className="font-medium text-accent group-hover:text-foreground">💰 À vista (5% desconto)</div>
+                    <div className="text-xs text-muted-foreground group-hover:text-foreground">
                       R$ {calculateCashPriceWithPassOn(displayPrice, passOnCashDiscount, price).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                     </div>
                   </div>
@@ -471,13 +471,13 @@ const ProductDetailsDialog = ({
                               ref={(el) => (installmentRefs.current[option.installments] = el)}
                               variant="ghost"
                               onClick={() => handleInstallmentClick(option)}
-                              className="w-full justify-start text-sm h-auto py-2.5 mb-1 hover:bg-muted"
+                              className="group w-full justify-start text-sm h-auto py-2.5 mb-1 text-foreground hover:bg-muted hover:text-foreground"
                             >
                               <div className="text-left">
                                 <div className="font-medium">
                                   {option.installments}x de R$ {option.installmentValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                                 </div>
-                                <div className="text-xs text-muted-foreground">
+                                <div className="text-xs text-muted-foreground group-hover:text-foreground">
                                   Total: R$ {option.totalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                                   {option.rate > 0 && ` (${option.rate.toFixed(2)}% juros)`}
                                 </div>
@@ -489,7 +489,7 @@ const ProductDetailsDialog = ({
                     </div>
 
                     {/* Gradiente indicando mais conteúdo abaixo */}
-                    <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-background to-transparent pointer-events-none" />
+                    <div className="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-background to-transparent pointer-events-none" />
                   </div>
                 </PopoverContent>
               </Popover>
