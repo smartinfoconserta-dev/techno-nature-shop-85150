@@ -543,7 +543,7 @@ export function AddManualReceivableDialog({
                           setSaleDateOpen(false);
                         }}
                         initialFocus
-                        className="pointer-events-auto"
+                        className={cn("p-3 pointer-events-auto")}
                       />
                     </PopoverContent>
                   </Popover>
@@ -591,7 +591,7 @@ export function AddManualReceivableDialog({
                         }}
                         disabled={(date) => date < new Date()}
                         initialFocus
-                        className="pointer-events-auto"
+                        className={cn("p-3 pointer-events-auto")}
                       />
                     </PopoverContent>
                   </Popover>

@@ -63,6 +63,7 @@ const MarkAsSoldDialog = ({
   const [initialPayment, setInitialPayment] = useState("");
   const [saleDate, setSaleDate] = useState<Date | undefined>(undefined);
   const [dueDate, setDueDate] = useState("");
+  const [dueDateOpen, setDueDateOpen] = useState(false);
   const [notes, setNotes] = useState("");
   const [showNewCustomerDialog, setShowNewCustomerDialog] = useState(false);
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -653,11 +654,35 @@ const MarkAsSoldDialog = ({
                 
                 <div className="space-y-2">
                   <Label>Vencimento</Label>
-                  <Input 
-                    type="date" 
-                    value={dueDate} 
-                    onChange={(e) => setDueDate(e.target.value)} 
-                  />
+                  <Popover open={dueDateOpen} onOpenChange={setDueDateOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !dueDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {dueDate ? format(new Date(dueDate), "dd/MM/yyyy", { locale: ptBR }) : "Selecionar data"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={dueDate ? new Date(dueDate) : undefined}
+                        onSelect={(date) => {
+                          if (date) {
+                            setDueDate(format(date, "yyyy-MM-dd"));
+                            setDueDateOpen(false);
+                          }
+                        }}
+                        disabled={(date) => date < new Date()}
+                        initialFocus
+                        className={cn("p-3 pointer-events-auto")}
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
                 
                 <div className="space-y-2">
