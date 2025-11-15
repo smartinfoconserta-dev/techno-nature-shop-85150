@@ -259,7 +259,8 @@ export function AddManualReceivableDialog({
           data.salePrice,
           receivable.id,
           data.warranty,
-          warrantyExpiresAt
+          warrantyExpiresAt,
+          saleDateStr
         );
       }
 

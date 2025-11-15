@@ -319,7 +319,16 @@ const MarkAsSoldDialog = ({
           saleDate: saleDateStr,
         });
 
-        productsStore.markAsSoldOnCredit(product.id, selectedCustomer.name, selectedCustomer.cpfCnpj, finalPrice, receivable.id, warrantyDays, warrantyExpires);
+        productsStore.markAsSoldOnCredit(
+          product.id, 
+          selectedCustomer.name, 
+          selectedCustomer.cpfCnpj, 
+          finalPrice, 
+          receivable.id, 
+          warrantyDays, 
+          warrantyExpires,
+          saleDateStr
+        );
 
         await receivablesStore.refreshFromBackend();
         
