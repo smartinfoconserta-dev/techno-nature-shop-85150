@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { DollarSign, Calendar, Eye, Trash2, AlertCircle, UserPlus, Edit, FileDown, ShoppingCart, CheckCircle2, Archive, TestTube, Search, X } from "lucide-react";
+import { DollarSign, Calendar, Eye, Trash2, AlertCircle, UserPlus, Edit, FileDown, ShoppingCart, CheckCircle2, Archive, TestTube, Search, X, ChevronDown, Users, List } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { generateCustomerReportPDF } from "@/lib/generateCustomerReportPDF";
 import { format } from "date-fns";
@@ -31,6 +31,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 const ReceivablesTab = () => {
   const { toast } = useToast();
@@ -52,6 +57,7 @@ const ReceivablesTab = () => {
   const [showCustomerPaymentDialog, setShowCustomerPaymentDialog] = useState(false);
   const [showQuickSaleDialog, setShowQuickSaleDialog] = useState(false);
   const [creatingTestData, setCreatingTestData] = useState(false);
+  const [viewMode, setViewMode] = useState<"list" | "customer">("list");
 
   useEffect(() => {
     loadReceivables();
@@ -90,6 +96,24 @@ const ReceivablesTab = () => {
     }
 
     setFilteredReceivables(filtered);
+  };
+
+  const groupByCustomer = () => {
+    const groups: Record<string, Receivable[]> = {};
+    filteredReceivables.forEach(r => {
+      if (!groups[r.customerId]) {
+        groups[r.customerId] = [];
+      }
+      groups[r.customerId].push(r);
+    });
+    return Object.entries(groups).map(([customerId, receivables]) => ({
+      customerId,
+      customerName: receivables[0].customerName,
+      receivables,
+      totalAmount: receivables.reduce((sum, r) => sum + r.totalAmount, 0),
+      paidAmount: receivables.reduce((sum, r) => sum + r.paidAmount, 0),
+      remainingAmount: receivables.reduce((sum, r) => sum + r.remainingAmount, 0),
+    })).sort((a, b) => a.customerName.localeCompare(b.customerName));
   };
 
   const getStatusCounts = () => {
@@ -410,15 +434,35 @@ const ReceivablesTab = () => {
 
       {/* Lista de Contas */}
       <Card>
-        <CardHeader>
-          <CardTitle>📋 Lista de Contas ({filteredReceivables.length})</CardTitle>
+        <CardHeader className="space-y-4">
+          <div className="flex items-center justify-between">
+            <CardTitle>📋 Lista de Contas ({filteredReceivables.length})</CardTitle>
+            <div className="flex gap-2">
+              <Button
+                variant={viewMode === "list" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setViewMode("list")}
+              >
+                <List className="w-4 h-4 mr-2" />
+                Lista Completa
+              </Button>
+              <Button
+                variant={viewMode === "customer" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setViewMode("customer")}
+              >
+                <Users className="w-4 h-4 mr-2" />
+                Por Cliente
+              </Button>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           {filteredReceivables.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <p>Nenhuma conta a receber encontrada</p>
             </div>
-          ) : (
+          ) : viewMode === "list" ? (
             <div className="space-y-2">
               {filteredReceivables.map((receivable) => (
                 <ReceivableItem
@@ -445,7 +489,102 @@ const ReceivablesTab = () => {
                       toast({ title: "PDF gerado com sucesso!" });
                     }
                   }}
+                  onDelete={(r) => setReceivableToDelete(r.id)}
                 />
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {groupByCustomer().map((group) => (
+                <Collapsible key={group.customerId} className="border rounded-lg">
+                  <div className="p-4">
+                    <CollapsibleTrigger className="w-full">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-primary/10 rounded flex items-center justify-center">
+                            <Users className="w-5 h-5 text-primary" />
+                          </div>
+                          <div className="text-left">
+                            <h3 className="font-medium">{group.customerName}</h3>
+                            <p className="text-sm text-muted-foreground">
+                              {group.receivables.length} {group.receivables.length === 1 ? 'venda' : 'vendas'}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <div className="text-right text-sm">
+                            <p className="text-muted-foreground">Total: R$ {group.totalAmount.toFixed(2)}</p>
+                            <p className="text-green-600">Pago: R$ {group.paidAmount.toFixed(2)}</p>
+                            <p className="text-red-600 font-medium">Resta: R$ {group.remainingAmount.toFixed(2)}</p>
+                          </div>
+                          <ChevronDown className="w-5 h-5 text-muted-foreground transition-transform" />
+                        </div>
+                      </div>
+                    </CollapsibleTrigger>
+                    
+                    <CollapsibleContent className="mt-4 space-y-2">
+                      <div className="flex gap-2 mb-3">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={async () => {
+                            const customer = await customersStore.getCustomerById(group.customerId);
+                            if (customer) {
+                              setCustomerToEdit(customer);
+                              setShowEditCustomerDialog(true);
+                            }
+                          }}
+                        >
+                          <Edit className="w-4 h-4 mr-2" />
+                          Editar Cliente
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={async () => {
+                            const customer = await customersStore.getCustomerById(group.customerId);
+                            if (customer) {
+                              const receivables = receivablesStore.getReceivablesByCustomer(group.customerId);
+                              generateCustomerReportPDF(customer, receivables);
+                              toast({ title: "PDF gerado com sucesso!" });
+                            }
+                          }}
+                        >
+                          <FileDown className="w-4 h-4 mr-2" />
+                          Gerar PDF
+                        </Button>
+                      </div>
+                      {group.receivables.map((receivable) => (
+                        <ReceivableItem
+                          key={receivable.id}
+                          receivable={receivable}
+                          isOverdue={isOverdue(receivable)}
+                          onViewDetails={(r) => {
+                            setSelectedReceivable(r);
+                            setShowDetailsDialog(true);
+                          }}
+                          onAddPayment={handleAddPayment}
+                          onEditCustomer={async (customerId) => {
+                            const customer = await customersStore.getCustomerById(customerId);
+                            if (customer) {
+                              setCustomerToEdit(customer);
+                              setShowEditCustomerDialog(true);
+                            }
+                          }}
+                          onGeneratePDF={async (customerId) => {
+                            const customer = await customersStore.getCustomerById(customerId);
+                            if (customer) {
+                              const receivables = receivablesStore.getReceivablesByCustomer(customerId);
+                              generateCustomerReportPDF(customer, receivables);
+                              toast({ title: "PDF gerado com sucesso!" });
+                            }
+                          }}
+                          onDelete={(r) => setReceivableToDelete(r.id)}
+                        />
+                      ))}
+                    </CollapsibleContent>
+                  </div>
+                </Collapsible>
               ))}
             </div>
           )}
