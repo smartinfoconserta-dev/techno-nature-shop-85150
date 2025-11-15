@@ -102,6 +102,10 @@ const ProductDetailsDialog = ({
   let finalPrice = displayPrice;
   let displayMode: 'original' | 'coupon' | 'cash' | 'installment' | 'coupon-installment' = 'original';
   let paymentDetails: { installments?: number; installmentValue?: number; totalAmount?: number } = {};
+  
+  // Calcular economia do cupom
+  const hasCouponB2B = isDiscountActive && couponValidation.coupon && discountPrice && discountPrice < displayPrice;
+  const couponSavings = hasCouponB2B ? (displayPrice - discountPrice) : 0;
 
   // NOVO: Verificar se tem cupom válido e se produto tem preço B2B
   if (isDiscountActive && couponValidation.coupon) {
@@ -270,8 +274,8 @@ const ProductDetailsDialog = ({
                   </CarouselItem>
                 )}
               </CarouselContent>
-              <CarouselPrevious />
-              <CarouselNext />
+              <CarouselPrevious className="left-2 top-1/2 -translate-y-1/2 z-10" />
+              <CarouselNext className="right-2 top-1/2 -translate-y-1/2 z-10" />
             </Carousel>
             <div className="mt-2 text-xs text-muted-foreground">{current + 1} / {images?.length || 1}</div>
           </div>
@@ -285,10 +289,28 @@ const ProductDetailsDialog = ({
             <div className="mt-4">
               <div className="text-3xl font-bold text-foreground">R$ {finalPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
               <div className="text-sm text-muted-foreground mt-1">
-                {displayMode === 'coupon' && 'Preço com cupom aplicado'}
+                {displayMode === 'coupon' && (
+                  <>
+                    Preço com cupom aplicado
+                    {couponSavings > 0 && (
+                      <span className="text-green-600 font-medium ml-2">
+                        — Economia de R$ {couponSavings.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                    )}
+                  </>
+                )}
                 {displayMode === 'cash' && 'Preço à vista (5% de desconto)'}
                 {displayMode === 'installment' && paymentDetails.installments && `Parcelado em ${paymentDetails.installments}x`}
-                {displayMode === 'coupon-installment' && paymentDetails.installments && `Cupom + ${paymentDetails.installments}x`}
+                {displayMode === 'coupon-installment' && paymentDetails.installments && (
+                  <>
+                    {`Cupom + ${paymentDetails.installments}x`}
+                    {couponSavings > 0 && (
+                      <span className="text-green-600 font-medium ml-2">
+                        — Economia de R$ {couponSavings.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                    )}
+                  </>
+                )}
                 {displayMode === 'original' && `Preço de tabela: R$ ${displayPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
               </div>
             </div>
@@ -301,7 +323,7 @@ const ProductDetailsDialog = ({
                     <CreditCard className="mr-2 h-4 w-4" /> Formas de Pagamento
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-80" side="bottom" align="start" sideOffset={8} avoidCollisions={true} collisionPadding={20}>
+                <PopoverContent className="w-[92vw] sm:w-80" side="bottom" align="start" sideOffset={8} avoidCollisions={true} collisionPadding={20}>
                   <div className="space-y-3">
                     {/* Título */}
                     <h3 className="font-medium text-foreground">Escolha a forma de pagamento</h3>
@@ -339,7 +361,11 @@ const ProductDetailsDialog = ({
                         <span className="text-xs text-muted-foreground">Role para ver mais</span>
                       </div>
                       
-                      <div className="space-y-2 max-h-60 overflow-y-auto overscroll-contain touch-pan-y relative pointer-events-auto">
+                      <div 
+                        className="space-y-2 max-h-[60vh] sm:max-h-60 overflow-y-auto overscroll-contain touch-pan-y relative pointer-events-auto"
+                        onWheel={(e) => e.stopPropagation()}
+                        onTouchMove={(e) => e.stopPropagation()}
+                      >
                         {isLoadingInstallments ? (
                           <div className="text-sm text-muted-foreground">Carregando...</div>
                         ) : (
@@ -387,15 +413,15 @@ const ProductDetailsDialog = ({
                 <Tag className="h-4 w-4 mr-1" /> Tenho cupom
               </button>
               {showCouponInput && (
-                <div className="mt-2 flex items-center gap-2">
+                <div className="mt-2 flex flex-wrap items-center gap-2">
                   <Input
                     value={coupon}
                     onChange={(e) => setCoupon(e.target.value.toUpperCase())}
                     placeholder="CUPOM"
-                    className="max-w-xs"
+                    className="w-full sm:flex-1 sm:min-w-0 sm:max-w-xs"
                   />
                   {coupon && (
-                    <Badge variant={couponValidation.valid ? 'default' : 'secondary'}>
+                    <Badge variant={couponValidation.valid ? 'default' : 'secondary'} className="shrink-0">
                       {couponValidation.valid ? 'Cupom válido' : 'Cupom inválido'}
                     </Badge>
                   )}
