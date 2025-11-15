@@ -115,9 +115,10 @@ Deno.serve(async (req) => {
     // Mapear e calcular arquivamento automático
     const allMappedReceivables = (receivables || []).map(row => {
       const isPaid = row.status === 'paid';
-      const warrantyDays = row.warranty_days || 90;
-      const warrantyExpired = isWarrantyExpired(row.created_at, warrantyDays);
-      const warrantyExpiresAt = calculateWarrantyExpiration(row.created_at, warrantyDays);
+      const warrantyDays = row.warranty_days ?? 90; // Respeitar 0
+      const saleDate = row.sale_date || row.created_at; // Usar sale_date se disponível
+      const warrantyExpired = isWarrantyExpired(saleDate, warrantyDays);
+      const warrantyExpiresAt = calculateWarrantyExpiration(saleDate, warrantyDays);
       
       return {
         id: row.id,
