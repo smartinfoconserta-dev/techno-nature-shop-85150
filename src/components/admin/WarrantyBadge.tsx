@@ -1,6 +1,7 @@
 import { calculateWarranty } from "@/lib/warrantyHelper";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, AlertTriangle, XCircle } from "lucide-react";
+import { format } from "date-fns";
 
 interface WarrantyBadgeProps {
   saleDate: string;
@@ -9,7 +10,16 @@ interface WarrantyBadgeProps {
 }
 
 const WarrantyBadge = ({ saleDate, warrantyDays = 90, size = "default" }: WarrantyBadgeProps) => {
+  console.log("🐛 BADGE - saleDate recebido:", saleDate);
+  console.log("🐛 BADGE - warrantyDays recebido:", warrantyDays);
+  
   const warranty = calculateWarranty(saleDate, warrantyDays);
+  
+  console.log("🐛 BADGE - Cálculo resultado:", {
+    daysRemaining: warranty.daysRemaining,
+    isActive: warranty.isActive,
+    expirationDate: format(warranty.expirationDate, "dd/MM/yyyy"),
+  });
 
   if (!warranty.isActive) {
     return (
