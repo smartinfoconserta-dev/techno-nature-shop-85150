@@ -350,12 +350,12 @@ const ProductDetailsDialog = ({
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent 
-                  className="w-[92vw] sm:w-[420px] max-h-[70vh] overflow-y-auto overflow-x-hidden p-3 pointer-events-auto" 
+                  className="w-[90vw] sm:w-[420px] max-h-[60vh] sm:max-h-[50vh] overflow-y-auto overscroll-contain overflow-x-hidden p-3 pointer-events-auto" 
                   side="bottom" 
-                  align="start" 
-                  sideOffset={8} 
+                  align="center" 
+                  sideOffset={4} 
                   avoidCollisions 
-                  collisionPadding={20}
+                  collisionPadding={{ top: 60, bottom: 20, left: 20, right: 20 }}
                   onWheelCapture={(e) => e.stopPropagation()}
                   onTouchMove={(e) => e.stopPropagation()}
                 >
