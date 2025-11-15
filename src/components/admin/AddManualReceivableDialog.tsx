@@ -708,15 +708,22 @@ export function AddManualReceivableDialog({
                     Se você já cadastrou este produto no seu catálogo, pode vincular a venda ao registro existente.
                   </p>
                   
-                  <RadioGroup 
-                    value={productSource} 
-                    onValueChange={(v) => {
-                      setProductSource(v as "manual" | "catalog");
-                      if (v === "manual") {
-                        setSelectedProductId("");
-                      }
-                    }}
-                  >
+              <RadioGroup 
+                value={productSource} 
+                onValueChange={(v) => {
+                  const newSource = v as "manual" | "catalog";
+                  
+                  // Só limpa os campos se REALMENTE mudou de catalog → manual
+                  if (productSource === "catalog" && newSource === "manual") {
+                    setSelectedProductId("");
+                    form.setValue("productName", "");
+                    form.setValue("costPrice", 0);
+                    form.setValue("salePrice", 0);
+                  }
+                  
+                  setProductSource(newSource);
+                }}
+              >
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="manual" id="manual" />
                       <Label htmlFor="manual" className="font-normal cursor-pointer">
