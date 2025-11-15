@@ -2,7 +2,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Package, Eye, DollarSign, Edit, FileDown, AlertCircle } from "lucide-react";
+import { Package, Eye, DollarSign, Edit, FileDown, AlertCircle, Trash2 } from "lucide-react";
 import { Receivable } from "@/lib/receivablesStore";
 import WarrantyBadge from "./WarrantyBadge";
 import { cn } from "@/lib/utils";
@@ -14,6 +14,7 @@ interface ReceivableItemProps {
   onAddPayment: (receivable: Receivable) => void;
   onEditCustomer: (customerId: string) => void;
   onGeneratePDF: (customerId: string) => void;
+  onDelete?: (receivable: Receivable) => void;
 }
 
 const ReceivableItem = ({
@@ -23,6 +24,7 @@ const ReceivableItem = ({
   onAddPayment,
   onEditCustomer,
   onGeneratePDF,
+  onDelete,
 }: ReceivableItemProps) => {
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("pt-BR", {
@@ -113,6 +115,11 @@ const ReceivableItem = ({
         <Button variant="ghost" size="sm" onClick={() => onGeneratePDF(receivable.customerId)} title="Gerar PDF">
           <FileDown className="w-4 h-4" />
         </Button>
+        {onDelete && (
+          <Button variant="ghost" size="sm" onClick={() => onDelete(receivable)} title="Deletar">
+            <Trash2 className="w-4 h-4" />
+          </Button>
+        )}
       </div>
     </div>
   );
