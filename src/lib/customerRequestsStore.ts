@@ -172,7 +172,7 @@ export const customerRequestsStore = {
         paymentMethod: req.payment_method || "",
         installments: req.installments || 1,
         installmentRate: req.installment_rate || 0,
-        warrantyMonths: req.warranty_days || 0,
+        warranty: req.warranty_days || 0,
         notes: req.notes || "",
       })) || []
     );

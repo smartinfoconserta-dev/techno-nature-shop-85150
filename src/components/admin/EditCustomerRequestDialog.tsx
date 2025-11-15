@@ -157,7 +157,6 @@ export const EditCustomerRequestDialog = ({ request, open, onOpenChange, onSucce
         payments: [],
         source: "manual" as any,
         warranty: parseInt(formData.warrantyMonths),
-        warrantyMonths: Math.floor(parseInt(formData.warrantyMonths) / 30),
         notes: formData.adminNotes || formData.notes,
       });
 

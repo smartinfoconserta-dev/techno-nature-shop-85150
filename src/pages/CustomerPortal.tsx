@@ -47,7 +47,6 @@ interface Receivable {
   status: "pending" | "partial" | "paid";
   payments: any[];
   warranty?: number;
-  warrantyMonths?: number;
   warrantyExpiresAt?: string;
   notes?: string;
   archived: boolean;
