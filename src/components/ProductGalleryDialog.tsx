@@ -41,7 +41,7 @@ const ProductGalleryDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="relative max-w-4xl w-full p-0 overflow-hidden bg-white">
+      <DialogContent className="max-w-4xl w-full p-0 overflow-hidden bg-white">
         <div className="relative bg-white">
           <Button
             variant="ghost"
