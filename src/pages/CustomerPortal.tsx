@@ -2,25 +2,20 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCustomerAuth } from "@/hooks/useCustomerAuth";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { LogOut, ShoppingBag, DollarSign, Clock, Shield, Loader2, FileText, Notebook, Plus, Trash2, XCircle, CheckCircle2, Archive, ChevronDown, Printer } from "lucide-react";
-import { calculateWarranty } from "@/lib/warrantyHelper";
-import { format } from "date-fns";
-import { CustomerStatsChart } from "@/components/customer/CustomerStatsChart";
+import { ShoppingBag, DollarSign, Clock, Loader2, ChevronDown } from "lucide-react";
 import { SummaryCard } from "@/components/customer/SummaryCard";
-import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
 import { AddNotebookItemDialog } from "@/components/customer/AddNotebookItemDialog";
-import { CustomerRequestsList } from "@/components/customer/CustomerRequestsList";
 import { DeletePortalReceivableDialog } from "@/components/customer/DeletePortalReceivableDialog";
 import { CustomerReceivableItem } from "@/components/customer/CustomerReceivableItem";
-import SearchBar from "@/components/SearchBar";
-import WarrantyBadge from "@/components/admin/WarrantyBadge";
+import { CustomerPortalHeader } from "@/components/customer/CustomerPortalHeader";
+import { CustomerStatsChart } from "@/components/customer/CustomerStatsChart";
+import { FilterBar } from "@/components/admin/FilterBar";
+import { ActiveFilterChip } from "@/components/admin/ActiveFilterChip";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { generateCustomerPortalPDF } from "@/lib/generateCustomerPortalPDF";
@@ -34,33 +29,18 @@ interface Receivable {
   productName: string;
   brand?: string;
   category?: string;
-  costPrice?: number;
-  basePrice?: number;
-  salePrice?: number;
-  profit?: number;
   totalAmount: number;
   paidAmount: number;
   remainingAmount: number;
   installments: number;
-  installmentRate: number;
-  dueDate?: string;
   status: "pending" | "partial" | "paid";
-  payments: any[];
   warranty?: number;
-  warrantyExpiresAt?: string;
-  notes?: string;
   archived: boolean;
   saleDate: string;
   createdAt: string;
-  updatedAt: string;
+  dueDate?: string;
   autoArchived?: boolean;
 }
-
-// Helper para converter meses em dias
-const convertMonthsToDays = (months?: number): number => {
-  if (!months || months === 0) return 0;
-  return months * 30;
-};
 
 const CustomerPortal = () => {
   const navigate = useNavigate();
@@ -70,21 +50,22 @@ const CustomerPortal = () => {
   const [archivedReceivables, setArchivedReceivables] = useState<Receivable[]>([]);
   const [activeTab, setActiveTab] = useState("active");
   const [searchTerm, setSearchTerm] = useState("");
-  const [activeSearchTerm, setActiveSearchTerm] = useState("");
-  const [archivedSearchTerm, setArchivedSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [periodFilter, setPeriodFilter] = useState("all");
+  const [brandFilter, setBrandFilter] = useState("all");
+  const [warrantyFilter, setWarrantyFilter] = useState("all");
   const [loading, setLoading] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [selectedReceivable, setSelectedReceivable] = useState<Receivable | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [statsOpen, setStatsOpen] = useState(false);
 
   useEffect(() => {
     if (!customer) {
       navigate("/login");
       return;
     }
-
-    // Carregar compras ativas e arquivadas
     loadReceivables("active");
     loadReceivables("archived");
   }, [customer, navigate]);
@@ -92,61 +73,23 @@ const CustomerPortal = () => {
   const loadReceivables = async (view: "active" | "archived" = "active") => {
     try {
       setLoading(true);
-      
-      // Obter token do localStorage
       const token = localStorage.getItem("customer_token");
       
       if (!token) {
-        toast({
-          title: "Sessão expirada",
-          description: "Faça login novamente para acessar seu histórico.",
-          variant: "destructive",
-        });
-        logout();
+        toast({ title: "Sessão expirada", description: "Por favor, faça login novamente", variant: "destructive" });
         navigate("/login");
         return;
       }
 
-      // Chamar função de backend portal-get-receivables
-      const { data, error } = await supabase.functions.invoke('portal-get-receivables', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: { view },
+      const { data, error } = await supabase.functions.invoke("portal-get-receivables", {
+        body: { token, view },
       });
 
-      if (error) {
-        throw error;
-      }
-
-      if (!data.success) {
-        throw new Error(data.error || 'FETCH_FAILED');
-      }
-
-      if (view === "active") {
-        setActiveReceivables(data.receivables || []);
-      } else {
-        setArchivedReceivables(data.receivables || []);
-      }
-
+      if (error) throw error;
+      if (view === "active") setActiveReceivables(data.receivables || []);
+      else setArchivedReceivables(data.receivables || []);
     } catch (error: any) {
-      const errorCode = error?.message || error?.error || 'UNKNOWN_ERROR';
-      
-      if (errorCode === 'TOKEN_EXPIRED' || errorCode === 'UNAUTHORIZED' || errorCode === 'INVALID_TOKEN') {
-        toast({
-          title: "Sessão expirada",
-          description: "Sua sessão expirou. Faça login novamente.",
-          variant: "destructive",
-        });
-        logout();
-        navigate("/login");
-      } else {
-        toast({
-          title: "Erro ao carregar histórico",
-          description: "Não foi possível carregar suas compras. Tente novamente mais tarde.",
-          variant: "destructive",
-        });
-      }
+      toast({ title: "Erro ao carregar compras", description: error.message, variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -158,78 +101,55 @@ const CustomerPortal = () => {
   };
 
   const handlePrintPDF = () => {
-    if (filteredReceivables.length === 0) {
-      toast({
-        title: "Nenhuma compra para imprimir",
-        description: "Nenhuma compra encontrada.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Calcular totais baseados nos filtros
-    const pdfTotals = {
-      totalComprado: filteredReceivables.reduce((sum, r) => sum + r.totalAmount, 0),
-      totalPago: filteredReceivables.reduce((sum, r) => sum + r.paidAmount, 0),
-      totalDevedor: filteredReceivables.reduce((sum, r) => sum + r.remainingAmount, 0),
-    };
-
-    generateCustomerPortalPDF(
-      {
-        code: customer.code,
-        name: customer.name,
-        cpfCnpj: customer.cpfCnpj,
-        phone: customer.phone,
-      },
-      filteredReceivables,
-      "Todas as compras"
-    );
-
-    toast({
-      title: "PDF gerado com sucesso",
-      description: "O extrato foi baixado para seu computador.",
-    });
+    if (customer) generateCustomerPortalPDF(customer, [...activeReceivables, ...archivedReceivables]);
   };
 
-  if (!customer) return null;
+  const handleDeleteClick = (id: string) => {
+    const receivable = archivedReceivables.find((r) => r.id === id);
+    if (receivable) {
+      setSelectedReceivable(receivable);
+      setShowDeleteDialog(true);
+    }
+  };
 
-  // Usar receivables corretos baseado na tab ativa
-  const receivables = activeTab === "active" ? activeReceivables : archivedReceivables;
-
-  const totalComprado = receivables.reduce((sum, r) => sum + r.totalAmount, 0);
-  const totalPago = receivables.reduce((sum, r) => sum + r.paidAmount, 0);
-  const totalDevedor = receivables.reduce((sum, r) => sum + r.remainingAmount, 0);
-
-  // Filtrar compras apenas pela busca
-  const filteredReceivables = receivables.filter(r => {
-    if (!searchTerm) return true;
+  const currentReceivables = activeTab === "active" ? activeReceivables : archivedReceivables;
+  
+  const filteredReceivables = currentReceivables.filter(rec => {
+    const matchesSearch = rec.productName.toLowerCase().includes(searchTerm.toLowerCase()) || rec.brand?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === "all" || rec.status === statusFilter;
+    const matchesBrand = brandFilter === "all" || rec.brand === brandFilter;
     
-    const search = searchTerm.toLowerCase();
-    const matchesName = r.productName.toLowerCase().includes(search);
-    const matchesBrand = r.brand?.toLowerCase().includes(search);
-    const matchesValue = r.totalAmount.toString().includes(search);
+    let matchesPeriod = true;
+    if (periodFilter !== "all") {
+      const daysDiff = Math.floor((new Date().getTime() - new Date(rec.saleDate).getTime()) / (1000 * 60 * 60 * 24));
+      if (periodFilter === "30days") matchesPeriod = daysDiff <= 30;
+      else if (periodFilter === "90days") matchesPeriod = daysDiff <= 90;
+      else if (periodFilter === "180days") matchesPeriod = daysDiff <= 180;
+    }
     
-    return matchesName || matchesBrand || matchesValue;
+    return matchesSearch && matchesStatus && matchesBrand && matchesPeriod;
   });
 
-  // Calcular progresso de pagamento
-  const progressoPagamento = totalComprado > 0 ? (totalPago / totalComprado) * 100 : 0;
+  const totalComprado = currentReceivables.reduce((sum, rec) => sum + rec.totalAmount, 0);
+  const totalPago = currentReceivables.reduce((sum, rec) => sum + rec.paidAmount, 0);
+  const totalDevedor = currentReceivables.reduce((sum, rec) => sum + rec.remainingAmount, 0);
 
-  // Verificar vencimentos próximos (7 dias)
-  const proximosVencimentos = receivables.filter(r => {
-    if (!r.dueDate || r.status === "paid") return false;
-    const daysUntilDue = Math.ceil((new Date(r.dueDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
-    return daysUntilDue >= 0 && daysUntilDue <= 7;
+  const proximosVencimentos = activeReceivables.filter(rec => {
+    if (!rec.dueDate || rec.status === "paid") return false;
+    const diasRestantes = Math.ceil((new Date(rec.dueDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+    return diasRestantes <= 7 && diasRestantes >= 0;
   });
 
-  const getStatusBadge = (status: Receivable["status"]) => {
+  const uniqueBrands = Array.from(new Set(currentReceivables.map(r => r.brand).filter(Boolean)));
+  const activeFiltersCount = [searchTerm !== "", statusFilter !== "all", periodFilter !== "all", brandFilter !== "all", warrantyFilter !== "all"].filter(Boolean).length;
+
+  const getStatusBadge = (status: "pending" | "partial" | "paid") => {
     const variants = {
-      pending: { label: "Pendente", variant: "destructive" as const },
-      partial: { label: "Parcial", variant: "default" as const },
-      paid: { label: "Quitado", variant: "secondary" as const },
+      pending: { variant: "destructive" as const, label: "Pendente" },
+      partial: { variant: "default" as const, label: "Parcial" },
+      paid: { variant: "secondary" as const, label: "Quitado" },
     };
-    const config = variants[status];
-    return <Badge variant={config.variant}>{config.label}</Badge>;
+    return <Badge variant={variants[status].variant}>{variants[status].label}</Badge>;
   };
 
   if (loading) {
@@ -237,7 +157,7 @@ const CustomerPortal = () => {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
-          <p className="text-muted-foreground">Carregando seu histórico...</p>
+          <p className="text-muted-foreground">Carregando...</p>
         </div>
       </div>
     );
@@ -245,242 +165,98 @@ const CustomerPortal = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-card">
-        <div className="container mx-auto px-4">
-          {/* Título no topo */}
-          <div className="pt-3 pb-2 border-b">
-            <h1 className="text-lg font-semibold text-center">Portal do Cliente</h1>
-          </div>
-          
-          {/* Nome + Botões */}
-          <div className="py-3 flex justify-between items-center gap-3">
-            <p className="text-xs text-muted-foreground truncate">{customer.name}</p>
-            
-            <div className="flex gap-1.5 flex-shrink-0">
-              {/* Novo Item - com texto */}
-              <Sheet>
-                <SheetTrigger asChild>
-                  <Button variant="outline" size="sm" className="h-8 px-3">
-                    <Notebook className="h-3.5 w-3.5 mr-1.5" />
-                    <span className="text-xs">Novo Item</span>
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto">
-                  <SheetHeader>
-                    <SheetTitle>Minha Caderneta</SheetTitle>
-                  </SheetHeader>
-                  <div className="space-y-4 mt-4">
-                    <CustomerRequestsList refreshKey={refreshKey} />
-                    <Button 
-                      onClick={() => setShowAddDialog(true)} 
-                      className="w-full"
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Adicionar Novo Item
-                    </Button>
-                  </div>
-                </SheetContent>
-              </Sheet>
-              
-              {/* PDF - apenas ícone */}
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={handlePrintPDF}
-                className="h-8 w-8 p-0"
-                title="Imprimir PDF"
-              >
-                <Printer className="h-3.5 w-3.5" />
-              </Button>
-              
-              {/* Sair - apenas ícone */}
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={handleLogout}
-                className="h-8 w-8 p-0"
-                title="Sair"
-              >
-                <LogOut className="h-3.5 w-3.5" />
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
+      <CustomerPortalHeader
+        customerName={customer?.name || ""}
+        onLogout={handleLogout}
+        onPrintPDF={handlePrintPDF}
+        onAddNotebook={() => setShowAddDialog(true)}
+        creditBalance={customer?.creditBalance}
+      />
 
-      {/* Conteúdo */}
-      <main className="container mx-auto px-4 py-8">
-        {/* Cards de Resumo */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <SummaryCard
-            title="Total Comprado"
-            value={`R$ ${totalComprado.toFixed(2)}`}
-            icon={ShoppingBag}
-            animated
-          />
-          
-          <SummaryCard
-            title="Total Pago"
-            value={`R$ ${totalPago.toFixed(2)}`}
-            icon={DollarSign}
-            valueColor="text-green-600"
-            progress={progressoPagamento}
-            animated
-          />
-          
-          <SummaryCard
-            title="Saldo Devedor"
-            value={`R$ ${totalDevedor.toFixed(2)}`}
-            icon={Clock}
-            valueColor="text-red-600"
-            alert={
-              proximosVencimentos.length > 0
-                ? {
-                    show: true,
-                    text: `⚠️ ${proximosVencimentos.length} conta(s) vencendo em até 7 dias`
-                  }
-                : undefined
-            }
-            animated
-          />
+      <main className="container mx-auto px-3 md:px-4 py-4 md:py-6 space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <SummaryCard title="Total Comprado" value={`R$ ${totalComprado.toFixed(2)}`} icon={ShoppingBag} valueColor="text-primary" />
+          <SummaryCard title="Total Pago" value={`R$ ${totalPago.toFixed(2)}`} icon={DollarSign} valueColor="text-green-600" />
+          <SummaryCard title="Saldo Devedor" value={`R$ ${totalDevedor.toFixed(2)}`} icon={Clock} valueColor="text-destructive"
+            alert={proximosVencimentos.length > 0 ? { show: true, text: `${proximosVencimentos.length} vencendo em breve` } : undefined} />
         </div>
 
-        {/* Card de Crédito Disponível */}
-        {customer.creditBalance && customer.creditBalance > 0 && (
-          <Card className="border-green-500 mb-8">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <DollarSign className="h-4 w-4" />
-                Crédito Disponível (Haver)
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold text-green-600">
-                R$ {customer.creditBalance.toFixed(2)}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Disponível para suas próximas compras
-              </p>
+        {customer?.creditBalance && customer.creditBalance > 0 && (
+          <Card className="border-l-4 border-l-primary bg-primary/5">
+            <CardContent className="p-3 md:p-4">
+              <p className="text-xs text-muted-foreground mb-1">Crédito Disponível</p>
+              <p className="text-lg font-bold text-primary">{customer.creditBalance.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</p>
             </CardContent>
           </Card>
         )}
 
-        {/* Lista de Compras */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Minhas Compras</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-4">
-                <TabsTrigger value="active" className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4" />
-                  Ativas
-                </TabsTrigger>
-                <TabsTrigger value="archived" className="flex items-center gap-2">
-                  <Archive className="h-4 w-4" />
-                  Arquivadas
-                </TabsTrigger>
-              </TabsList>
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="active" className="gap-2">✅ Ativas <Badge variant="secondary" className="h-5 px-1.5">{activeReceivables.length}</Badge></TabsTrigger>
+            <TabsTrigger value="archived" className="gap-2">📦 Arquivadas <Badge variant="secondary" className="h-5 px-1.5">{archivedReceivables.length}</Badge></TabsTrigger>
+          </TabsList>
 
-              <TabsContent value="active" className="mt-0">
-                {/* Campo de busca */}
-                <div className="mb-4 relative">
-                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Buscar produto, valor, marca..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
+          <TabsContent value={activeTab} className="space-y-4 mt-4">
+            <FilterBar searchValue={searchTerm} onSearchChange={setSearchTerm} searchPlaceholder="Buscar produto, marca..."
+              resultsCount={{ showing: filteredReceivables.length, total: currentReceivables.length }}>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-full sm:w-[180px]"><SelectValue placeholder="Status" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="pending">Pendente</SelectItem>
+                  <SelectItem value="partial">Parcial</SelectItem>
+                  <SelectItem value="paid">Quitado</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={periodFilter} onValueChange={setPeriodFilter}>
+                <SelectTrigger className="w-full sm:w-[180px]"><SelectValue placeholder="Período" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="30days">30 dias</SelectItem>
+                  <SelectItem value="90days">90 dias</SelectItem>
+                </SelectContent>
+              </Select>
+            </FilterBar>
 
-                {filteredReceivables.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-8">
-                    {activeReceivables.length === 0 ? "Nenhuma compra ativa" : "Nenhuma compra encontrada com os filtros aplicados"}
-                  </p>
-                ) : (
-                  <div className="space-y-1.5">
-                    {filteredReceivables.map(receivable => (
-                      <CustomerReceivableItem
-                        key={receivable.id}
-                        receivable={receivable}
-                        isArchived={false}
-                        getStatusBadge={getStatusBadge}
-                      />
-                    ))}
-                  </div>
-                )}
-              </TabsContent>
+            {activeFiltersCount > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {searchTerm && <ActiveFilterChip label={`Busca: ${searchTerm}`} onRemove={() => setSearchTerm("")} />}
+                {statusFilter !== "all" && <ActiveFilterChip label={`Status: ${statusFilter}`} onRemove={() => setStatusFilter("all")} />}
+              </div>
+            )}
 
-              <TabsContent value="archived" className="mt-0">
-                {archivedReceivables.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-8">
-                    Nenhuma compra arquivada
-                  </p>
-                ) : (
-                  <div className="space-y-1.5">
-                    {archivedReceivables.map(receivable => (
-                      <CustomerReceivableItem
-                        key={receivable.id}
-                        receivable={receivable}
-                        isArchived={true}
-                        onDelete={(id) => {
-                          const rec = archivedReceivables.find(r => r.id === id);
-                          if (rec) {
-                            setSelectedReceivable(rec);
-                            setShowDeleteDialog(true);
-                          }
-                        }}
-                        getStatusBadge={getStatusBadge}
-                      />
-                    ))}
-                  </div>
-                )}
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
+            <div className="space-y-3">
+              {filteredReceivables.length === 0 ? (
+                <Card><CardContent className="p-8 text-center"><p className="text-muted-foreground">Nenhuma compra encontrada</p></CardContent></Card>
+              ) : (
+                filteredReceivables.map((rec) => (
+                  <CustomerReceivableItem key={rec.id} receivable={rec} isArchived={activeTab === "archived"}
+                    onDelete={activeTab === "archived" ? handleDeleteClick : undefined} getStatusBadge={getStatusBadge} />
+                ))
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
 
-        {/* Gráficos - Collapsible (fechado por padrão) */}
-        <Collapsible defaultOpen={false}>
-          <Card>
-            <CollapsibleTrigger asChild>
-              <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    📊 Estatísticas e Histórico
-                  </CardTitle>
-                  <ChevronDown className="h-4 w-4 transition-transform duration-200 data-[state=open]:rotate-180" />
-                </div>
-              </CardHeader>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <CardContent className="pt-0">
-                <CustomerStatsChart receivables={receivables} />
-              </CardContent>
-            </CollapsibleContent>
-          </Card>
-        </Collapsible>
-
+        {filteredReceivables.length > 0 && (
+          <Collapsible open={statsOpen} onOpenChange={setStatsOpen}>
+            <Card>
+              <CollapsibleTrigger asChild>
+                <Button variant="ghost" className="w-full justify-between p-4">
+                  <span className="font-semibold">📊 Ver Estatísticas</span>
+                  <ChevronDown className={`h-4 w-4 transition-transform ${statsOpen ? "rotate-180" : ""}`} />
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent><CardContent className="pt-0"><CustomerStatsChart receivables={currentReceivables} /></CardContent></CollapsibleContent>
+            </Card>
+          </Collapsible>
+        )}
       </main>
 
-      <AddNotebookItemDialog
-        open={showAddDialog}
-        onOpenChange={setShowAddDialog}
-        onSuccess={() => setRefreshKey(prev => prev + 1)}
-      />
-      
-      <DeletePortalReceivableDialog
-        receivable={selectedReceivable}
-        open={showDeleteDialog}
-        onOpenChange={setShowDeleteDialog}
-        onDeleted={() => {
-          loadReceivables("active");
-          loadReceivables("archived");
-        }}
-      />
+      <AddNotebookItemDialog open={showAddDialog} onOpenChange={setShowAddDialog}
+        onSuccess={() => { setRefreshKey(prev => prev + 1); loadReceivables("active"); loadReceivables("archived"); }} />
+      <DeletePortalReceivableDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog} receivable={selectedReceivable}
+        onSuccess={() => { loadReceivables("archived"); setSelectedReceivable(null); }} />
     </div>
   );
 };
