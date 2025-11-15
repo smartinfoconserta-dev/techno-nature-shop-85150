@@ -49,17 +49,17 @@ export const CustomerRequestsList = ({ refreshKey }: Props) => {
   return (
     <div className="space-y-1.5">
       {requests.map((request) => {
-        const warrantyDays = request.warranty_months ? request.warranty_months * 30 : 0;
+        const warrantyDays = request.warranty_days || 0;
         let warrantyText = null;
         
-        if (request.warranty_months && request.warranty_months > 0) {
+        if (request.warranty_days && request.warranty_days > 0) {
           if (request.status === 'confirmed' && request.confirmed_at) {
             const warranty = calculateWarranty(request.confirmed_at, warrantyDays);
             warrantyText = warranty.isActive 
               ? `${warranty.daysRemaining} dias restantes`
               : `Expirada`;
           } else {
-            warrantyText = `${request.warranty_months} ${request.warranty_months === 1 ? 'mês' : 'meses'}`;
+            warrantyText = `${request.warranty_days} ${request.warranty_days === 1 ? 'dia' : 'dias'}`;
           }
         }
 

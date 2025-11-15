@@ -81,7 +81,7 @@ export const quickSalesStore = {
       paymentBreakdown: row.payment_breakdown as { cash: number; pix: number; card: number } | undefined,
       paymentMethod: row.payment_method as "cash" | "pix" | "card" | undefined,
       taxAmount: Number(row.digital_tax || 0),
-      warranty: row.warranty_months || undefined,
+      warranty: row.warranty_days || undefined,
       warrantyExpiresAt: undefined,
       notes: row.notes || undefined,
       saleDate: row.created_at,
@@ -154,7 +154,7 @@ export const quickSalesStore = {
         payment_breakdown: paymentBreakdown,
         payment_method: paymentMethod,
         digital_tax: newSale.taxAmount || 0,
-        warranty_months: newSale.warranty ?? 90, // Default 90 dias
+        warranty_days: newSale.warranty ?? 90, // Default 90 dias
         notes: newSale.notes || null,
         created_at: newSale.createdAt,
         updated_at: newSale.updatedAt,
@@ -199,7 +199,7 @@ export const quickSalesStore = {
     if (data.paymentBreakdown !== undefined) updateData.payment_breakdown = data.paymentBreakdown;
     if (data.paymentMethod !== undefined) updateData.payment_method = data.paymentMethod;
     if (data.taxAmount !== undefined) updateData.digital_tax = data.taxAmount;
-    if (data.warranty !== undefined) updateData.warranty_months = data.warranty;
+    if (data.warranty !== undefined) updateData.warranty_days = data.warranty;
     updateData.profit = profit;
     updateData.margin = salePrice > 0 ? (profit / salePrice) * 100 : 0;
 
@@ -287,7 +287,7 @@ export const quickSalesStore = {
       paymentBreakdown: row.payment_breakdown,
       digitalTax: row.digital_tax,
       taxAmount: row.digital_tax,
-      warrantyMonths: row.warranty_months,
+      warrantyMonths: row.warranty_days,
       notes: row.notes,
       saleDate: row.created_at,
       createdAt: row.created_at,

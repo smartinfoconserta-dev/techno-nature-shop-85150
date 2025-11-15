@@ -166,7 +166,7 @@ export type Database = {
           sale_price: number
           status: string
           updated_at: string
-          warranty_months: number | null
+          warranty_days: number | null
         }
         Insert: {
           admin_notes?: string | null
@@ -189,7 +189,7 @@ export type Database = {
           sale_price: number
           status?: string
           updated_at?: string
-          warranty_months?: number | null
+          warranty_days?: number | null
         }
         Update: {
           admin_notes?: string | null
@@ -212,7 +212,7 @@ export type Database = {
           sale_price?: number
           status?: string
           updated_at?: string
-          warranty_months?: number | null
+          warranty_days?: number | null
         }
         Relationships: [
           {
@@ -370,7 +370,7 @@ export type Database = {
           sold_date: string | null
           sold_on_credit: boolean
           specifications: Json | null
-          warranty_months: number | null
+          warranty_days: number | null
         }
         Insert: {
           base_price: number
@@ -402,7 +402,7 @@ export type Database = {
           sold_date?: string | null
           sold_on_credit?: boolean
           specifications?: Json | null
-          warranty_months?: number | null
+          warranty_days?: number | null
         }
         Update: {
           base_price?: number
@@ -434,7 +434,7 @@ export type Database = {
           sold_date?: string | null
           sold_on_credit?: boolean
           specifications?: Json | null
-          warranty_months?: number | null
+          warranty_days?: number | null
         }
         Relationships: [
           {
@@ -488,7 +488,7 @@ export type Database = {
           profit: number
           sale_price: number
           updated_at: string
-          warranty_months: number | null
+          warranty_days: number | null
         }
         Insert: {
           brand?: string | null
@@ -510,7 +510,7 @@ export type Database = {
           profit: number
           sale_price: number
           updated_at?: string
-          warranty_months?: number | null
+          warranty_days?: number | null
         }
         Update: {
           brand?: string | null
@@ -532,7 +532,7 @@ export type Database = {
           profit?: number
           sale_price?: number
           updated_at?: string
-          warranty_months?: number | null
+          warranty_days?: number | null
         }
         Relationships: [
           {
@@ -573,7 +573,7 @@ export type Database = {
           status: string
           total_amount: number
           updated_at: string
-          warranty_months: number | null
+          warranty_days: number | null
         }
         Insert: {
           archived?: boolean
@@ -603,7 +603,7 @@ export type Database = {
           status: string
           total_amount: number
           updated_at?: string
-          warranty_months?: number | null
+          warranty_days?: number | null
         }
         Update: {
           archived?: boolean
@@ -633,7 +633,7 @@ export type Database = {
           status?: string
           total_amount?: number
           updated_at?: string
-          warranty_months?: number | null
+          warranty_days?: number | null
         }
         Relationships: [
           {

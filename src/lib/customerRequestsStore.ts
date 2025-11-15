@@ -10,7 +10,7 @@ export interface CustomerRequest {
   cost_price?: number;
   brand?: string;
   category?: string;
-  warranty_months?: number;
+  warranty_days?: number;
   payment_method?: string;
   installments?: number;
   installment_rate?: number;
@@ -172,7 +172,7 @@ export const customerRequestsStore = {
         paymentMethod: req.payment_method || "",
         installments: req.installments || 1,
         installmentRate: req.installment_rate || 0,
-        warrantyMonths: req.warranty_months || 0,
+        warrantyMonths: req.warranty_days || 0,
         notes: req.notes || "",
       })) || []
     );
