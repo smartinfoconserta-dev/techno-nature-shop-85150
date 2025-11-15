@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { DollarSign, Calendar, Eye, Trash2, AlertCircle, UserPlus, Edit, FileDown, ShoppingCart, CheckCircle2, Archive, TestTube, Search, X, ChevronDown, Users, List } from "lucide-react";
+import { DollarSign, Calendar, Eye, Trash2, AlertCircle, UserPlus, Edit, FileDown, ShoppingCart, ChevronDown, Search, X, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { generateCustomerReportPDF } from "@/lib/generateCustomerReportPDF";
 import { format } from "date-fns";
@@ -22,6 +22,8 @@ import EditCustomerDialog from "./EditCustomerDialog";
 import QuickSaleDialog from "./QuickSaleDialog";
 import ReceivableItem from "./ReceivableItem";
 import ReceivablesSummaryBar from "./ReceivablesSummaryBar";
+import { FilterBar } from "./FilterBar";
+import { ActiveFilterChip } from "./ActiveFilterChip";
 import {
   AlertDialog,
   AlertDialogAction,
