@@ -41,15 +41,16 @@ const ProductGalleryDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl w-full p-0 overflow-hidden">
-        <div className="relative bg-background">
+      <DialogContent className="relative max-w-4xl w-full p-0 overflow-hidden bg-white">
+        <div className="relative bg-white">
           <Button
             variant="ghost"
             size="icon"
-            className="absolute top-4 right-4 z-10 bg-background/80 backdrop-blur-sm hover:bg-background"
+            className="absolute top-4 right-4 z-[120] bg-white/90 backdrop-blur-sm border border-gray-200 shadow-lg hover:bg-gray-100 text-gray-700"
+            aria-label="Fechar galeria"
             onClick={() => onOpenChange(false)}
           >
-            <X className="h-4 w-4" />
+            <X className="h-5 w-5" />
           </Button>
 
           <div className="p-8">
@@ -71,8 +72,8 @@ const ProductGalleryDialog = ({
               </CarouselContent>
               {images.length > 1 && (
                 <>
-                  <CarouselPrevious className="left-4" />
-                  <CarouselNext className="right-4" />
+                  <CarouselPrevious className="left-4 z-[110] bg-white/90 backdrop-blur-sm border border-gray-200 shadow-lg" />
+                  <CarouselNext className="right-4 z-[110] bg-white/90 backdrop-blur-sm border border-gray-200 shadow-lg" />
                 </>
               )}
             </Carousel>
