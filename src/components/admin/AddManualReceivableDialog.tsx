@@ -90,6 +90,8 @@ export function AddManualReceivableDialog({
       category: "",
       costPrice: 0,
       salePrice: 0,
+      saleDate: undefined,
+      dueDate: undefined,
       initialCash: 0,
       initialPix: 0,
       initialCard: 0,
@@ -108,7 +110,20 @@ export function AddManualReceivableDialog({
       setCouponDiscount(0);
       setCouponError("");
       setShowAdvanced(false);
-      form.reset();
+      form.reset({
+        productName: "",
+        brand: "",
+        category: "",
+        costPrice: 0,
+        salePrice: 0,
+        saleDate: undefined,
+        dueDate: undefined,
+        initialCash: 0,
+        initialPix: 0,
+        initialCard: 0,
+        warranty: 0,
+        notes: "",
+      });
     }
   }, [open, form]);
 
@@ -143,6 +158,9 @@ export function AddManualReceivableDialog({
   const onSubmit = async (data: FormData) => {
     if (!customerId) return;
 
+    console.log("🐛 DEBUG - Data de Venda selecionada:", data.saleDate);
+    console.log("🐛 DEBUG - Data formatada:", data.saleDate ? format(data.saleDate, "dd/MM/yyyy") : "undefined");
+
     setIsLoading(true);
 
     try {
@@ -173,6 +191,10 @@ export function AddManualReceivableDialog({
       const paymentDate = data.saleDate 
         ? format(data.saleDate, "yyyy-MM-dd") 
         : format(new Date(), "yyyy-MM-dd");
+      
+      console.log("🐛 DEBUG - paymentDate para pagamentos iniciais:", paymentDate);
+      console.log("🐛 DEBUG - Warranty days:", data.warranty);
+      
       const initialPayments: any[] = [];
       let totalInitial = 0;
 
@@ -210,6 +232,17 @@ export function AddManualReceivableDialog({
       }
 
       // Cria conta a receber com todos os pagamentos iniciais
+      const finalCreatedAt = data.saleDate
+        ? new Date(Date.UTC(
+            data.saleDate.getFullYear(),
+            data.saleDate.getMonth(),
+            data.saleDate.getDate(),
+            12, 0, 0
+          )).toISOString()
+        : undefined;
+
+      console.log("🐛 DEBUG - createdAt que será salvo:", finalCreatedAt);
+
       const receivable = await receivablesStore.addReceivable({
         customerId,
         customerCode: customer.code,
@@ -227,14 +260,7 @@ export function AddManualReceivableDialog({
         source: productSource === "catalog" ? "catalog" : "manual",
         warranty: data.warranty,
         warrantyExpiresAt,
-        createdAt: data.saleDate
-          ? new Date(Date.UTC(
-              data.saleDate.getFullYear(),
-              data.saleDate.getMonth(),
-              data.saleDate.getDate(),
-              12, 0, 0
-            )).toISOString()
-          : undefined,
+        createdAt: finalCreatedAt,
       });
 
       // Se for do catálogo, marca produto como vendido
