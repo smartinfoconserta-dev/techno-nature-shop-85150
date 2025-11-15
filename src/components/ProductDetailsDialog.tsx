@@ -240,7 +240,7 @@ const ProductDetailsDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="relative max-w-4xl p-0">
+      <DialogContent className="relative max-w-4xl p-0 bg-white">
         <DialogTitle className="sr-only">{name}</DialogTitle>
         <DialogDescription className="sr-only">
           Detalhes completos do produto {name} - {brand}
@@ -272,8 +272,8 @@ const ProductDetailsDialog = ({
                     </CarouselItem>
                   )}
                 </CarouselContent>
-                <CarouselPrevious className="left-2 top-1/2 -translate-y-1/2 z-[110] bg-background/90 border border-border shadow-md backdrop-blur supports-[backdrop-filter]:bg-background/60" />
-                <CarouselNext className="right-2 top-1/2 -translate-y-1/2 z-[110] bg-background/90 border border-border shadow-md backdrop-blur supports-[backdrop-filter]:bg-background/60" />
+                <CarouselPrevious className="left-2 top-1/2 -translate-y-1/2 z-[110] bg-white/90 backdrop-blur-sm border border-gray-200 shadow-lg" />
+                <CarouselNext className="right-2 top-1/2 -translate-y-1/2 z-[110] bg-white/90 backdrop-blur-sm border border-gray-200 shadow-lg" />
               </Carousel>
             <div className="mt-2 text-xs text-muted-foreground">{current + 1} / {images?.length || 1}</div>
           </div>
@@ -505,10 +505,10 @@ const ProductDetailsDialog = ({
         
         <button
           onClick={() => onOpenChange(false)}
-          className="absolute right-3 top-3 z-[120] rounded-full p-1.5 bg-background border border-border shadow-md transition-colors hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 pointer-events-auto touch-manipulation"
+          className="absolute right-3 top-3 z-[120] rounded-full p-2 bg-white/90 backdrop-blur-sm border border-gray-200 shadow-lg transition-colors hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400 pointer-events-auto"
           aria-label="Fechar"
         >
-          <X className="h-4 w-4 text-foreground" />
+          <X className="h-5 w-5 text-gray-700" />
         </button>
       </DialogContent>
 
