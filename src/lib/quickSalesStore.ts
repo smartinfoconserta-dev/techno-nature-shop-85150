@@ -85,7 +85,7 @@ export const quickSalesStore = {
       warranty: row.warranty_days || undefined,
       warrantyExpiresAt: undefined,
       notes: row.notes || undefined,
-      saleDate: row.created_at,
+      saleDate: row.sale_date || row.created_at,
       createdAt: row.created_at,
       updatedAt: row.updated_at || row.created_at,
     }));
@@ -132,7 +132,7 @@ export const quickSalesStore = {
       warranty: data.warranty,
       warrantyExpiresAt: data.warrantyExpiresAt,
       notes: data.notes,
-      saleDate: new Date().toISOString(),
+      saleDate: data.saleDate || new Date().toISOString(),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -155,8 +155,9 @@ export const quickSalesStore = {
         payment_breakdown: paymentBreakdown,
         payment_method: paymentMethod,
         digital_tax: newSale.taxAmount || 0,
-        warranty_days: newSale.warranty ?? 90, // Default 90 dias
+        warranty_days: newSale.warranty ?? 90,
         notes: newSale.notes || null,
+        sale_date: newSale.saleDate.split('T')[0], // Extrai apenas a data YYYY-MM-DD
         created_at: newSale.createdAt,
         updated_at: newSale.updatedAt,
       } as any);
@@ -201,6 +202,7 @@ export const quickSalesStore = {
     if (data.paymentMethod !== undefined) updateData.payment_method = data.paymentMethod;
     if (data.taxAmount !== undefined) updateData.digital_tax = data.taxAmount;
     if (data.warranty !== undefined) updateData.warranty_days = data.warranty;
+    if (data.saleDate !== undefined) updateData.sale_date = data.saleDate.split('T')[0];
     updateData.profit = profit;
     updateData.margin = salePrice > 0 ? (profit / salePrice) * 100 : 0;
 
