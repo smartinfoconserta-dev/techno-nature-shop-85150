@@ -263,6 +263,8 @@ export function AddManualReceivableDialog({
         );
       }
 
+      await receivablesStore.refreshFromBackend();
+      
       toast({
         title: "Venda registrada!",
         description: `${data.productName} - R$ ${data.salePrice.toFixed(2)}${productSource === "catalog" ? " (vinculado ao catálogo)" : ""}`,

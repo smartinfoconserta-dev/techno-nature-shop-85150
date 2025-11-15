@@ -68,7 +68,8 @@ const ReceivablesTab = () => {
     applyFilters();
   }, [receivables, statusFilter, customerFilter, searchQuery]);
 
-  const loadReceivables = () => {
+  const loadReceivables = async () => {
+    await receivablesStore.refreshFromBackend();
     const data = activeTab === "active" 
       ? receivablesStore.getActiveReceivables()
       : receivablesStore.getArchivedReceivables();
@@ -170,6 +171,7 @@ const ReceivablesTab = () => {
         description: `R$ ${totalPaid.toFixed(2)} adicionado com sucesso`,
       });
 
+      await receivablesStore.refreshFromBackend();
       loadReceivables();
       setSelectedReceivable(null);
       setShowPaymentDialog(false);
@@ -210,6 +212,8 @@ const ReceivablesTab = () => {
       
       // Deletar o recebível
       await receivablesStore.deleteReceivable(receivableToDelete);
+      await receivablesStore.refreshFromBackend();
+      
       toast({
         title: "Conta removida",
         description: "Conta a receber removida com sucesso e produto devolvido ao estoque",
