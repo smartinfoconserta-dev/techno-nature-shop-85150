@@ -294,43 +294,76 @@ const ProductDetailsDialog = ({
             </div>
 
             {/* Seleção de pagamento */}
-            <div className="mt-4 flex flex-wrap gap-2">
-              <Button
-                variant={selectedPayment?.type === 'cash' ? 'default' : 'outline'}
-                onClick={() => setSelectedPayment({ type: 'cash', cashValue: calculateCashPriceWithPassOn(displayPrice, passOnCashDiscount || false, price) })}
-              >
-                <CreditCard className="mr-2 h-4 w-4" /> À vista
-              </Button>
-
+            <div className="mt-4">
               <Popover open={paymentPopoverOpen} onOpenChange={setPaymentPopoverOpen}>
                 <PopoverTrigger asChild>
-                  <Button variant="outline">
-                    <ChevronDown className="mr-2 h-4 w-4" /> Parcelar
+                  <Button variant="outline" className="w-full">
+                    <CreditCard className="mr-2 h-4 w-4" /> Formas de Pagamento
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-80" side="bottom" align="start" sideOffset={8} avoidCollisions={true} collisionPadding={20}>
-                  <div className="space-y-2 max-h-80 overflow-y-auto">
-                    {isLoadingInstallments ? (
-                      <div className="text-sm text-muted-foreground">Carregando...</div>
-                    ) : (
-                      installmentOptions.map((option) => (
-                        <button
-                          key={option.installments}
-                          ref={(el) => (installmentRefs.current[option.installments] = el)}
-                          onClick={() => handleInstallmentClick(option)}
-                          className={
-                            'w-full text-left rounded-md border bg-background px-3 py-2 text-sm transition-colors hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring ' +
-                            (selectedPayment?.type === 'installment' && selectedPayment.data?.installments === option.installments ? 'ring-2 ring-primary' : '')
-                          }
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="font-medium">{option.installments}x</span>
-                            <span className="text-foreground">R$ {option.installmentValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                          </div>
-                          <div className="text-xs text-muted-foreground">Total: R$ {option.totalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                        </button>
-                      ))
-                    )}
+                  <div className="space-y-3">
+                    {/* Título */}
+                    <h3 className="font-medium text-foreground">Escolha a forma de pagamento</h3>
+                    
+                    {/* Ver preço original */}
+                    <Button 
+                      variant="ghost" 
+                      className="w-full justify-between text-sm h-auto py-2"
+                      onClick={() => {
+                        setSelectedPayment(null);
+                        setPaymentPopoverOpen(false);
+                      }}
+                    >
+                      <span>Ver preço original</span>
+                      <span className="font-medium">R$ {displayPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    </Button>
+                    
+                    {/* À vista com desconto */}
+                    <Button 
+                      variant="ghost" 
+                      className="w-full justify-between text-sm h-auto py-2"
+                      onClick={() => {
+                        setSelectedPayment({ type: 'cash', cashValue: calculateCashPriceWithPassOn(displayPrice, passOnCashDiscount || false, price) });
+                        setPaymentPopoverOpen(false);
+                      }}
+                    >
+                      <span>💰 À vista (5% desconto)</span>
+                      <span className="font-medium text-green-600">R$ {calculateCashPriceWithPassOn(displayPrice, passOnCashDiscount || false, price).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    </Button>
+                    
+                    {/* Seção de Parcelamento */}
+                    <div className="border-t pt-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium">💳 Parcelamento (Visa/Mastercard)</span>
+                        <span className="text-xs text-muted-foreground">Role para ver mais</span>
+                      </div>
+                      
+                      <div className="space-y-2 max-h-60 overflow-y-auto relative">
+                        {isLoadingInstallments ? (
+                          <div className="text-sm text-muted-foreground">Carregando...</div>
+                        ) : (
+                          installmentOptions.map((option) => (
+                            <button
+                              key={option.installments}
+                              ref={(el) => (installmentRefs.current[option.installments] = el)}
+                              onClick={() => handleInstallmentClick(option)}
+                              className={
+                                'w-full text-left rounded-md border bg-background px-3 py-2 text-sm transition-colors hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring ' +
+                                (selectedPayment?.type === 'installment' && selectedPayment.data?.installments === option.installments ? 'ring-2 ring-primary' : '')
+                              }
+                            >
+                              <div className="flex items-center justify-between">
+                                <span className="font-medium">{option.installments}x</span>
+                                <span className="text-foreground">R$ {option.installmentValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                              </div>
+                              <div className="text-xs text-muted-foreground">Total: R$ {option.totalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                            </button>
+                          ))
+                        )}
+                        <div className="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-background to-transparent pointer-events-none" />
+                      </div>
+                    </div>
                   </div>
                 </PopoverContent>
               </Popover>
