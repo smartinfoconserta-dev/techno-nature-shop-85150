@@ -293,13 +293,17 @@ export function AddManualReceivableDialog({
               <RadioGroup 
                 value={productSource} 
                 onValueChange={(v) => {
-                  setProductSource(v as "manual" | "catalog");
-                  if (v === "manual") {
+                  const newSource = v as "manual" | "catalog";
+                  
+                  // Só limpa os campos se REALMENTE mudou de catalog → manual
+                  if (productSource === "catalog" && newSource === "manual") {
                     setSelectedProductId("");
                     form.setValue("productName", "");
                     form.setValue("costPrice", 0);
                     form.setValue("salePrice", 0);
                   }
+                  
+                  setProductSource(newSource);
                 }}
               >
                 <div className="flex items-center space-x-2">
