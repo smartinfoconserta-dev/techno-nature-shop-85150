@@ -52,9 +52,10 @@ const isWarrantyExpired = (saleDate: string, warrantyDays: number = 90): boolean
 
 const shouldAutoArchiveQuickSale = (sale: QuickSale): boolean => {
   // Vendas rápidas são sempre pagas, então só verifica garantia
+  // Usar ?? em vez de || para respeitar warranty = 0 (sem garantia)
   const warrantyExpired = isWarrantyExpired(
     sale.saleDate, 
-    sale.warranty || 3
+    sale.warranty ?? 3
   );
   return warrantyExpired; // Vendas rápidas com garantia expirada = arquivadas
 };

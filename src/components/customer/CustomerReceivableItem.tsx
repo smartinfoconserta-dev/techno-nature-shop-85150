@@ -31,7 +31,8 @@ export const CustomerReceivableItem = ({
   onDelete,
   getStatusBadge 
 }: CustomerReceivableItemProps) => {
-  const warrantyDays = receivable.warranty || 0;
+  // Usar ?? em vez de || para respeitar warranty = 0 (sem garantia)
+  const warrantyDays = receivable.warranty ?? 0;
 
   return (
     <div className="p-3 md:p-4 border rounded-lg hover:shadow-sm transition-shadow bg-card">

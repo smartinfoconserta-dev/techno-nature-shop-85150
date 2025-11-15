@@ -9,8 +9,22 @@ interface WarrantyBadgeProps {
   size?: "sm" | "default" | "lg";
 }
 
-const WarrantyBadge = ({ saleDate, warrantyDays = 90, size = "default" }: WarrantyBadgeProps) => {
-  const warranty = calculateWarranty(saleDate, warrantyDays);
+const WarrantyBadge = ({ saleDate, warrantyDays, size = "default" }: WarrantyBadgeProps) => {
+  // Se não foi passado warrantyDays, usar 90 como padrão
+  // Usar ?? para respeitar warranty = 0 (sem garantia)
+  const actualWarrantyDays = warrantyDays ?? 90;
+  
+  // Se warranty_days = 0, mostrar "Sem Garantia"
+  if (actualWarrantyDays === 0) {
+    return (
+      <Badge variant="secondary" className="gap-1 bg-gray-100 text-gray-700 border-gray-300">
+        <XCircle className="w-3 h-3" />
+        Sem garantia
+      </Badge>
+    );
+  }
+
+  const warranty = calculateWarranty(saleDate, actualWarrantyDays);
 
   if (!warranty.isActive) {
     return (
