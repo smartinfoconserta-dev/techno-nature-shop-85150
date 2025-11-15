@@ -503,7 +503,7 @@ const ProductDetailsDialog = ({
         </div>
         <button
           onClick={() => onOpenChange(false)}
-          className="absolute right-3 top-3 z-[100] rounded-full p-1.5 bg-background border border-border shadow-md transition-colors hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 pointer-events-auto"
+          className="fixed md:absolute md:right-3 md:top-3 right-4 top-[calc(env(safe-area-inset-top)+12px)] z-[1000] rounded-full p-1.5 bg-background border border-border shadow-md transition-colors hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 pointer-events-auto"
           aria-label="Fechar"
         >
           <X className="h-4 w-4 text-foreground" />
