@@ -62,6 +62,7 @@ const MarkAsSoldDialog = ({
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [initialPayment, setInitialPayment] = useState("");
   const [saleDate, setSaleDate] = useState<Date | undefined>(undefined);
+  const [saleDateOpen, setSaleDateOpen] = useState(false);
   const [dueDate, setDueDate] = useState("");
   const [dueDateOpen, setDueDateOpen] = useState(false);
   const [notes, setNotes] = useState("");
@@ -562,7 +563,7 @@ const MarkAsSoldDialog = ({
                 {/* Data da Venda */}
                 <div className="space-y-2">
                   <Label>📅 Data da Venda (opcional)</Label>
-                  <Popover>
+                  <Popover open={saleDateOpen} onOpenChange={setSaleDateOpen}>
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline"
@@ -575,14 +576,19 @@ const MarkAsSoldDialog = ({
                         {saleDate ? format(saleDate, "PPP", { locale: ptBR }) : "Data de hoje"}
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
+                    <PopoverContent className="w-auto p-0" align="start" side="bottom" sideOffset={8} collisionPadding={8}>
                       <Calendar
                         mode="single"
                         selected={saleDate}
-                        onSelect={setSaleDate}
+                        onSelect={(date) => {
+                          if (date) {
+                            setSaleDate(date);
+                            requestAnimationFrame(() => setSaleDateOpen(false));
+                          }
+                        }}
                         initialFocus
                         locale={ptBR}
-                        className="pointer-events-auto"
+                        className={cn("p-3 pointer-events-auto")}
                       />
                     </PopoverContent>
                   </Popover>
@@ -660,14 +666,14 @@ const MarkAsSoldDialog = ({
                         {dueDate ? format(new Date(dueDate), "dd/MM/yyyy", { locale: ptBR }) : "Selecionar data"}
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
+                    <PopoverContent className="w-auto p-0" align="start" side="bottom" sideOffset={8} collisionPadding={8}>
                       <Calendar
                         mode="single"
                         selected={dueDate ? new Date(dueDate) : undefined}
                         onSelect={(date) => {
                           if (date) {
                             setDueDate(format(date, "yyyy-MM-dd"));
-                            setDueDateOpen(false);
+                            requestAnimationFrame(() => setDueDateOpen(false));
                           }
                         }}
                         disabled={(date) => date < new Date()}
