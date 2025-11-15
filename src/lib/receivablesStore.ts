@@ -58,7 +58,7 @@ const shouldAutoArchive = (receivable: Receivable): boolean => {
   const isPaid = receivable.status === 'paid';
   const warrantyExpired = isWarrantyExpired(
     receivable.createdAt, 
-    receivable.warrantyMonths ?? 3
+    receivable.warrantyMonths ?? 0
   );
   return isPaid && warrantyExpired;
 };
@@ -231,7 +231,7 @@ export const receivablesStore = {
         payments: receivable.payments || [],
         coupon_code: receivable.couponCode || null,
         coupon_discount: receivable.couponDiscount || null,
-        warranty_days: receivable.warrantyMonths ?? 90, // Default 90 dias
+        warranty_days: receivable.warranty ?? 0,
         notes: receivable.notes || null,
         archived: receivable.archived || false,
         created_at: receivable.createdAt,
