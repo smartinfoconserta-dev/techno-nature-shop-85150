@@ -349,8 +349,29 @@ const ProductDetailsDialog = ({
             <div className="mt-4">
               <Popover modal open={paymentPopoverOpen} onOpenChange={setPaymentPopoverOpen}>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full">
-                    <CreditCard className="mr-2 h-4 w-4" /> Formas de Pagamento
+                  <Button 
+                    variant="default" 
+                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-md"
+                  >
+                    <div className="flex items-center gap-2 w-full">
+                      <CreditCard className="h-4 w-4" />
+                      <span>Formas de Pagamento</span>
+                      {/* Bandeiras Visa e Mastercard */}
+                      <div className="flex gap-1 ml-auto">
+                        {/* Visa */}
+                        <svg className="h-5 w-7" viewBox="0 0 48 32" fill="none">
+                          <rect width="48" height="32" rx="4" fill="white"/>
+                          <path d="M20.5 11h-4l-2.5 10h2l.5-2h2.5l.5 2h2.5l-2-10zm-2.5 6l1-4 1 4h-2z" fill="#1A1F71"/>
+                        </svg>
+                        {/* Mastercard */}
+                        <svg className="h-5 w-7" viewBox="0 0 48 32" fill="none">
+                          <rect width="48" height="32" rx="4" fill="white"/>
+                          <circle cx="18" cy="16" r="7" fill="#EB001B"/>
+                          <circle cx="30" cy="16" r="7" fill="#FF5F00"/>
+                          <path d="M24 10.5a10 10 0 000 11 10 10 0 000-11z" fill="#F79E1B"/>
+                        </svg>
+                      </div>
+                    </div>
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent 
@@ -359,11 +380,11 @@ const ProductDetailsDialog = ({
                   align="center" 
                   sideOffset={4} 
                   avoidCollisions 
-                  collisionPadding={{ top: 100, bottom: 20, left: 20, right: 20 }}
+                  collisionPadding={{ top: 120, bottom: 20, left: 20, right: 20 }}
                   onWheelCapture={(e) => e.stopPropagation()}
                   onTouchMove={(e) => e.stopPropagation()}
                 >
-                  <div className="space-y-3">
+                  <div className="space-y-3 pt-2">
                     {/* Título */}
                     <h3 className="font-medium text-foreground">Escolha a forma de pagamento</h3>
                     
