@@ -581,18 +581,21 @@ export const productsStore = {
     totalAmount: number,
     receivableId: string,
     warranty?: number,
-    warrantyExpiresAt?: string
+    warrantyExpiresAt?: string,
+    saleDate?: string
   ): Product {
     const list = this.getAllProducts();
     const idx = list.findIndex((p) => p.id === id);
     if (idx === -1) throw new Error("Produto não encontrado");
+
+    const soldDate = saleDate || new Date().toISOString();
 
     const updated: Product = {
       ...list[idx],
       sold: true,
       buyerName: buyerName.trim(),
       salePrice: totalAmount,
-      saleDate: new Date().toISOString(),
+      saleDate: soldDate,
       warranty,
       receivableId,
       soldOnCredit: true,
@@ -609,7 +612,7 @@ export const productsStore = {
           sold: true,
           customer_name: buyerName.trim(),
           sale_price: totalAmount,
-          sold_date: new Date().toISOString(),
+          sold_date: soldDate,
           warranty_days: warranty,
           receivable_id: receivableId,
           sold_on_credit: true,
