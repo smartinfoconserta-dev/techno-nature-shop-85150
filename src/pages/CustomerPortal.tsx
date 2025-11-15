@@ -85,7 +85,10 @@ const CustomerPortal = () => {
       }
 
       const { data, error } = await supabase.functions.invoke("portal-get-receivables", {
-        body: { token, view },
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: { view },
       });
 
       if (error) throw error;
