@@ -79,7 +79,7 @@ serve(async (req) => {
         customer_name: customer.name,
         product_name: productName,
         sale_price: salePrice,
-        warranty_months: null,
+        warranty_days: null,
         status: "pending",
         notes: notes || null,
       })

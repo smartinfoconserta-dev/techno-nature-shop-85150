@@ -104,7 +104,7 @@ function mapRowToProduct(row: any): Product {
     invoiceUrl: undefined,
     soldOnCredit: !!row.sold_on_credit,
     receivableId: row.receivable_id || undefined,
-    warranty: row.warranty_months || undefined,
+    warranty: row.warranty_days || undefined,
     warrantyExpiresAt: undefined,
     expenses: ((row.expenses as any[]) || []).map((exp: any) => ({
       id: exp.id || String(Date.now()),
@@ -261,7 +261,7 @@ export const productsStore = {
     if (data.taxAmount !== undefined) updateData.digital_tax = data.taxAmount;
     if (data.saleDate !== undefined) updateData.sold_date = data.saleDate;
     if (data.buyerName !== undefined) updateData.customer_name = data.buyerName;
-    if (data.warranty !== undefined) updateData.warranty_months = data.warranty;
+    if (data.warranty !== undefined) updateData.warranty_days = data.warranty;
     if (data.expenses !== undefined) updateData.expenses = data.expenses;
 
     const { error } = await supabase.from("products").update(updateData).eq("id", id);
@@ -397,7 +397,7 @@ export const productsStore = {
             digital_tax: preciseTax,
             sold_date: new Date().toISOString(),
             customer_name: buyerName.trim(),
-            warranty_months: warranty,
+            warranty_days: warranty,
           })
           .eq("id", id);
 
@@ -606,13 +606,13 @@ export const productsStore = {
         await supabase
           .from("products")
           .update({
-            sold: true,
-            customer_name: buyerName.trim(),
-            sale_price: totalAmount,
-            sold_date: new Date().toISOString(),
-            warranty_months: warranty,
-            receivable_id: receivableId,
-            sold_on_credit: true,
+          sold: true,
+          customer_name: buyerName.trim(),
+          sale_price: totalAmount,
+          sold_date: new Date().toISOString(),
+          warranty_days: warranty,
+          receivable_id: receivableId,
+          sold_on_credit: true,
           })
           .eq("id", id);
         await this.refreshFromBackend();

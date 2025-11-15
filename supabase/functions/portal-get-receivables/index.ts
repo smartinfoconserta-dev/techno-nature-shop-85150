@@ -71,23 +71,23 @@ Deno.serve(async (req) => {
     }
 
     // Função auxiliar para calcular se a garantia venceu
-    const isWarrantyExpired = (createdAt: string, warrantyMonths?: number): boolean => {
-      if (!warrantyMonths || warrantyMonths === 0) return true;
+    const isWarrantyExpired = (createdAt: string, warrantyDays?: number): boolean => {
+      if (!warrantyDays || warrantyDays === 0) return true;
       
       const saleDate = new Date(createdAt);
       const expirationDate = new Date(saleDate);
-      expirationDate.setMonth(expirationDate.getMonth() + warrantyMonths);
+      expirationDate.setDate(expirationDate.getDate() + warrantyDays);
       
       return new Date() > expirationDate;
     };
 
     // Função auxiliar para calcular data de expiração da garantia
-    const calculateWarrantyExpiration = (createdAt: string, warrantyMonths?: number): string => {
-      if (!warrantyMonths || warrantyMonths === 0) return createdAt;
+    const calculateWarrantyExpiration = (createdAt: string, warrantyDays?: number): string => {
+      if (!warrantyDays || warrantyDays === 0) return createdAt;
       
       const saleDate = new Date(createdAt);
       const expirationDate = new Date(saleDate);
-      expirationDate.setMonth(expirationDate.getMonth() + warrantyMonths);
+      expirationDate.setDate(expirationDate.getDate() + warrantyDays);
       
       return expirationDate.toISOString();
     };
@@ -115,9 +115,9 @@ Deno.serve(async (req) => {
     // Mapear e calcular arquivamento automático
     const allMappedReceivables = (receivables || []).map(row => {
       const isPaid = row.status === 'paid';
-      const warrantyMonths = row.warranty_months || 3;
-      const warrantyExpired = isWarrantyExpired(row.created_at, warrantyMonths);
-      const warrantyExpiresAt = calculateWarrantyExpiration(row.created_at, warrantyMonths);
+      const warrantyDays = row.warranty_days || 90;
+      const warrantyExpired = isWarrantyExpired(row.created_at, warrantyDays);
+      const warrantyExpiresAt = calculateWarrantyExpiration(row.created_at, warrantyDays);
       
       return {
         id: row.id,
@@ -144,7 +144,7 @@ Deno.serve(async (req) => {
         archived: row.archived || false,
         createdAt: row.created_at,
         updatedAt: row.updated_at || row.created_at,
-        warrantyMonths: warrantyMonths,
+        warrantyMonths: warrantyDays,
         warrantyExpiresAt: warrantyExpiresAt,
         autoArchived: isPaid && warrantyExpired, // Arquivamento automático
       };

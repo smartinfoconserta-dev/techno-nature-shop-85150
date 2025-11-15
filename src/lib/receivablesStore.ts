@@ -105,7 +105,7 @@ function mapRowToReceivable(row: any): Receivable {
     })),
     source: undefined,
     warranty: undefined,
-    warrantyMonths: (row.warranty_months === null || row.warranty_months === undefined) ? undefined : Number(row.warranty_months),
+    warrantyMonths: (row.warranty_days === null || row.warranty_days === undefined) ? undefined : Number(row.warranty_days),
     warrantyExpiresAt: undefined,
     notes: row.notes || undefined,
     archived: row.archived || false,
@@ -231,7 +231,7 @@ export const receivablesStore = {
         payments: receivable.payments || [],
         coupon_code: receivable.couponCode || null,
         coupon_discount: receivable.couponDiscount || null,
-        warranty_months: receivable.warrantyMonths ?? 90, // Default 90 dias
+        warranty_days: receivable.warrantyMonths ?? 90, // Default 90 dias
         notes: receivable.notes || null,
         archived: receivable.archived || false,
         created_at: receivable.createdAt,

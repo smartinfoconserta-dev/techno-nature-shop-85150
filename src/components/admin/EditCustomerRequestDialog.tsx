@@ -32,7 +32,7 @@ export const EditCustomerRequestDialog = ({ request, open, onOpenChange, onSucce
     costPrice: request.cost_price?.toString() || "",
     brand: request.brand || "",
     category: request.category || "",
-    warrantyMonths: (request.warranty_months ?? 90).toString(), // Já está em dias
+    warrantyMonths: (request.warranty_days ?? 90).toString(), // Garantia em dias
     paymentMethod: request.payment_method || "",
     installments: request.installments?.toString() || "1",
     adminNotes: request.admin_notes || "",
@@ -58,7 +58,7 @@ export const EditCustomerRequestDialog = ({ request, open, onOpenChange, onSucce
         cost_price: formData.costPrice ? parseFloat(formData.costPrice) : undefined,
         brand: formData.brand || undefined,
         category: formData.category || undefined,
-        warranty_months: parseInt(formData.warrantyMonths), // Salvar dias diretamente
+        warranty_days: parseInt(formData.warrantyMonths), // Salvar dias diretamente
         payment_method: formData.paymentMethod || undefined,
         installments: parseInt(formData.installments),
         admin_notes: formData.adminNotes || undefined,
@@ -125,7 +125,7 @@ export const EditCustomerRequestDialog = ({ request, open, onOpenChange, onSucce
         cost_price: costPrice,
         brand: formData.brand,
         category: formData.category,
-        warranty_months: Math.floor(parseInt(formData.warrantyMonths) / 30),
+        warranty_days: parseInt(formData.warrantyMonths), // Salvar dias diretamente
         payment_method: formData.paymentMethod,
         installments: parseInt(formData.installments),
         installment_rate: parseFloat(formData.installments) > 1 ? 0 : undefined,
