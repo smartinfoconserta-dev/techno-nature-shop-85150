@@ -308,7 +308,7 @@ const ProductDetailsDialog = ({
                     <ChevronDown className="mr-2 h-4 w-4" /> Parcelar
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-80" side="bottom" align="start" sideOffset={8} avoidCollisions={true} collisionPadding={20}>
+                <PopoverContent className="w-80">
                   <div className="space-y-2 max-h-80 overflow-y-auto">
                     {isLoadingInstallments ? (
                       <div className="text-sm text-muted-foreground">Carregando...</div>
