@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { LogOut, Menu, Loader2, Database } from "lucide-react";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
+import { MobileAdminMenu } from "@/components/admin/MobileAdminMenu";
 import DashboardTab from "@/components/admin/DashboardTab";
 import ProductsMainTab from "@/components/admin/ProductsMainTab";
 import FinanceMainTab from "@/components/admin/FinanceMainTab";
@@ -87,14 +88,14 @@ const Admin = () => {
 
         {/* Conteúdo Principal */}
         <div className="flex-1 flex flex-col min-w-0">
-          {/* Header */}
-          <header className="border-b border-border bg-card sticky top-0 z-10">
+          {/* Header Desktop */}
+          <header className="hidden md:block border-b border-border bg-card sticky top-0 z-10">
             <div className="container mx-auto px-4 py-4 flex justify-between items-center">
               <div className="flex items-center gap-3 flex-1 min-w-0">
-                <SidebarTrigger className="md:flex hidden" />
+                <SidebarTrigger />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h1 className="text-xl md:text-2xl font-bold text-foreground">
+                    <h1 className="text-2xl font-bold text-foreground">
                       Painel Administrativo
                     </h1>
                     <Badge variant="secondary" className="gap-1 text-xs">
@@ -102,7 +103,7 @@ const Admin = () => {
                       Backend conectado ({productCount} produtos)
                     </Badge>
                   </div>
-                  <p className="text-xs md:text-sm text-muted-foreground truncate">
+                  <p className="text-sm text-muted-foreground truncate">
                     {user?.email} • {window.location.host}
                   </p>
                 </div>
@@ -114,37 +115,23 @@ const Admin = () => {
             </div>
           </header>
 
-          {/* Tabs Mobile - Apenas em telas pequenas */}
-          <div className="md:hidden border-b border-border bg-card sticky top-[73px] z-10">
-            <div className="overflow-x-auto">
-              <div className="inline-flex p-0.5 gap-0.5 min-w-full">
-                {[
-                  { value: "dashboard", label: "📊 Dashboard" },
-                  { value: "products", label: "📦 Produtos" },
-                  { value: "quick-sales", label: "⚡ Vendas Rápidas" },
-                  { value: "receivables", label: "📒 Caderneta" },
-                  { value: "notebook", label: `📓 Solicitações${pendingRequestsCount > 0 ? ` (${pendingRequestsCount})` : ""}` },
-                  { value: "customers", label: "👥 Clientes" },
-                  { value: "finance", label: "💰 Financeiro" },
-                  { value: "history", label: "📜 Histórico" },
-                  { value: "coupons", label: "🎟️ Cupons" },
-                  { value: "settings", label: "⚙️ Configurações" },
-                ].map((tab) => (
-                  <button
-                    key={tab.value}
-                    onClick={() => setActiveTab(tab.value)}
-                    className={`px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition-colors ${
-                      activeTab === tab.value
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-transparent text-muted-foreground hover:bg-muted"
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
+          {/* Header Mobile */}
+          <header className="md:hidden border-b border-border bg-card sticky top-0 z-10">
+            <div className="px-3 py-3 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <MobileAdminMenu
+                  activeTab={activeTab}
+                  onTabChange={setActiveTab}
+                  pendingRequestsCount={pendingRequestsCount}
+                  onLogout={handleLogout}
+                />
+                <h1 className="text-lg font-bold text-foreground">Admin</h1>
               </div>
+              <Button variant="ghost" onClick={handleLogout} size="sm" className="h-9">
+                <LogOut className="h-4 w-4" />
+              </Button>
             </div>
-          </div>
+          </header>
 
           {/* Conteúdo das Tabs */}
           <main className="flex-1 container mx-auto px-3 py-4 md:px-4 md:py-8">
