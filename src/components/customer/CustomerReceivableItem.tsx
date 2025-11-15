@@ -30,7 +30,7 @@ export const CustomerReceivableItem = ({
   onDelete,
   getStatusBadge 
 }: CustomerReceivableItemProps) => {
-  const warrantyDays = receivable.warrantyMonths ? receivable.warrantyMonths * 30 : 0;
+  const warrantyDays = receivable.warrantyMonths || 0;
 
   return (
     <div className="flex items-center gap-3 p-3 border rounded-lg hover:shadow-sm transition-shadow bg-card">

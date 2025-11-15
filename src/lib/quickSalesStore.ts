@@ -42,11 +42,11 @@ function saveQuickCache() {
 }
 
 // Helper functions for auto-archiving logic
-const isWarrantyExpired = (saleDate: string, warrantyMonths: number = 3): boolean => {
-  if (warrantyMonths === 0) return true;
+const isWarrantyExpired = (saleDate: string, warrantyDays: number = 90): boolean => {
+  if (warrantyDays === 0) return true;
   const sale = new Date(saleDate);
   const expirationDate = new Date(sale);
-  expirationDate.setMonth(expirationDate.getMonth() + warrantyMonths);
+  expirationDate.setDate(expirationDate.getDate() + warrantyDays);
   return new Date() > expirationDate;
 };
 
