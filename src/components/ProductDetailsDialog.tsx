@@ -323,7 +323,7 @@ const ProductDetailsDialog = ({
                     <CreditCard className="mr-2 h-4 w-4" /> Formas de Pagamento
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-[92vw] sm:w-80" side="bottom" align="start" sideOffset={8} avoidCollisions={true} collisionPadding={20}>
+                <PopoverContent className="w-[92vw] sm:w-[420px] max-h-[70vh] overflow-y-auto overflow-x-hidden p-3" side="bottom" align="start" sideOffset={8} avoidCollisions collisionPadding={20}>
                   <div className="space-y-3">
                     {/* Título */}
                     <h3 className="font-medium text-foreground">Escolha a forma de pagamento</h3>
@@ -361,11 +361,7 @@ const ProductDetailsDialog = ({
                         <span className="text-xs text-muted-foreground">Role para ver mais</span>
                       </div>
                       
-                      <div 
-                        className="space-y-2 max-h-[60vh] sm:max-h-60 overflow-y-auto overscroll-contain touch-pan-y relative pointer-events-auto"
-                        onWheel={(e) => e.stopPropagation()}
-                        onTouchMove={(e) => e.stopPropagation()}
-                      >
+                      <div className="space-y-2">
                         {isLoadingInstallments ? (
                           <div className="text-sm text-muted-foreground">Carregando...</div>
                         ) : (
@@ -387,7 +383,6 @@ const ProductDetailsDialog = ({
                             </button>
                           ))
                         )}
-                        <div className="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-background to-transparent pointer-events-none" />
                       </div>
                     </div>
                   </div>
