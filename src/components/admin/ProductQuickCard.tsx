@@ -18,9 +18,10 @@ const ProductQuickCard = ({ product, onClick }: ProductQuickCardProps) => {
 
   return (
     <Card 
-      className="cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-[1.02] group"
+      className="cursor-pointer transition-all duration-300 hover:shadow-xl hover:scale-[1.02] group relative before:absolute before:inset-0 before:rounded-lg before:p-[2px] before:bg-gradient-to-br before:from-primary before:to-primary-purple before:opacity-0 hover:before:opacity-100 before:transition-opacity before:-z-10"
       onClick={onClick}
     >
+      <div className="relative bg-card rounded-lg">
       <CardContent className="p-4 space-y-3">
         {/* Imagem */}
         <AspectRatio ratio={4 / 3}>
@@ -50,14 +51,15 @@ const ProductQuickCard = ({ product, onClick }: ProductQuickCardProps) => {
 
         {/* Preço */}
         <div className="flex items-center justify-between">
-          <p className="text-lg font-bold text-foreground">
+          <p className="text-lg font-bold bg-gradient-to-r from-primary to-primary-purple bg-clip-text text-transparent">
             {formatCurrency(product.price)}
           </p>
-          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+          <Badge variant="outline" className="bg-gradient-to-r from-primary/10 to-primary-purple/10 border-primary/20 text-primary font-semibold">
             Disponível
           </Badge>
         </div>
       </CardContent>
+      </div>
     </Card>
   );
 };

@@ -202,18 +202,19 @@ const ProductCard = ({ id, images, name, brand, category, specs, description, pr
   return (
     <>
       <Card 
-        className="overflow-hidden transition-all duration-200 hover:shadow-md cursor-pointer border-border/50 relative"
+        className="overflow-hidden transition-all duration-300 hover:shadow-xl cursor-pointer relative group before:absolute before:inset-0 before:rounded-lg before:p-[2px] before:bg-gradient-to-br before:from-primary before:to-primary-purple before:opacity-0 hover:before:opacity-100 before:transition-opacity before:-z-10"
         onClick={() => setIsDetailsOpen(true)}
       >
-        <div className="aspect-square overflow-hidden bg-muted relative group">
+        <div className="relative bg-card rounded-lg">
+        <div className="aspect-square overflow-hidden bg-muted relative">
           <img 
             src={mainImage} 
             alt={name}
             loading="lazy"
-            className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
+            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
           {hasMultipleImages && (
-            <Badge className="absolute bottom-2 right-2 gap-1 text-xs">
+            <Badge className="absolute bottom-2 right-2 gap-1 text-xs bg-gradient-to-r from-primary/90 to-primary-purple/90 border-0">
               <Image className="h-3 w-3" />
               +{images.length - 1}
             </Badge>
@@ -234,7 +235,7 @@ const ProductCard = ({ id, images, name, brand, category, specs, description, pr
           )}
           
           <div className="pt-2">
-            <p className="text-xl font-bold text-primary">
+            <p className="text-xl font-bold bg-gradient-to-r from-primary to-primary-purple bg-clip-text text-transparent">
               R$ {displayPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </p>
             <p className="text-xs text-muted-foreground mt-0.5">
@@ -246,6 +247,7 @@ const ProductCard = ({ id, images, name, brand, category, specs, description, pr
             </p>
           </div>
         </CardContent>
+        </div>
       </Card>
 
     <ProductGalleryDialog

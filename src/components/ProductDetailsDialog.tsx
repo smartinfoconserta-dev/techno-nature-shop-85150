@@ -295,7 +295,7 @@ const ProductDetailsDialog = ({
 
             {/* Preços */}
             <div className="mt-4">
-              <div className="text-3xl font-bold text-primary">
+              <div className="text-3xl font-bold bg-gradient-to-r from-primary to-primary-purple bg-clip-text text-transparent">
                 {(displayMode === 'installment' || displayMode === 'coupon-installment') && paymentDetails.installments && paymentDetails.installmentValue ? (
                   <>
                     {paymentDetails.installments}x de R$ {paymentDetails.installmentValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
