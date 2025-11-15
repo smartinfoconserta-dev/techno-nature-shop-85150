@@ -57,6 +57,7 @@ export function AddCustomerPaymentDialog({
 }: AddCustomerPaymentDialogProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [paymentDateOpen, setPaymentDateOpen] = useState(false);
   const [distributionPreview, setDistributionPreview] = useState<Array<{
     receivableId: string;
     productName: string;
@@ -384,7 +385,7 @@ export function AddCustomerPaymentDialog({
                     render={({ field }) => (
                       <FormItem className="flex flex-col">
                         <FormLabel>Data do Pagamento *</FormLabel>
-                        <Popover>
+                        <Popover open={paymentDateOpen} onOpenChange={setPaymentDateOpen}>
                           <PopoverTrigger asChild>
                             <FormControl>
                               <Button
@@ -403,12 +404,18 @@ export function AddCustomerPaymentDialog({
                               </Button>
                             </FormControl>
                           </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
+                          <PopoverContent className="w-auto p-0" align="start" side="bottom" sideOffset={8} collisionPadding={8}>
                             <Calendar
                               mode="single"
                               selected={field.value}
-                              onSelect={field.onChange}
+                              onSelect={(date) => {
+                                if (date) {
+                                  field.onChange(date);
+                                  requestAnimationFrame(() => setPaymentDateOpen(false));
+                                }
+                              }}
                               initialFocus
+                              className={cn("p-3 pointer-events-auto")}
                             />
                           </PopoverContent>
                         </Popover>

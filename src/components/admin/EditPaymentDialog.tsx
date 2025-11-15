@@ -131,14 +131,14 @@ const EditPaymentDialog = ({ open, onOpenChange, payment, receivable, onConfirm 
                     {paymentDate ? format(new Date(paymentDate), "dd/MM/yyyy", { locale: ptBR }) : "Selecionar data"}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
+                <PopoverContent className="w-auto p-0" align="start" side="bottom" sideOffset={8} collisionPadding={8}>
                   <Calendar
                     mode="single"
                     selected={paymentDate ? new Date(paymentDate) : undefined}
                     onSelect={(date) => {
                       if (date) {
                         setPaymentDate(format(date, "yyyy-MM-dd"));
-                        setPaymentDateOpen(false);
+                        requestAnimationFrame(() => setPaymentDateOpen(false));
                       }
                     }}
                     initialFocus

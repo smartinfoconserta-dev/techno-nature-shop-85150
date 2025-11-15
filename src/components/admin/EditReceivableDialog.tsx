@@ -55,6 +55,7 @@ export function EditReceivableDialog({
 }: EditReceivableDialogProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [dueDateOpen, setDueDateOpen] = useState(false);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -207,7 +208,7 @@ export function EditReceivableDialog({
               render={({ field }) => (
                 <FormItem className="flex flex-col">
                   <FormLabel>Data Vencimento (opcional)</FormLabel>
-                  <Popover>
+                  <Popover open={dueDateOpen} onOpenChange={setDueDateOpen}>
                     <PopoverTrigger asChild>
                       <FormControl>
                         <Button
@@ -226,13 +227,19 @@ export function EditReceivableDialog({
                         </Button>
                       </FormControl>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
+                    <PopoverContent className="w-auto p-0" align="start" side="bottom" sideOffset={8} collisionPadding={8}>
                       <Calendar
                         mode="single"
                         selected={field.value}
-                        onSelect={field.onChange}
+                        onSelect={(date) => {
+                          if (date) {
+                            field.onChange(date);
+                            requestAnimationFrame(() => setDueDateOpen(false));
+                          }
+                        }}
                         disabled={(date) => date < new Date()}
                         initialFocus
+                        className={cn("p-3 pointer-events-auto")}
                       />
                     </PopoverContent>
                   </Popover>
