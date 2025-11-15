@@ -77,6 +77,8 @@ export function AddManualReceivableDialog({
   const [couponDiscount, setCouponDiscount] = useState(0);
   const [couponError, setCouponError] = useState("");
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [saleDateOpen, setSaleDateOpen] = useState(false);
+  const [dueDateOpen, setDueDateOpen] = useState(false);
   
   const catalogProducts = productsStore.getAvailableProducts();
 
@@ -158,10 +160,11 @@ export function AddManualReceivableDialog({
         ? selectedProductId 
         : null; // Entrada manual não tem product_id vinculado
 
-      // Calcula data de expiração da garantia
+      // Calcula data de expiração da garantia a partir da data de venda
       let warrantyExpiresAt: string | undefined;
       if (data.warranty > 0) {
-        const expirationDate = new Date();
+        const base = data.saleDate ? new Date(data.saleDate) : new Date();
+        const expirationDate = new Date(base);
         expirationDate.setDate(expirationDate.getDate() + data.warranty);
         warrantyExpiresAt = expirationDate.toISOString();
       }
@@ -224,7 +227,14 @@ export function AddManualReceivableDialog({
         source: productSource === "catalog" ? "catalog" : "manual",
         warranty: data.warranty,
         warrantyExpiresAt,
-        createdAt: data.saleDate ? data.saleDate.toISOString() : undefined,
+        createdAt: data.saleDate
+          ? new Date(Date.UTC(
+              data.saleDate.getFullYear(),
+              data.saleDate.getMonth(),
+              data.saleDate.getDate(),
+              12, 0, 0
+            )).toISOString()
+          : undefined,
       });
 
       // Se for do catálogo, marca produto como vendido
@@ -505,7 +515,7 @@ export function AddManualReceivableDialog({
               render={({ field }) => (
                 <FormItem className="flex flex-col">
                   <FormLabel>📅 Data da Venda (opcional)</FormLabel>
-                  <Popover>
+                  <Popover open={saleDateOpen} onOpenChange={setSaleDateOpen}>
                     <PopoverTrigger asChild>
                       <FormControl>
                         <Button
@@ -528,7 +538,10 @@ export function AddManualReceivableDialog({
                       <Calendar
                         mode="single"
                         selected={field.value}
-                        onSelect={field.onChange}
+                        onSelect={(date) => {
+                          field.onChange(date);
+                          setSaleDateOpen(false);
+                        }}
                         initialFocus
                         className="pointer-events-auto"
                       />
@@ -549,7 +562,7 @@ export function AddManualReceivableDialog({
               render={({ field }) => (
                 <FormItem className="flex flex-col">
                   <FormLabel>Data Vencimento (opcional)</FormLabel>
-                  <Popover>
+                  <Popover open={dueDateOpen} onOpenChange={setDueDateOpen}>
                     <PopoverTrigger asChild>
                       <FormControl>
                         <Button
@@ -572,7 +585,10 @@ export function AddManualReceivableDialog({
                       <Calendar
                         mode="single"
                         selected={field.value}
-                        onSelect={field.onChange}
+                        onSelect={(date) => {
+                          field.onChange(date);
+                          setDueDateOpen(false);
+                        }}
                         disabled={(date) => date < new Date()}
                         initialFocus
                         className="pointer-events-auto"

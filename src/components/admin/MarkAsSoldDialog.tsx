@@ -253,8 +253,9 @@ const MarkAsSoldDialog = ({
       const totalInitial = cashInitial + pixInitial + cardInitial;
 
       try {
+        const base = saleDate ? new Date(saleDate) : new Date();
         const warrantyExpires = warrantyDays > 0 
-          ? new Date(Date.now() + warrantyDays * 24 * 60 * 60 * 1000).toISOString()
+          ? new Date(base.getTime() + warrantyDays * 24 * 60 * 60 * 1000).toISOString()
           : undefined;
 
         // Calcular custo total do produto (soma das despesas)
@@ -314,7 +315,14 @@ const MarkAsSoldDialog = ({
           warrantyMonths: warrantyDays, // Salvar dias diretamente
           warrantyExpiresAt: warrantyExpires,
           payments: initialPayments,
-          createdAt: saleDate ? saleDate.toISOString() : undefined,
+          createdAt: saleDate
+            ? new Date(Date.UTC(
+                saleDate.getFullYear(),
+                saleDate.getMonth(),
+                saleDate.getDate(),
+                12, 0, 0
+              )).toISOString()
+            : undefined,
         });
 
         productsStore.markAsSoldOnCredit(product.id, selectedCustomer.name, selectedCustomer.cpfCnpj, finalPrice, receivable.id, warrantyDays, warrantyExpires);
