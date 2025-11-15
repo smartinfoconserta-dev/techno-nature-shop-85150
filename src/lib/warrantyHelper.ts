@@ -6,6 +6,20 @@ export interface WarrantyStatus {
   warrantyDays: number; // Total de dias da garantia
 }
 
+/**
+ * Helper centralizado para obter dias de garantia de forma consistente
+ * Respeita 0 (sem garantia) e usa 90 como padrão apenas se undefined/null
+ */
+export function getWarrantyDays(item: {
+  warranty?: number | null;
+  warranty_days?: number | null;
+  warrantyDays?: number | null;
+}): number {
+  // Prioridade: warranty > warranty_days > warrantyDays > default 90
+  const value = item.warranty ?? item.warranty_days ?? item.warrantyDays ?? 90;
+  return value;
+}
+
 export function calculateWarranty(
   saleDate: string, 
   warrantyDays: number = 90
