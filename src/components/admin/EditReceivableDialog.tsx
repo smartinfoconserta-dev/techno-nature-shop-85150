@@ -95,6 +95,8 @@ export function EditReceivableDialog({
         notes: data.notes,
       });
 
+      await receivablesStore.refreshFromBackend();
+
       toast({
         title: "Venda atualizada!",
         description: `${data.productName} foi atualizado com sucesso`,

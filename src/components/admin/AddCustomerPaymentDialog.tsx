@@ -192,6 +192,8 @@ export function AddCustomerPaymentDialog({
         description: `R$ ${totalApplied.toFixed(2)} distribuído em ${appliedCount} compra${appliedCount > 1 ? 's' : ''}`,
       });
 
+      await receivablesStore.refreshFromBackend();
+
       const remaining = totalPayment - totalApplied;
       if (remaining > 0) {
         toast({

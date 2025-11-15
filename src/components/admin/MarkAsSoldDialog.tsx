@@ -321,6 +321,8 @@ const MarkAsSoldDialog = ({
 
         productsStore.markAsSoldOnCredit(product.id, selectedCustomer.name, selectedCustomer.cpfCnpj, finalPrice, receivable.id, warrantyDays, warrantyExpires);
 
+        await receivablesStore.refreshFromBackend();
+        
         toast({ title: "Venda registrada!", description: "Conta a receber criada com sucesso" });
         onUpdate();
         onOpenChange(false);
