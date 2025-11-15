@@ -114,7 +114,7 @@ const InstallmentSelector = ({ basePrice, hasCouponActive, onSelect }: Installme
         >
           <SelectValue placeholder="Selecione a forma de pagamento" />
         </SelectTrigger>
-        <SelectContent className="z-[200] bg-background border-border shadow-lg">
+        <SelectContent className="min-w-[280px]">
           <SelectItem value="none">Ver preço original</SelectItem>
           {!hasCouponActive && (
             <SelectItem 
