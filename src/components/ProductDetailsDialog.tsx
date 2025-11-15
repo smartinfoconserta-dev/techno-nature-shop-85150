@@ -240,14 +240,14 @@ const ProductDetailsDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] p-0 overflow-y-auto">
+      <DialogContent className="relative max-w-4xl p-0">
         <DialogTitle className="sr-only">{name}</DialogTitle>
         <DialogDescription className="sr-only">
           Detalhes completos do produto {name} - {brand}
         </DialogDescription>
         
-
-        <div className="grid md:grid-cols-2 gap-4 p-4">
+        <div className="max-h-[90vh] overflow-y-auto p-4">
+          <div className="grid md:grid-cols-2 gap-4">
           {/* Galeria de imagens */}
           <div>
             
@@ -272,8 +272,8 @@ const ProductDetailsDialog = ({
                     </CarouselItem>
                   )}
                 </CarouselContent>
-                <CarouselPrevious className="left-2 top-1/2 -translate-y-1/2 z-10" />
-                <CarouselNext className="right-2 top-1/2 -translate-y-1/2 z-10" />
+                <CarouselPrevious className="left-2 top-1/2 -translate-y-1/2 z-[110] bg-background/90 border border-border shadow-md backdrop-blur supports-[backdrop-filter]:bg-background/60" />
+                <CarouselNext className="right-2 top-1/2 -translate-y-1/2 z-[110] bg-background/90 border border-border shadow-md backdrop-blur supports-[backdrop-filter]:bg-background/60" />
               </Carousel>
             <div className="mt-2 text-xs text-muted-foreground">{current + 1} / {images?.length || 1}</div>
           </div>
@@ -501,9 +501,11 @@ const ProductDetailsDialog = ({
             </Button>
           </div>
         </div>
+        </div>
+        
         <button
           onClick={() => onOpenChange(false)}
-          className="fixed md:absolute md:right-3 md:top-3 right-4 top-[calc(env(safe-area-inset-top)+12px)] z-[1000] rounded-full p-1.5 bg-background border border-border shadow-md transition-colors hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 pointer-events-auto"
+          className="absolute right-3 top-3 z-[120] rounded-full p-1.5 bg-background border border-border shadow-md transition-colors hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 pointer-events-auto touch-manipulation"
           aria-label="Fechar"
         >
           <X className="h-4 w-4 text-foreground" />
