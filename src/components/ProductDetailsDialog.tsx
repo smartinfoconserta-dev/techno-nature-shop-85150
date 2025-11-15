@@ -291,7 +291,15 @@ const ProductDetailsDialog = ({
 
             {/* Preços */}
             <div className="mt-4">
-              <div className="text-3xl font-bold text-foreground">R$ {finalPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+              <div className="text-3xl font-bold text-foreground">
+                {(displayMode === 'installment' || displayMode === 'coupon-installment') && paymentDetails.installments && paymentDetails.installmentValue ? (
+                  <>
+                    {paymentDetails.installments}x de R$ {paymentDetails.installmentValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </>
+                ) : (
+                  <>R$ {finalPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</>
+                )}
+              </div>
               <div className="text-sm text-muted-foreground mt-1">
                 {displayMode === 'coupon' && (
                   <>
@@ -304,10 +312,24 @@ const ProductDetailsDialog = ({
                   </>
                 )}
                 {displayMode === 'cash' && 'Preço à vista (5% de desconto)'}
-                {displayMode === 'installment' && paymentDetails.installments && `Parcelado em ${paymentDetails.installments}x`}
-                {displayMode === 'coupon-installment' && paymentDetails.installments && (
+                {displayMode === 'installment' && paymentDetails.totalAmount && (
                   <>
-                    {`Cupom + ${paymentDetails.installments}x`}
+                    Total: R$ {paymentDetails.totalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {(() => {
+                      const baseAmount = displayPrice;
+                      const interestAmount = Math.max(0, Math.round((paymentDetails.totalAmount - baseAmount) * 100) / 100);
+                      return interestAmount > 0 ? ` • Juros totais: R$ ${interestAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '';
+                    })()}
+                  </>
+                )}
+                {displayMode === 'coupon-installment' && paymentDetails.totalAmount && (
+                  <>
+                    Cupom + parcelado — Total: R$ {paymentDetails.totalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {(() => {
+                      const baseAmount = (discountPrice && discountPrice < displayPrice) ? discountPrice : displayPrice;
+                      const interestAmount = Math.max(0, Math.round((paymentDetails.totalAmount - baseAmount) * 100) / 100);
+                      return interestAmount > 0 ? ` • Juros totais: R$ ${interestAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '';
+                    })()}
                     {couponSavings > 0 && (
                       <span className="text-green-600 font-medium ml-2">
                         — Economia de R$ {couponSavings.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -321,13 +343,22 @@ const ProductDetailsDialog = ({
 
             {/* Seleção de pagamento */}
             <div className="mt-4">
-              <Popover open={paymentPopoverOpen} onOpenChange={setPaymentPopoverOpen}>
+              <Popover modal open={paymentPopoverOpen} onOpenChange={setPaymentPopoverOpen}>
                 <PopoverTrigger asChild>
                   <Button variant="outline" className="w-full">
                     <CreditCard className="mr-2 h-4 w-4" /> Formas de Pagamento
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-[92vw] sm:w-[420px] max-h-[70vh] overflow-y-auto overflow-x-hidden p-3" side="bottom" align="start" sideOffset={8} avoidCollisions collisionPadding={20}>
+                <PopoverContent 
+                  className="w-[92vw] sm:w-[420px] max-h-[70vh] overflow-y-auto overflow-x-hidden p-3 pointer-events-auto" 
+                  side="bottom" 
+                  align="start" 
+                  sideOffset={8} 
+                  avoidCollisions 
+                  collisionPadding={20}
+                  onWheelCapture={(e) => e.stopPropagation()}
+                  onTouchMove={(e) => e.stopPropagation()}
+                >
                   <div className="space-y-3">
                     {/* Título */}
                     <h3 className="font-medium text-foreground">Escolha a forma de pagamento</h3>
