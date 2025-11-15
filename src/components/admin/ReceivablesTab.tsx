@@ -21,6 +21,7 @@ import NewCustomerDialog from "./NewCustomerDialog";
 import EditCustomerDialog from "./EditCustomerDialog";
 import QuickSaleDialog from "./QuickSaleDialog";
 import ReceivableItem from "./ReceivableItem";
+import ReceivablesSummaryBar from "./ReceivablesSummaryBar";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -287,181 +288,78 @@ const ReceivablesTab = () => {
         </div>
       </div>
 
-      {/* Tabs Ativas/Arquivadas */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex items-center gap-4">
-            <Button
-              variant={activeTab === "active" ? "default" : "outline"}
-              onClick={() => setActiveTab("active")}
-              className="flex-1 gap-2"
-            >
-              <CheckCircle2 className="h-4 w-4" />
-              ATIVAS ({receivablesStore.getActiveReceivables().length})
-            </Button>
-            <Button
-              variant={activeTab === "archived" ? "default" : "outline"}
-              onClick={() => setActiveTab("archived")}
-              className="flex-1 gap-2"
-            >
-              <Archive className="h-4 w-4" />
-              HISTÓRICO ({receivablesStore.getArchivedReceivables().length})
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Summary Bar Unificado */}
+      <ReceivablesSummaryBar
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        totals={totals}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+        activeCounts={receivablesStore.getActiveReceivables().length}
+        archivedCounts={receivablesStore.getArchivedReceivables().length}
+      />
 
-      {/* Filtros */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="space-y-4">
-            {/* Barra de Pesquisa */}
-            <div className="w-full">
-              <label className="text-sm font-medium mb-2 block">Pesquisar</label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Pesquisar por produto, cliente ou observações..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-
-            {/* Filtros de Status e Cliente */}
-            <div className="flex flex-wrap gap-4">
-              <div className="flex-1 min-w-[200px]">
-                <label className="text-sm font-medium mb-2 block">Status</label>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todas ({statusCounts.all})</SelectItem>
-                    <SelectItem value="pending">🔴 Pendente ({statusCounts.pending})</SelectItem>
-                    <SelectItem value="partial">🟡 Parcial ({statusCounts.partial})</SelectItem>
-                    <SelectItem value="paid">🟢 Quitado ({statusCounts.paid})</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="flex-1 min-w-[200px]">
-                <label className="text-sm font-medium mb-2 block">Cliente</label>
-                <Select value={customerFilter} onValueChange={setCustomerFilter}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos</SelectItem>
-                    {customers.map(customer => (
-                      <SelectItem key={customer.id} value={customer.id}>
-                        {customer.code} - {customer.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Botão Limpar Filtros */}
-              {hasActiveFilters && (
-                <div className="flex-1 min-w-[200px] flex items-end">
-                  <Button
-                    variant="outline"
-                    onClick={clearFilters}
-                    className="w-full gap-2"
-                  >
-                    <X className="h-4 w-4" />
-                    Limpar Filtros
-                  </Button>
-                </div>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Resumo Geral */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Total</p>
-                <p className="text-2xl font-bold">R$ {totals.total.toFixed(2)}</p>
-              </div>
-              <DollarSign className="h-8 w-8 text-muted-foreground" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Pago</p>
-                <p className="text-2xl font-bold text-green-600">R$ {totals.paid.toFixed(2)}</p>
-              </div>
-              <DollarSign className="h-8 w-8 text-green-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">A Receber</p>
-                <p className="text-2xl font-bold text-blue-600">R$ {totals.remaining.toFixed(2)}</p>
-              </div>
-              <DollarSign className="h-8 w-8 text-blue-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Vencido</p>
-                <p className="text-2xl font-bold text-red-600">R$ {totals.overdue.toFixed(2)}</p>
-              </div>
-              <AlertCircle className="h-8 w-8 text-red-600" />
-            </div>
-          </CardContent>
-        </Card>
+      {/* Filtros inline (sem card) */}
+      <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
+        <div className="relative flex-1 w-full">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por produto ou cliente..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9 h-10"
+          />
+        </div>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-full sm:w-[180px] h-10">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os Status</SelectItem>
+            <SelectItem value="pending">🔴 Pendente</SelectItem>
+            <SelectItem value="partial">🟡 Parcial</SelectItem>
+            <SelectItem value="paid">🟢 Quitado</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={customerFilter} onValueChange={setCustomerFilter}>
+          <SelectTrigger className="w-full sm:w-[180px] h-10">
+            <SelectValue placeholder="Cliente" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os Clientes</SelectItem>
+            {customers.map((customer) => (
+              <SelectItem key={customer.id} value={customer.id}>
+                {customer.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {hasActiveFilters && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setSearchQuery("");
+              setStatusFilter("all");
+              setCustomerFilter("all");
+            }}
+            className="gap-2 h-10"
+          >
+            <X className="h-4 w-4" />
+            Limpar
+          </Button>
+        )}
       </div>
 
-      {/* Lista de Contas */}
-      <Card>
-        <CardHeader className="space-y-4">
-          <div className="flex items-center justify-between">
-            <CardTitle>📋 Lista de Contas ({filteredReceivables.length})</CardTitle>
-            <div className="flex gap-2">
-              <Button
-                variant={viewMode === "list" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setViewMode("list")}
-              >
-                <List className="w-4 h-4 mr-2" />
-                Lista Completa
-              </Button>
-              <Button
-                variant={viewMode === "customer" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setViewMode("customer")}
-              >
-                <Users className="w-4 h-4 mr-2" />
-                Por Cliente
-              </Button>
-            </div>
+      {/* Lista de Contas (sem card wrapper) */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold text-foreground">
+          📋 Lista de Contas ({filteredReceivables.length})
+        </h3>
+        {filteredReceivables.length === 0 ? (
+          <div className="text-center py-12 text-muted-foreground bg-card rounded-lg border">
+            <p>Nenhuma conta a receber encontrada</p>
           </div>
-        </CardHeader>
-        <CardContent>
-          {filteredReceivables.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <p>Nenhuma conta a receber encontrada</p>
-            </div>
           ) : viewMode === "list" ? (
             <div className="space-y-2">
               {filteredReceivables.map((receivable) => (
@@ -588,8 +486,7 @@ const ReceivablesTab = () => {
               ))}
             </div>
           )}
-        </CardContent>
-      </Card>
+      </div>
 
       <NewCustomerDialog
         open={showNewCustomerDialog}
