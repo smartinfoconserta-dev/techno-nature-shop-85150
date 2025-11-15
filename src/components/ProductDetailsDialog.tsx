@@ -287,7 +287,11 @@ const ProductDetailsDialog = ({
           {/* Informações e ações */}
           <div>
             <h2 className="text-2xl font-semibold text-foreground">{name}</h2>
-            <Badge variant="secondary" className="mt-2">{brand}</Badge>
+            {specs && (
+              <p className="mt-2 text-sm text-muted-foreground line-clamp-2">
+                {specs}
+              </p>
+            )}
 
             {/* Preços */}
             <div className="mt-4">
@@ -355,7 +359,7 @@ const ProductDetailsDialog = ({
                   align="center" 
                   sideOffset={4} 
                   avoidCollisions 
-                  collisionPadding={{ top: 60, bottom: 20, left: 20, right: 20 }}
+                  collisionPadding={{ top: 100, bottom: 20, left: 20, right: 20 }}
                   onWheelCapture={(e) => e.stopPropagation()}
                   onTouchMove={(e) => e.stopPropagation()}
                 >
