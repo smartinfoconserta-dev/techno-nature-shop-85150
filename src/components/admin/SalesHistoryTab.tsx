@@ -2,20 +2,20 @@ import { useEffect, useState } from "react";
 import { productsStore, Product } from "@/lib/productsStore";
 import { quickSalesStore, QuickSale } from "@/lib/quickSalesStore";
 import { receivablesStore, Receivable } from "@/lib/receivablesStore";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { TrendingUp, DollarSign, Package, Percent, Pencil, FileText, XCircle, Search, Shield, CheckCircle2, Archive } from "lucide-react";
+import { TrendingUp, DollarSign, Package, Percent, CheckCircle2, Archive, Search } from "lucide-react";
 import EditSaleDialog from "./EditSaleDialog";
-import WarrantyBadge from "./WarrantyBadge";
 import { calculateWarranty } from "@/lib/warrantyHelper";
 import SaleHistoryItem from "./SaleHistoryItem";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { FilterBar } from "./FilterBar";
+import { ActiveFilterChip } from "./ActiveFilterChip";
 import {
   AlertDialog,
   AlertDialogAction,
