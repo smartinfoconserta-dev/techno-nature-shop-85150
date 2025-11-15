@@ -10,6 +10,7 @@ interface CustomerReceivableItemProps {
     id: string;
     productName: string;
     brand?: string;
+    saleDate?: string;
     createdAt: string;
     totalAmount: number;
     paidAmount: number;
@@ -43,7 +44,7 @@ export const CustomerReceivableItem = ({
           {getStatusBadge(receivable.status)}
           {warrantyDays > 0 ? (
             <WarrantyBadge 
-              saleDate={receivable.createdAt}
+              saleDate={receivable.saleDate || receivable.createdAt}
               warrantyDays={warrantyDays}
               size="sm"
             />

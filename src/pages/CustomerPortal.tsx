@@ -50,6 +50,7 @@ interface Receivable {
   warrantyExpiresAt?: string;
   notes?: string;
   archived: boolean;
+  saleDate: string;
   createdAt: string;
   updatedAt: string;
   autoArchived?: boolean;
