@@ -65,10 +65,10 @@ const ReceivableItem = ({
               • {receivable.customerName}
             </span>
             {getStatusBadge(receivable.status)}
-            {receivable.warrantyMonths && (
+            {receivable.warranty && (
         <WarrantyBadge
           saleDate={receivable.createdAt}
-          warrantyDays={receivable.warrantyMonths}
+          warrantyDays={receivable.warranty}
         />
             )}
             {isOverdue && (

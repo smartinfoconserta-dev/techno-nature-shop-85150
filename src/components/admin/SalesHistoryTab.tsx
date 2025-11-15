@@ -89,14 +89,7 @@ const SalesHistoryTab = () => {
 
   // Helper para obter dias de garantia corretos
   const getWarrantyDays = (sale: HistorySale): number => {
-    // Para receivables, warranty pode estar em meses, precisa converter
-    if (sale.type === "receivable" && sale.warranty) {
-      // Se warranty for maior que 365, provavelmente já está em dias
-      // Senão, assumir que está em meses e converter
-      return sale.warranty > 365 ? sale.warranty : sale.warranty * 30;
-    }
-    
-    // Para produtos e quick sales, warranty já está em dias
+    // Warranty já está sempre em dias para todos os tipos
     return sale.warranty || 90;
   };
 

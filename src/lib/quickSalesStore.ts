@@ -287,7 +287,7 @@ export const quickSalesStore = {
       paymentBreakdown: row.payment_breakdown,
       digitalTax: row.digital_tax,
       taxAmount: row.digital_tax,
-      warrantyMonths: row.warranty_days,
+      warranty: row.warranty_days,
       notes: row.notes,
       saleDate: row.created_at,
       createdAt: row.created_at,

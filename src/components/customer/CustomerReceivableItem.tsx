@@ -15,7 +15,7 @@ interface CustomerReceivableItemProps {
     paidAmount: number;
     remainingAmount: number;
     status: "pending" | "partial" | "paid";
-    warrantyMonths?: number;
+    warranty?: number;
     dueDate?: string;
     autoArchived?: boolean;
   };
@@ -30,7 +30,7 @@ export const CustomerReceivableItem = ({
   onDelete,
   getStatusBadge 
 }: CustomerReceivableItemProps) => {
-  const warrantyDays = receivable.warrantyMonths || 0;
+  const warrantyDays = receivable.warranty || 0;
 
   return (
     <div className="flex items-center gap-3 p-3 border rounded-lg hover:shadow-sm transition-shadow bg-card">

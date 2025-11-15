@@ -312,7 +312,6 @@ const MarkAsSoldDialog = ({
           dueDate: dueDate || undefined,
           notes: notes || undefined,
           warranty: warrantyDays,
-          warrantyMonths: warrantyDays, // Salvar dias diretamente
           warrantyExpiresAt: warrantyExpires,
           payments: initialPayments,
           createdAt: saleDate

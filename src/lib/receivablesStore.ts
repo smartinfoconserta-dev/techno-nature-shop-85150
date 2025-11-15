@@ -30,7 +30,6 @@ export interface Receivable {
   payments: ReceivablePayment[];
   source?: "catalog" | "quick" | "manual";
   warranty?: number;
-  warrantyMonths?: number;
   warrantyExpiresAt?: string;
   notes?: string;
   archived?: boolean;
@@ -58,7 +57,7 @@ const shouldAutoArchive = (receivable: Receivable): boolean => {
   const isPaid = receivable.status === 'paid';
   const warrantyExpired = isWarrantyExpired(
     receivable.createdAt, 
-    receivable.warrantyMonths ?? 0
+    receivable.warranty ?? 0
   );
   return isPaid && warrantyExpired;
 };
@@ -104,8 +103,7 @@ function mapRowToReceivable(row: any): Receivable {
       notes: p.notes,
     })),
     source: undefined,
-    warranty: undefined,
-    warrantyMonths: (row.warranty_days === null || row.warranty_days === undefined) ? undefined : Number(row.warranty_days),
+    warranty: (row.warranty_days === null || row.warranty_days === undefined) ? undefined : Number(row.warranty_days),
     warrantyExpiresAt: undefined,
     notes: row.notes || undefined,
     archived: row.archived || false,
@@ -198,7 +196,6 @@ export const receivablesStore = {
       payments: data.payments || [],
       source: data.source,
       warranty: data.warranty,
-      warrantyMonths: (data as any).warrantyMonths,
       warrantyExpiresAt: data.warrantyExpiresAt,
       notes: data.notes,
       archived: false,
