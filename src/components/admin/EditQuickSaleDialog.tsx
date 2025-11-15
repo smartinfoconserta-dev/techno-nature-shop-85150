@@ -31,7 +31,12 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Trash2 } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { CalendarIcon, Trash2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { quickSalesStore, QuickSale } from "@/lib/quickSalesStore";
 import { receivablesStore } from "@/lib/receivablesStore";
 import { useToast } from "@/hooks/use-toast";
@@ -62,6 +67,8 @@ export function EditQuickSaleDialog({
   const [sale, setSale] = useState<QuickSale | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [saleDate, setSaleDate] = useState<Date>(new Date());
+  const [saleDateOpen, setSaleDateOpen] = useState(false);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -78,6 +85,7 @@ export function EditQuickSaleDialog({
       const foundSale = quickSalesStore.getQuickSaleById(saleId);
       if (foundSale) {
         setSale(foundSale);
+        setSaleDate(new Date(foundSale.saleDate));
         form.reset({
           productName: foundSale.productName,
           customerName: foundSale.customerName || "",
@@ -98,6 +106,7 @@ export function EditQuickSaleDialog({
         customerName: data.customerName || undefined,
         customerCpf: data.customerCpf || undefined,
         notes: data.notes,
+        saleDate: format(saleDate, "yyyy-MM-dd"),
       });
 
       toast({
@@ -187,6 +196,41 @@ export function EditQuickSaleDialog({
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              {/* Data da Venda */}
+              <FormItem className="flex flex-col">
+                <FormLabel>Data da Venda *</FormLabel>
+                <Popover open={saleDateOpen} onOpenChange={setSaleDateOpen}>
+                  <PopoverTrigger asChild>
+                    <FormControl>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full pl-3 text-left font-normal",
+                          !saleDate && "text-muted-foreground"
+                        )}
+                      >
+                        {saleDate ? format(saleDate, "PPP", { locale: ptBR }) : "Selecione uma data"}
+                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                      </Button>
+                    </FormControl>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={saleDate}
+                      onSelect={(date) => {
+                        setSaleDate(date || new Date());
+                        setSaleDateOpen(false);
+                      }}
+                      disabled={(date) => date > new Date()}
+                      initialFocus
+                      locale={ptBR}
+                    />
+                  </PopoverContent>
+                </Popover>
+                <FormMessage />
+              </FormItem>
+
               {/* Nome do Produto */}
               <FormField
                 control={form.control}

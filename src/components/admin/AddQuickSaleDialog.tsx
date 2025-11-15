@@ -23,7 +23,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { quickSalesStore } from "@/lib/quickSalesStore";
 import { useToast } from "@/hooks/use-toast";
@@ -63,6 +67,8 @@ export function AddQuickSaleDialog({
   const [installmentOptions, setInstallmentOptions] = useState<InstallmentOption[]>([]);
   const [taxRate, setTaxRate] = useState(3.9);
   const [includeCashInTax, setIncludeCashInTax] = useState(false);
+  const [saleDate, setSaleDate] = useState<Date>(new Date());
+  const [saleDateOpen, setSaleDateOpen] = useState(false);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -150,12 +156,12 @@ export function AddQuickSaleDialog({
       }
       
       const taxAmount = getTaxAmount();
-      const saleDate = format(new Date(), "yyyy-MM-dd");
+      const saleDateString = format(saleDate, "yyyy-MM-dd");
 
       // Calcula data de expiração da garantia
       let warrantyExpiresAt: string | undefined;
       if (data.warranty > 0) {
-        const expirationDate = new Date();
+        const expirationDate = new Date(saleDate);
         expirationDate.setDate(expirationDate.getDate() + data.warranty);
         warrantyExpiresAt = expirationDate.toISOString();
       }
@@ -176,7 +182,7 @@ export function AddQuickSaleDialog({
         warranty: data.warranty,
         warrantyExpiresAt,
         notes: data.notes,
-        saleDate,
+        saleDate: saleDateString,
       });
 
       toast({
@@ -189,6 +195,7 @@ export function AddQuickSaleDialog({
       setPix("");
       setCard("");
       setSelectedInstallment(null);
+      setSaleDate(new Date());
       onSuccess();
       onOpenChange(false);
     } catch (error: any) {
@@ -214,6 +221,41 @@ export function AddQuickSaleDialog({
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {/* Data da Venda */}
+            <FormItem className="flex flex-col">
+              <FormLabel>Data da Venda *</FormLabel>
+              <Popover open={saleDateOpen} onOpenChange={setSaleDateOpen}>
+                <PopoverTrigger asChild>
+                  <FormControl>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full pl-3 text-left font-normal",
+                        !saleDate && "text-muted-foreground"
+                      )}
+                    >
+                      {saleDate ? format(saleDate, "PPP", { locale: ptBR }) : "Selecione uma data"}
+                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                    </Button>
+                  </FormControl>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={saleDate}
+                    onSelect={(date) => {
+                      setSaleDate(date || new Date());
+                      setSaleDateOpen(false);
+                    }}
+                    disabled={(date) => date > new Date()}
+                    initialFocus
+                    locale={ptBR}
+                  />
+                </PopoverContent>
+              </Popover>
+              <FormMessage />
+            </FormItem>
+
             {/* Nome do Produto */}
             <FormField
               control={form.control}

@@ -495,6 +495,7 @@ export type Database = {
           payment_method: string
           product_name: string
           profit: number
+          sale_date: string
           sale_price: number
           updated_at: string
           warranty_days: number | null
@@ -517,6 +518,7 @@ export type Database = {
           payment_method: string
           product_name: string
           profit: number
+          sale_date?: string
           sale_price: number
           updated_at?: string
           warranty_days?: number | null
@@ -539,6 +541,7 @@ export type Database = {
           payment_method?: string
           product_name?: string
           profit?: number
+          sale_date?: string
           sale_price?: number
           updated_at?: string
           warranty_days?: number | null
