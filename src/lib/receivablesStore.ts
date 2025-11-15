@@ -45,11 +45,11 @@ let receivablesCache: Receivable[] = [];
 let initialized = false;
 
 // Helper functions for auto-archiving logic
-const isWarrantyExpired = (createdAt: string, warrantyMonths: number = 3): boolean => {
-  if (warrantyMonths === 0) return true;
+const isWarrantyExpired = (createdAt: string, warrantyDays: number = 90): boolean => {
+  if (warrantyDays === 0) return true;
   const saleDate = new Date(createdAt);
   const expirationDate = new Date(saleDate);
-  expirationDate.setMonth(expirationDate.getMonth() + warrantyMonths);
+  expirationDate.setDate(expirationDate.getDate() + warrantyDays);
   return new Date() > expirationDate;
 };
 
