@@ -87,7 +87,7 @@ function mapRowToProduct(row: any): Product {
     brand: row.brand,
     category: row.category,
     images: row.images || [],
-    specs: typeof row.specifications === 'string' ? row.specifications : "",
+    specs: row.specs || "", // ✅ Lê do campo TEXT
     description: row.description || "",
     price: Number(row.base_price),
     costPrice: row.base_price ? Number(row.base_price) : undefined,
@@ -212,7 +212,8 @@ export const productsStore = {
       brand: product.brand,
       category: product.category,
       images: product.images,
-      specifications: product.specifications || null,
+      specs: product.specs || null, // ✅ Salva campo TEXT
+      specifications: product.specifications || null, // ✅ Salva campo JSONB
       description: product.description,
       base_price: product.price,
       discount_price: product.discountPrice || null,
@@ -248,8 +249,8 @@ export const productsStore = {
     if (data.brand !== undefined) updateData.brand = data.brand;
     if (data.category !== undefined) updateData.category = data.category;
     if (data.images !== undefined) updateData.images = data.images;
-    if (data.specs !== undefined) updateData.specifications = data.specs;
-    if (data.specifications !== undefined) updateData.specifications = data.specifications;
+    if (data.specs !== undefined) updateData.specs = data.specs; // ✅ Salva no campo TEXT
+    if (data.specifications !== undefined) updateData.specifications = data.specifications; // ✅ Salva no campo JSONB
     if (data.description !== undefined) updateData.description = data.description;
     if (data.price !== undefined) updateData.base_price = data.price;
     if (data.discountPrice !== undefined) updateData.discount_price = data.discountPrice || null;
