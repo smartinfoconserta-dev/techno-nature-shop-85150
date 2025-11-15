@@ -339,7 +339,7 @@ const ProductDetailsDialog = ({
                         <span className="text-xs text-muted-foreground">Role para ver mais</span>
                       </div>
                       
-                      <div className="space-y-2 max-h-60 overflow-y-auto relative">
+                      <div className="space-y-2 max-h-60 overflow-y-auto overscroll-contain touch-pan-y relative pointer-events-auto">
                         {isLoadingInstallments ? (
                           <div className="text-sm text-muted-foreground">Carregando...</div>
                         ) : (
@@ -349,7 +349,7 @@ const ProductDetailsDialog = ({
                               ref={(el) => (installmentRefs.current[option.installments] = el)}
                               onClick={() => handleInstallmentClick(option)}
                               className={
-                                'w-full text-left rounded-md border bg-background px-3 py-2 text-sm transition-colors hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring ' +
+                                'w-full text-left rounded-md border bg-background px-3 py-2 text-sm transition-colors hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring pointer-events-auto ' +
                                 (selectedPayment?.type === 'installment' && selectedPayment.data?.installments === option.installments ? 'ring-2 ring-primary' : '')
                               }
                             >
@@ -421,7 +421,7 @@ const ProductDetailsDialog = ({
             </Accordion>
 
             {/* WhatsApp */}
-            <Button className="mt-6" onClick={handleWhatsAppClick}>
+            <Button className="mt-6 w-full bg-green-600 hover:bg-green-700 text-white" onClick={handleWhatsAppClick}>
               <MessageCircle className="mr-2 h-4 w-4" /> Falar no WhatsApp
             </Button>
           </div>
