@@ -90,7 +90,8 @@ const SalesHistoryTab = () => {
   // Helper para obter dias de garantia corretos
   const getWarrantyDays = (sale: HistorySale): number => {
     // Warranty já está sempre em dias para todos os tipos
-    return sale.warranty || 90;
+    // Usar ?? em vez de || para respeitar warranty = 0 (sem garantia)
+    return sale.warranty ?? 90;
   };
 
   // Verificar se uma venda deve ser arquivada automaticamente
@@ -423,6 +424,10 @@ const SalesHistoryTab = () => {
       if (!sale.saleDate) return false;
       
       const warrantyDays = getWarrantyDays(sale);
+      
+      // Se não tem garantia (0 dias), não deve aparecer em "ativas" nem "expiradas"
+      if (warrantyDays === 0) return false;
+      
       const warranty = calculateWarranty(sale.saleDate, warrantyDays);
       if (warrantyFilter === "active") return warranty.isActive;
       if (warrantyFilter === "expired") return !warranty.isActive;
