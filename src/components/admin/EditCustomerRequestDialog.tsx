@@ -12,6 +12,7 @@ import { categoriesStore } from "@/lib/categoriesStore";
 import { brandsStore } from "@/lib/brandsStore";
 import { Loader2, CheckCircle2, XCircle, Check } from "lucide-react";
 import WarrantySelector from "./WarrantySelector";
+import { getWarrantyDays } from "@/lib/warrantyHelper";
 
 interface Props {
   request: CustomerRequest;
@@ -32,7 +33,7 @@ export const EditCustomerRequestDialog = ({ request, open, onOpenChange, onSucce
     costPrice: request.cost_price?.toString() || "",
     brand: request.brand || "",
     category: request.category || "",
-    warrantyMonths: (request.warranty_days ?? 90).toString(), // Garantia em dias
+    warrantyMonths: getWarrantyDays({ warranty_days: request.warranty_days }).toString(), // Garantia em dias
     paymentMethod: request.payment_method || "",
     installments: request.installments?.toString() || "1",
     adminNotes: request.admin_notes || "",
