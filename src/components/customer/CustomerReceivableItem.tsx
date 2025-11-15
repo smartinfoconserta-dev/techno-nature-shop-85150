@@ -65,7 +65,7 @@ export const CustomerReceivableItem = ({
             </>
           )}
           <span>•</span>
-          <span>{format(new Date(receivable.createdAt), "dd/MM/yyyy", { locale: ptBR })}</span>
+          <span>{format(new Date(receivable.saleDate || receivable.createdAt), "dd/MM/yyyy", { locale: ptBR })}</span>
         </div>
         
         {/* Linha 3: Valores em Grid */}

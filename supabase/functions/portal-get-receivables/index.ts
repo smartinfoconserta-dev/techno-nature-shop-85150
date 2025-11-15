@@ -143,9 +143,11 @@ Deno.serve(async (req) => {
         payments: row.payments || [],
         notes: row.notes || undefined,
         archived: row.archived || false,
+        saleDate: saleDate, // ✅ Data da venda correta
         createdAt: row.created_at,
         updatedAt: row.updated_at || row.created_at,
-        warrantyMonths: warrantyDays,
+        warranty: warrantyDays, // ✅ Garantia em dias (nome padronizado)
+        warrantyMonths: warrantyDays, // Mantido para compatibilidade
         warrantyExpiresAt: warrantyExpiresAt,
         autoArchived: isPaid && warrantyExpired, // Arquivamento automático
       };
