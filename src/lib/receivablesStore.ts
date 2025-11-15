@@ -34,6 +34,7 @@ export interface Receivable {
   notes?: string;
   archived?: boolean;
   archivedAt?: string;
+  saleDate: string; // Data real da venda (DATE 'YYYY-MM-DD')
   createdAt: string;
   updatedAt: string;
 }
@@ -108,6 +109,7 @@ function mapRowToReceivable(row: any): Receivable {
     notes: row.notes || undefined,
     archived: row.archived || false,
     archivedAt: undefined,
+    saleDate: row.sale_date || (row.created_at ? new Date(row.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]),
     createdAt: row.created_at,
     updatedAt: row.updated_at || row.created_at,
   };
@@ -200,6 +202,7 @@ export const receivablesStore = {
       notes: data.notes,
       archived: false,
       archivedAt: undefined,
+      saleDate: data.saleDate || new Date().toISOString().split('T')[0],
       createdAt: data.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -231,6 +234,7 @@ export const receivablesStore = {
         warranty_days: receivable.warranty ?? 0,
         notes: receivable.notes || null,
         archived: receivable.archived || false,
+        sale_date: receivable.saleDate,
         created_at: receivable.createdAt,
         updated_at: receivable.updatedAt,
       } as any);

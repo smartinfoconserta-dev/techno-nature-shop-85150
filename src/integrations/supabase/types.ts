@@ -569,6 +569,7 @@ export type Database = {
           product_name: string
           profit: number | null
           remaining_amount: number
+          sale_date: string | null
           sale_price: number
           status: string
           total_amount: number
@@ -599,6 +600,7 @@ export type Database = {
           product_name: string
           profit?: number | null
           remaining_amount: number
+          sale_date?: string | null
           sale_price: number
           status: string
           total_amount: number
@@ -629,6 +631,7 @@ export type Database = {
           product_name?: string
           profit?: number | null
           remaining_amount?: number
+          sale_date?: string | null
           sale_price?: number
           status?: string
           total_amount?: number

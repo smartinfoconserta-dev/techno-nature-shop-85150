@@ -315,14 +315,7 @@ const MarkAsSoldDialog = ({
           warranty: warrantyDays,
           warrantyExpiresAt: warrantyExpires,
           payments: initialPayments,
-          createdAt: saleDate
-            ? new Date(Date.UTC(
-                saleDate.getFullYear(),
-                saleDate.getMonth(),
-                saleDate.getDate(),
-                12, 0, 0
-              )).toISOString()
-            : undefined,
+          saleDate: saleDateStr,
         });
 
         productsStore.markAsSoldOnCredit(product.id, selectedCustomer.name, selectedCustomer.cpfCnpj, finalPrice, receivable.id, warrantyDays, warrantyExpires);

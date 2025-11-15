@@ -10,16 +10,7 @@ interface WarrantyBadgeProps {
 }
 
 const WarrantyBadge = ({ saleDate, warrantyDays = 90, size = "default" }: WarrantyBadgeProps) => {
-  console.log("🐛 BADGE - saleDate recebido:", saleDate);
-  console.log("🐛 BADGE - warrantyDays recebido:", warrantyDays);
-  
   const warranty = calculateWarranty(saleDate, warrantyDays);
-  
-  console.log("🐛 BADGE - Cálculo resultado:", {
-    daysRemaining: warranty.daysRemaining,
-    isActive: warranty.isActive,
-    expirationDate: format(warranty.expirationDate, "dd/MM/yyyy"),
-  });
 
   if (!warranty.isActive) {
     return (

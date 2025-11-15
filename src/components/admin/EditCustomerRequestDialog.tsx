@@ -143,6 +143,8 @@ export const EditCustomerRequestDialog = ({ request, open, onOpenChange, onSucce
       dueDate.setDate(dueDate.getDate() + 30);
 
       // Criar receivable
+      const saleDateStr = new Date().toISOString().split('T')[0];
+      
       const receivable = await receivablesStore.addReceivable({
         customerId: request.customer_id,
         customerCode: "", // Será preenchido pelo backend se necessário
@@ -158,6 +160,7 @@ export const EditCustomerRequestDialog = ({ request, open, onOpenChange, onSucce
         source: "manual" as any,
         warranty: parseInt(formData.warrantyMonths),
         notes: formData.adminNotes || formData.notes,
+        saleDate: saleDateStr,
       });
 
       // Marcar solicitação como confirmada e vincular ao receivable

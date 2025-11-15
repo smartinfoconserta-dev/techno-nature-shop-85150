@@ -158,9 +158,6 @@ export function AddManualReceivableDialog({
   const onSubmit = async (data: FormData) => {
     if (!customerId) return;
 
-    console.log("🐛 DEBUG - Data de Venda selecionada:", data.saleDate);
-    console.log("🐛 DEBUG - Data formatada:", data.saleDate ? format(data.saleDate, "dd/MM/yyyy") : "undefined");
-
     setIsLoading(true);
 
     try {
@@ -191,9 +188,6 @@ export function AddManualReceivableDialog({
       const paymentDate = data.saleDate 
         ? format(data.saleDate, "yyyy-MM-dd") 
         : format(new Date(), "yyyy-MM-dd");
-      
-      console.log("🐛 DEBUG - paymentDate para pagamentos iniciais:", paymentDate);
-      console.log("🐛 DEBUG - Warranty days:", data.warranty);
       
       const initialPayments: any[] = [];
       let totalInitial = 0;
@@ -232,16 +226,9 @@ export function AddManualReceivableDialog({
       }
 
       // Cria conta a receber com todos os pagamentos iniciais
-      const finalCreatedAt = data.saleDate
-        ? new Date(Date.UTC(
-            data.saleDate.getFullYear(),
-            data.saleDate.getMonth(),
-            data.saleDate.getDate(),
-            12, 0, 0
-          )).toISOString()
-        : undefined;
-
-      console.log("🐛 DEBUG - createdAt que será salvo:", finalCreatedAt);
+      const saleDateStr = data.saleDate 
+        ? format(data.saleDate, 'yyyy-MM-dd')
+        : format(new Date(), 'yyyy-MM-dd');
 
       const receivable = await receivablesStore.addReceivable({
         customerId,
@@ -260,7 +247,7 @@ export function AddManualReceivableDialog({
         source: productSource === "catalog" ? "catalog" : "manual",
         warranty: data.warranty,
         warrantyExpiresAt,
-        createdAt: finalCreatedAt,
+        saleDate: saleDateStr,
       });
 
       // Se for do catálogo, marca produto como vendido
@@ -560,13 +547,15 @@ export function AddManualReceivableDialog({
                         </Button>
                       </FormControl>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
+                    <PopoverContent className="w-auto p-0" align="start" side="bottom" sideOffset={8} collisionPadding={8}>
                       <Calendar
                         mode="single"
                         selected={field.value}
                         onSelect={(date) => {
-                          field.onChange(date);
-                          setSaleDateOpen(false);
+                          if (date) {
+                            field.onChange(date);
+                            requestAnimationFrame(() => setSaleDateOpen(false));
+                          }
                         }}
                         initialFocus
                         className={cn("p-3 pointer-events-auto")}

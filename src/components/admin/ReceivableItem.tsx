@@ -67,7 +67,7 @@ const ReceivableItem = ({
             {getStatusBadge(receivable.status)}
             {receivable.warranty && (
         <WarrantyBadge
-          saleDate={receivable.createdAt}
+          saleDate={receivable.saleDate || receivable.createdAt}
           warrantyDays={receivable.warranty}
         />
             )}
