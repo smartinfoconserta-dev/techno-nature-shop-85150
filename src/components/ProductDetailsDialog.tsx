@@ -232,26 +232,169 @@ const ProductDetailsDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] p-0 overflow-hidden">
-        <div className="max-h-[90vh] overflow-y-auto">
-          <DialogTitle className="sr-only">{name}</DialogTitle>
-          <DialogDescription className="sr-only">
-            Detalhes completos do produto {name} - {brand}
-          </DialogDescription>
-          
-          <button
-            onClick={() => onOpenChange(false)}
-            className="absolute right-4 top-4 z-10 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none"
-          >
-            <X className="h-4 w-4" />
-            <span className="sr-only">Fechar</span>
-          </button>
+      <DialogContent className="max-w-4xl max-h-[90vh] p-0 overflow-y-auto">
+        <DialogTitle className="sr-only">{name}</DialogTitle>
+        <DialogDescription className="sr-only">
+          Detalhes completos do produto {name} - {brand}
+        </DialogDescription>
+        
+        <button
+          onClick={() => onOpenChange(false)}
+          className="absolute right-4 top-4 z-10 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none"
+        >
+          <X className="h-4 w-4" />
+          <span className="sr-only">Fechar</span>
+        </button>
 
-          <div className="grid md:grid-cols-2 gap-4 p-4">
-...
+        <div className="grid md:grid-cols-2 gap-4 p-4">
+          {/* Galeria de imagens */}
+          <div>
+            <Carousel setApi={setApi}>
+              <CarouselContent>
+                {images?.length ? (
+                  images.map((src, idx) => (
+                    <CarouselItem key={idx}>
+                      <div className="aspect-square rounded-md overflow-hidden bg-muted">
+                        <img
+                          src={src}
+                          alt={`${name} - imagem ${idx + 1}`}
+                          className="h-full w-full object-cover"
+                          loading="lazy"
+                        />
+                      </div>
+                    </CarouselItem>
+                  ))
+                ) : (
+                  <CarouselItem>
+                    <div className="aspect-square rounded-md bg-muted" />
+                  </CarouselItem>
+                )}
+              </CarouselContent>
+              <CarouselPrevious />
+              <CarouselNext />
+            </Carousel>
+            <div className="mt-2 text-xs text-muted-foreground">{current + 1} / {images?.length || 1}</div>
+          </div>
+
+          {/* Informações e ações */}
+          <div>
+            <h2 className="text-2xl font-semibold text-foreground">{name}</h2>
+            <Badge variant="secondary" className="mt-2">{brand}</Badge>
+
+            {/* Preços */}
+            <div className="mt-4">
+              <div className="text-3xl font-bold text-foreground">R$ {finalPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+              <div className="text-sm text-muted-foreground mt-1">
+                {displayMode === 'coupon' && 'Preço com cupom aplicado'}
+                {displayMode === 'cash' && 'Preço à vista (5% de desconto)'}
+                {displayMode === 'installment' && paymentDetails.installments && `Parcelado em ${paymentDetails.installments}x`}
+                {displayMode === 'coupon-installment' && paymentDetails.installments && `Cupom + ${paymentDetails.installments}x`}
+                {displayMode === 'original' && `Preço de tabela: R$ ${displayPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+              </div>
+            </div>
+
+            {/* Seleção de pagamento */}
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Button
+                variant={selectedPayment?.type === 'cash' ? 'default' : 'outline'}
+                onClick={() => setSelectedPayment({ type: 'cash', cashValue: calculateCashPriceWithPassOn(displayPrice, passOnCashDiscount || false, price) })}
+              >
+                <CreditCard className="mr-2 h-4 w-4" /> À vista
+              </Button>
+
+              <Popover open={paymentPopoverOpen} onOpenChange={setPaymentPopoverOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline">
+                    <ChevronDown className="mr-2 h-4 w-4" /> Parcelar
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80" side="bottom" align="start" sideOffset={8} avoidCollisions={true} collisionPadding={20}>
+                  <div className="space-y-2 max-h-80 overflow-y-auto">
+                    {isLoadingInstallments ? (
+                      <div className="text-sm text-muted-foreground">Carregando...</div>
+                    ) : (
+                      installmentOptions.map((option) => (
+                        <button
+                          key={option.installments}
+                          ref={(el) => (installmentRefs.current[option.installments] = el)}
+                          onClick={() => handleInstallmentClick(option)}
+                          className={
+                            'w-full text-left rounded-md border bg-background px-3 py-2 text-sm transition-colors hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring ' +
+                            (selectedPayment?.type === 'installment' && selectedPayment.data?.installments === option.installments ? 'ring-2 ring-primary' : '')
+                          }
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium">{option.installments}x</span>
+                            <span className="text-foreground">R$ {option.installmentValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                          </div>
+                          <div className="text-xs text-muted-foreground">Total: R$ {option.totalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            {/* Detalhes do pagamento selecionado */}
+            {selectedPayment?.type === 'installment' && selectedPayment.data && (
+              <div className="mt-3 text-sm text-muted-foreground">
+                {selectedPayment.data.installments}x de R$ {selectedPayment.data.installmentValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                {' '} (Total: R$ {selectedPayment.data.totalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
+              </div>
+            )}
+
+            {/* Cupom */}
+            <div className="mt-6">
+              <button
+                type="button"
+                onClick={() => setShowCouponInput((v) => !v)}
+                className="text-sm text-primary hover:underline inline-flex items-center"
+              >
+                <Tag className="h-4 w-4 mr-1" /> Tenho cupom
+              </button>
+              {showCouponInput && (
+                <div className="mt-2 flex items-center gap-2">
+                  <Input
+                    value={coupon}
+                    onChange={(e) => setCoupon(e.target.value.toUpperCase())}
+                    placeholder="CUPOM"
+                    className="max-w-xs"
+                  />
+                  {coupon && (
+                    <Badge variant={couponValidation.valid ? 'default' : 'secondary'}>
+                      {couponValidation.valid ? 'Cupom válido' : 'Cupom inválido'}
+                    </Badge>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Especificações */}
+            <Accordion type="single" collapsible className="mt-6">
+              <AccordionItem value="specs">
+                <AccordionTrigger>Especificações</AccordionTrigger>
+                <AccordionContent>
+                  <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground">
+                    {(specs?.includes('\n') ? specs.split('\n') : specs.split(',')).filter((s) => s.trim()).map((s, i) => (
+                      <li key={i}>{s.trim()}</li>
+                    ))}
+                  </ul>
+                  {description && description.trim() && (
+                    <div className="mt-4 text-sm text-muted-foreground whitespace-pre-line">{description}</div>
+                  )}
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+
+            {/* WhatsApp */}
+            <Button className="mt-6" onClick={handleWhatsAppClick}>
+              <MessageCircle className="mr-2 h-4 w-4" /> Falar no WhatsApp
+            </Button>
           </div>
         </div>
       </DialogContent>
+
     </Dialog>
   );
 };
