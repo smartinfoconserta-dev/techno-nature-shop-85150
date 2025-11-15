@@ -50,6 +50,7 @@ export const MobileAdminMenu = ({
       category: "PRINCIPAL",
       items: [
         { value: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+        { value: "products", label: "Produtos", icon: Package },
       ],
     },
     {
@@ -61,23 +62,22 @@ export const MobileAdminMenu = ({
       ],
     },
     {
-      category: "PRODUTOS & GESTÃO",
-      items: [
-        { value: "products", label: "Produtos", icon: Package },
-        { value: "coupons", label: "Cupons", icon: Ticket },
-        { value: "customers", label: "Clientes", icon: Users },
-      ],
-    },
-    {
       category: "FINANÇAS",
       items: [
         { value: "finance", label: "Financeiro", icon: DollarSign },
+      ],
+    },
+    {
+      category: "CLIENTES",
+      items: [
+        { value: "customers", label: "Clientes", icon: Users },
         { value: "notebook", label: "Solicitações", icon: Notebook, badge: pendingRequestsCount },
       ],
     },
     {
-      category: "SISTEMA",
+      category: "OUTROS",
       items: [
+        { value: "coupons", label: "Cupons", icon: Ticket },
         { value: "recycle-bin", label: "Lixeira", icon: Trash2 },
         { value: "settings", label: "Configurações", icon: Settings },
       ],

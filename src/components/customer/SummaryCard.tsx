@@ -15,27 +15,28 @@ interface Props {
 
 export const SummaryCard = ({ title, value, icon: Icon, progress, alert, valueColor, animated }: Props) => {
   return (
-    <Card className={cn("relative overflow-hidden", animated && "hover:shadow-lg transition-shadow")}>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium flex items-center gap-2">
-          <Icon className={cn("h-4 w-4", animated && "animate-pulse")} />
-          {title}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <p className={cn("text-xl font-bold mb-1", valueColor)}>{value}</p>
-        
-        {/* Barra de Progresso */}
-        {progress !== undefined && (
-          <div className="space-y-1">
-            <Progress value={progress} className="h-2" />
-            <p className="text-xs text-muted-foreground">{progress.toFixed(0)}% concluído</p>
+    <Card className={cn(
+      "relative overflow-hidden border-l-4",
+      valueColor === "text-green-600" && "border-l-green-500",
+      valueColor === "text-destructive" && "border-l-destructive",
+      valueColor === "text-primary" && "border-l-primary",
+      !valueColor && "border-l-muted",
+      animated && "hover:shadow-lg transition-shadow"
+    )}>
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-1">
+              <Icon className={cn("h-4 w-4 text-muted-foreground", animated && "animate-pulse")} />
+              <p className="text-xs text-muted-foreground font-medium">{title}</p>
+            </div>
+            <p className={cn("text-xl md:text-2xl font-bold", valueColor)}>{value}</p>
           </div>
-        )}
+        </div>
         
-        {/* Alerta de Vencimento */}
+        {/* Alerta de Vencimento - Compacto */}
         {alert?.show && (
-          <div className="mt-2 p-2 bg-destructive/10 border border-destructive/20 rounded-md">
+          <div className="mt-3 p-2 bg-destructive/10 border border-destructive/20 rounded-md">
             <p className="text-xs text-destructive font-medium">{alert.text}</p>
           </div>
         )}
