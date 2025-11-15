@@ -173,6 +173,8 @@ export const productsStore = {
     const list = this.getAllProducts();
     const maxOrder = list.length > 0 ? Math.max(...list.map((p) => p.order)) : -1;
 
+    console.debug("➕ Adicionando produto - specs:", data.specs);
+
     const product: Product = {
       id: genId(),
       name: data.name,
@@ -200,10 +202,13 @@ export const productsStore = {
       warrantyExpiresAt: undefined,
       expenses: [],
       createdAt: new Date().toISOString(),
+      specifications: data.specifications,
     };
 
     productsCache = [...productsCache, product];
     saveProductsCache();
+
+    console.debug("➕ Enviando para Supabase - specs:", product.specs);
 
     // Persistir de forma síncrona com tratamento de erro
     const { error } = await supabase.from("products").upsert({
@@ -232,6 +237,10 @@ export const productsStore = {
     }
 
     await this.refreshFromBackend();
+    
+    const produtoAdicionado = productsCache.find((p) => p.id === product.id);
+    console.debug("✅ Produto adicionado - specs:", produtoAdicionado?.specs);
+    
     return product;
   },
 
@@ -239,6 +248,8 @@ export const productsStore = {
     const list = this.getAllProducts();
     const idx = list.findIndex((p) => p.id === id);
     if (idx === -1) throw new Error("Produto não encontrado");
+
+    console.debug("🔧 Atualizando produto - specs recebido:", data.specs);
 
     const updated: Product = { ...list[idx], ...data };
     productsCache = list.map((p) => (p.id === id ? updated : p));
@@ -265,6 +276,8 @@ export const productsStore = {
     if (data.warranty !== undefined) updateData.warranty_days = data.warranty;
     if (data.expenses !== undefined) updateData.expenses = data.expenses;
 
+    console.debug("🔧 Enviando para Supabase - specs:", updateData.specs);
+
     const { error } = await supabase.from("products").update(updateData).eq("id", id);
     
     if (error) {
@@ -275,6 +288,10 @@ export const productsStore = {
     }
 
     await this.refreshFromBackend();
+    
+    const produtoAtualizado = productsCache.find((p) => p.id === id);
+    console.debug("✅ Produto após update - specs:", produtoAtualizado?.specs);
+    
     return updated;
   },
 

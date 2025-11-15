@@ -54,9 +54,26 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
   const [processorOptions, setProcessorOptions] = useState<string[]>([]);
   const [ramOptions, setRamOptions] = useState<string[]>([]);
 
-  // Carregar rascunho salvo ao montar (apenas para novos produtos)
+  // Rehidratar campos quando o produto mudar (para edição)
   useEffect(() => {
-    if (!product) {
+    if (product) {
+      setName(product.name || "");
+      setCategory(product.category || "Notebooks");
+      setBrand(product.brand || "");
+      setSpecs(product.specs || "");
+      setDescription(product.description || "");
+      setPrice(product.price != null ? product.price.toString() : "");
+      setDiscountPrice(product.discountPrice != null ? product.discountPrice.toString() : "");
+      setPassOnCashDiscount(product.passOnCashDiscount || false);
+      setImages(product.images || []);
+      setProcessor(product.specifications?.processor || "");
+      setRam(product.specifications?.ram || "");
+      setDedicatedGPU(!!product.specifications?.dedicatedGPU);
+      
+      // Remover rascunho salvo ao editar produto existente
+      sessionStorage.removeItem(STORAGE_KEY);
+    } else {
+      // Carregar rascunho salvo apenas para novos produtos
       const savedDraft = sessionStorage.getItem(STORAGE_KEY);
       if (savedDraft) {
         try {
@@ -70,6 +87,9 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
           setDiscountPrice(draft.discountPrice || "");
           setPassOnCashDiscount(draft.passOnCashDiscount || false);
           setImages(draft.images || []);
+          setProcessor(draft.processor || "");
+          setRam(draft.ram || "");
+          setDedicatedGPU(draft.dedicatedGPU || false);
           toast.success("Rascunho restaurado", {
             description: "Seus dados não salvos foram recuperados",
             duration: 3000,
@@ -79,7 +99,7 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
         }
       }
     }
-  }, [product]);
+  }, [product?.id]);
 
   // Salvar rascunho automaticamente ao digitar
   useEffect(() => {
