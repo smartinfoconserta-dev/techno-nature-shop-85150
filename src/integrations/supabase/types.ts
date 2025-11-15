@@ -373,6 +373,7 @@ export type Database = {
           sold_date: string | null
           sold_on_credit: boolean
           specifications: Json | null
+          specs: string | null
           warranty_days: number | null
         }
         Insert: {
@@ -408,6 +409,7 @@ export type Database = {
           sold_date?: string | null
           sold_on_credit?: boolean
           specifications?: Json | null
+          specs?: string | null
           warranty_days?: number | null
         }
         Update: {
@@ -443,6 +445,7 @@ export type Database = {
           sold_date?: string | null
           sold_on_credit?: boolean
           specifications?: Json | null
+          specs?: string | null
           warranty_days?: number | null
         }
         Relationships: [

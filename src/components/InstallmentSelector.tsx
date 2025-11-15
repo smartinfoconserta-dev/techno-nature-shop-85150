@@ -106,6 +106,7 @@ const InstallmentSelector = ({ basePrice, hasCouponActive, onSelect }: Installme
       <Select value={selectedValue} onValueChange={handleValueChange}>
         <SelectTrigger 
           className={cn(
+            "bg-background text-foreground", // ✅ Cores explícitas
             selectedValue && selectedValue !== "none" 
               ? "border-primary ring-2 ring-primary/20" 
               : ""
@@ -113,7 +114,7 @@ const InstallmentSelector = ({ basePrice, hasCouponActive, onSelect }: Installme
         >
           <SelectValue placeholder="Selecione a forma de pagamento" />
         </SelectTrigger>
-        <SelectContent className="scrollbar-hide bg-popover">
+        <SelectContent className="z-[200] bg-background border-border shadow-lg">
           <SelectItem value="none">Ver preço original</SelectItem>
           {!hasCouponActive && (
             <SelectItem 
