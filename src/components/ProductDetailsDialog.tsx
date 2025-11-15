@@ -7,9 +7,11 @@ import { useState, useEffect, useRef } from "react";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from "@/components/ui/carousel";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Drawer, DrawerContent } from "@/components/ui/drawer";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { InstallmentOption, calculateCashPriceWithPassOn, calculateDisplayPrice, getAllInstallmentOptions } from "@/lib/installmentHelper";
 import { couponsStore } from "@/lib/couponsStore";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const sanitizeForWhatsApp = (text: string): string => {
   return text
@@ -46,12 +48,14 @@ const ProductDetailsDialog = ({
   discountPrice, 
   passOnCashDiscount = false 
 }: ProductDetailsDialogProps) => {
+  const isMobile = useIsMobile();
   const [coupon, setCoupon] = useState("");
   const [selectedPayment, setSelectedPayment] = useState<{ type: 'cash' | 'installment', data?: InstallmentOption, cashValue?: number } | null>(null);
   const [api, setApi] = useState<CarouselApi>();
   const [current, setCurrent] = useState(0);
   const [showCouponInput, setShowCouponInput] = useState(false);
   const [paymentPopoverOpen, setPaymentPopoverOpen] = useState(false);
+  const [paymentDrawerOpen, setPaymentDrawerOpen] = useState(false);
   const installmentRefs = useRef<{ [key: number]: HTMLButtonElement | null }>({});
   
   const [couponValidation, setCouponValidation] = useState<{ valid: boolean; coupon?: any }>({ valid: false });
@@ -450,6 +454,109 @@ const ProductDetailsDialog = ({
       </DialogContent>
 
     </Dialog>
+  );
+};
+
+// Componente reutilizável para as opções de pagamento
+interface PaymentOptionsContentProps {
+  displayPrice: number;
+  cashPrice: number;
+  isLoadingInstallments: boolean;
+  installmentOptions: InstallmentOption[];
+  onSelectOriginal: () => void;
+  onSelectCash: () => void;
+  onSelectInstallment: (option: InstallmentOption) => void;
+}
+
+const PaymentOptionsContent = ({
+  displayPrice,
+  cashPrice,
+  isLoadingInstallments,
+  installmentOptions,
+  onSelectOriginal,
+  onSelectCash,
+  onSelectInstallment,
+}: PaymentOptionsContentProps) => {
+  const cashDiscount = displayPrice - cashPrice;
+  
+  return (
+    <div className="space-y-3">
+      <h3 className="font-medium text-foreground">Escolha a forma de pagamento</h3>
+      
+      {/* Ver preço original */}
+      <button
+        onClick={onSelectOriginal}
+        className="w-full p-3 border rounded-lg hover:bg-accent/50 transition-colors text-left"
+      >
+        <div className="flex items-center justify-between">
+          <span className="font-medium">Ver preço original</span>
+          <span className="text-sm text-muted-foreground">
+            R$ {displayPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </span>
+        </div>
+      </button>
+
+      {/* À vista */}
+      <button
+        onClick={onSelectCash}
+        className="w-full p-3 border rounded-lg hover:bg-accent/50 transition-colors text-left"
+      >
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center justify-between">
+            <span className="font-medium">À vista (5% desconto)</span>
+            <span className="text-sm font-semibold text-green-600">
+              R$ {cashPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </span>
+          </div>
+          {cashDiscount > 0 && (
+            <span className="text-xs text-muted-foreground">
+              Economia de R$ {cashDiscount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </span>
+          )}
+        </div>
+      </button>
+
+      {/* Parcelamento */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-medium">Parcelamento (Visa/Mastercard)</span>
+        </div>
+        
+        <div className="space-y-2">
+          {isLoadingInstallments ? (
+            <div className="text-sm text-muted-foreground">Carregando...</div>
+          ) : (
+            installmentOptions.map((option) => {
+              const interestAmount = option.totalAmount - displayPrice;
+              return (
+                <button
+                  key={option.installments}
+                  onClick={() => onSelectInstallment(option)}
+                  className="w-full p-3 border rounded-lg hover:bg-accent/50 transition-colors text-left"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">{option.installments}x</span>
+                    <div className="text-right">
+                      <div className="text-sm font-medium">
+                        R$ {option.installmentValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Total: R$ {option.totalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </div>
+                      {interestAmount > 0 && (
+                        <div className="text-xs text-orange-600">
+                          Juros: R$ {interestAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </button>
+              );
+            })
+          )}
+        </div>
+      </div>
+    </div>
   );
 };
 
