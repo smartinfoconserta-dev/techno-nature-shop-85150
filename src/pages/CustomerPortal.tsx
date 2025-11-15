@@ -33,11 +33,14 @@ interface Receivable {
   paidAmount: number;
   remainingAmount: number;
   installments: number;
+  installmentRate: number;
   status: "pending" | "partial" | "paid";
+  payments: any[];
   warranty?: number;
   archived: boolean;
   saleDate: string;
   createdAt: string;
+  updatedAt: string;
   dueDate?: string;
   autoArchived?: boolean;
 }
@@ -101,7 +104,14 @@ const CustomerPortal = () => {
   };
 
   const handlePrintPDF = () => {
-    if (customer) generateCustomerPortalPDF(customer, [...activeReceivables, ...archivedReceivables]);
+    if (customer) {
+      generateCustomerPortalPDF(
+        customer,
+        [...activeReceivables, ...archivedReceivables],
+        "Todos os períodos",
+        "Loja"
+      );
+    }
   };
 
   const handleDeleteClick = (id: string) => {
@@ -220,8 +230,10 @@ const CustomerPortal = () => {
 
             {activeFiltersCount > 0 && (
               <div className="flex flex-wrap gap-2">
-                {searchTerm && <ActiveFilterChip label={`Busca: ${searchTerm}`} onRemove={() => setSearchTerm("")} />}
-                {statusFilter !== "all" && <ActiveFilterChip label={`Status: ${statusFilter}`} onRemove={() => setStatusFilter("all")} />}
+                {searchTerm && <ActiveFilterChip label="Busca" value={searchTerm} onRemove={() => setSearchTerm("")} />}
+                {statusFilter !== "all" && <ActiveFilterChip label="Status" value={statusFilter} onRemove={() => setStatusFilter("all")} />}
+                {periodFilter !== "all" && <ActiveFilterChip label="Período" value={periodFilter === "30days" ? "30 dias" : "90 dias"} onRemove={() => setPeriodFilter("all")} />}
+                {brandFilter !== "all" && <ActiveFilterChip label="Marca" value={brandFilter} onRemove={() => setBrandFilter("all")} />}
               </div>
             )}
 
@@ -256,7 +268,7 @@ const CustomerPortal = () => {
       <AddNotebookItemDialog open={showAddDialog} onOpenChange={setShowAddDialog}
         onSuccess={() => { setRefreshKey(prev => prev + 1); loadReceivables("active"); loadReceivables("archived"); }} />
       <DeletePortalReceivableDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog} receivable={selectedReceivable}
-        onSuccess={() => { loadReceivables("archived"); setSelectedReceivable(null); }} />
+        onDeleted={() => { loadReceivables("archived"); setSelectedReceivable(null); }} />
     </div>
   );
 };
