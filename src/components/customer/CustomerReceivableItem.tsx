@@ -36,7 +36,7 @@ export const CustomerReceivableItem = ({
   const warrantyDays = getWarrantyDays({ warranty: receivable.warranty });
 
   return (
-    <div className="p-3 md:p-4 border rounded-lg hover:shadow-sm transition-shadow bg-card">
+    <div className="p-3 md:p-4 border-2 border-border/50 rounded-lg hover:shadow-md hover:border-border transition-all bg-card">
       <div className="space-y-2">
         {/* Linha 1: Nome + Status */}
         <div className="flex items-start justify-between gap-2">

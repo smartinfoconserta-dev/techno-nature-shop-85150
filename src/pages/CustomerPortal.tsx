@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Separator } from "@/components/ui/separator";
 import { ShoppingBag, DollarSign, Clock, Loader2, ChevronDown } from "lucide-react";
 import { SummaryCard } from "@/components/customer/SummaryCard";
 import { AddNotebookItemDialog } from "@/components/customer/AddNotebookItemDialog";
@@ -240,13 +241,18 @@ const CustomerPortal = () => {
               </div>
             )}
 
-            <div className="space-y-3">
+            <div className="space-y-4">
               {filteredReceivables.length === 0 ? (
                 <Card><CardContent className="p-8 text-center"><p className="text-muted-foreground">Nenhuma compra encontrada</p></CardContent></Card>
               ) : (
-                filteredReceivables.map((rec) => (
-                  <CustomerReceivableItem key={rec.id} receivable={rec} isArchived={activeTab === "archived"}
-                    onDelete={activeTab === "archived" ? handleDeleteClick : undefined} getStatusBadge={getStatusBadge} />
+                filteredReceivables.map((rec, index) => (
+                  <div key={rec.id}>
+                    <CustomerReceivableItem receivable={rec} isArchived={activeTab === "archived"}
+                      onDelete={activeTab === "archived" ? handleDeleteClick : undefined} getStatusBadge={getStatusBadge} />
+                    {index < filteredReceivables.length - 1 && (
+                      <Separator className="my-3" />
+                    )}
+                  </div>
                 ))
               )}
             </div>
