@@ -172,7 +172,7 @@ const Index = () => {
       <section className="relative h-[30vh] min-h-[250px] max-h-[320px] overflow-hidden animate-fade-in">
         <div className="absolute inset-0">
           <img src={heroImage} alt="Tecnologia" className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/60 via-secondary/50 to-primary-purple/60" />
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/30 via-secondary/25 to-primary-purple/30" />
         </div>
         
         <div className="relative z-10 h-full flex items-center justify-center">
