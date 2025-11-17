@@ -29,9 +29,10 @@ interface ProductCardProps {
   costPrice?: number;
   discountPrice?: number;
   passOnCashDiscount?: boolean;
+  sold?: boolean;
 }
 
-const ProductCard = ({ id, images, name, brand, category, specs, description, price, costPrice, discountPrice, passOnCashDiscount = false }: ProductCardProps) => {
+const ProductCard = ({ id, images, name, brand, category, specs, description, price, costPrice, discountPrice, passOnCashDiscount = false, sold = false }: ProductCardProps) => {
   const [coupon, setCoupon] = useState("");
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
@@ -213,8 +214,21 @@ const ProductCard = ({ id, images, name, brand, category, specs, description, pr
             loading="lazy"
             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
+          
+          {sold && (
+            <>
+              {/* Overlay escuro semi-transparente */}
+              <div className="absolute inset-0 bg-black/60 z-10" />
+              
+              {/* Ribbon diagonal "Vendido" */}
+              <div className="absolute top-4 -right-10 bg-destructive text-destructive-foreground font-bold py-1 px-12 rotate-45 shadow-lg z-20 text-sm">
+                VENDIDO
+              </div>
+            </>
+          )}
+          
           {hasMultipleImages && (
-            <Badge className="absolute bottom-2 right-2 gap-1 text-xs bg-gradient-to-r from-primary/90 to-primary-purple/90 border-0">
+            <Badge className="absolute bottom-2 right-2 gap-1 text-xs bg-gradient-to-r from-primary/90 to-primary-purple/90 border-0 z-30">
               <Image className="h-3 w-3" />
               +{images.length - 1}
             </Badge>

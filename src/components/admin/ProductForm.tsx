@@ -39,6 +39,7 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
   const [passOnCashDiscount, setPassOnCashDiscount] = useState(
     product?.passOnCashDiscount || false
   );
+  const [sold, setSold] = useState(product?.sold || false);
   const [images, setImages] = useState<string[]>(product?.images || []);
   const [availableBrands, setAvailableBrands] = useState<string[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
@@ -65,6 +66,7 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
       setPrice(product.price != null ? product.price.toString() : "");
       setDiscountPrice(product.discountPrice != null ? product.discountPrice.toString() : "");
       setPassOnCashDiscount(product.passOnCashDiscount || false);
+      setSold(product.sold || false);
       setImages(product.images || []);
       setProcessor(product.specifications?.processor || "");
       setRam(product.specifications?.ram || "");
@@ -86,6 +88,7 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
           setPrice(draft.price || "");
           setDiscountPrice(draft.discountPrice || "");
           setPassOnCashDiscount(draft.passOnCashDiscount || false);
+          setSold(draft.sold || false);
           setImages(draft.images || []);
           setProcessor(draft.processor || "");
           setRam(draft.ram || "");
@@ -113,6 +116,7 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
         price,
         discountPrice,
         passOnCashDiscount,
+        sold,
         images,
         processor,
         ram,
@@ -255,6 +259,7 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
         price: parseFloat(price),
         discountPrice: discountPrice ? parseFloat(discountPrice) : undefined,
         passOnCashDiscount,
+        sold,
         images,
         specifications,
       } as any);
@@ -375,6 +380,27 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
                     <strong>R$ {price ? (parseFloat(price) * 0.95).toFixed(2) : "0,00"}</strong> à vista
                   </>
                 )}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="col-span-2">
+          <div className="flex items-start space-x-3 p-4 border rounded-lg bg-muted/50">
+            <Checkbox
+              id="sold"
+              checked={sold}
+              onCheckedChange={(checked) => setSold(checked as boolean)}
+            />
+            <div className="flex-1 space-y-1">
+              <Label 
+                htmlFor="sold" 
+                className="cursor-pointer font-semibold"
+              >
+                Marcar como vendido
+              </Label>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Quando marcado, o produto exibirá uma indicação visual de "Vendido" no catálogo
               </p>
             </div>
           </div>
