@@ -250,7 +250,7 @@ const CustomerPortal = () => {
                     <CustomerReceivableItem receivable={rec} isArchived={activeTab === "archived"}
                       onDelete={activeTab === "archived" ? handleDeleteClick : undefined} getStatusBadge={getStatusBadge} />
                     {index < filteredReceivables.length - 1 && (
-                      <Separator className="my-3" />
+                      <Separator className="my-2" />
                     )}
                   </div>
                 ))
