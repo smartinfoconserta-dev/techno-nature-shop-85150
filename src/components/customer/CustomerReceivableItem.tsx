@@ -36,8 +36,8 @@ export const CustomerReceivableItem = ({
   const warrantyDays = getWarrantyDays({ warranty: receivable.warranty });
 
   return (
-    <div className="p-3 md:p-4 border-2 border-border/50 rounded-lg hover:shadow-md hover:border-border transition-all bg-card">
-      <div className="space-y-2">
+    <div className="p-2.5 md:p-3 border border-border/40 rounded-lg hover:shadow-md hover:border-border transition-all bg-muted/30">
+      <div className="space-y-1.5">
         {/* Linha 1: Nome + Status */}
         <div className="flex items-start justify-between gap-2">
           <h4 className="font-semibold text-sm md:text-base flex-1">{receivable.productName}</h4>
@@ -69,7 +69,7 @@ export const CustomerReceivableItem = ({
         </div>
         
         {/* Linha 3: Valores em Grid */}
-        <div className="grid grid-cols-3 gap-2 text-xs">
+        <div className="grid grid-cols-3 gap-1.5 text-xs">
           <div className="flex flex-col">
             <span className="text-muted-foreground">💰 Total</span>
             <span className="font-semibold">
