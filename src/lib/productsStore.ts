@@ -36,6 +36,7 @@ export interface Product {
   passOnCashDiscount?: boolean;
   order: number;
   sold: boolean;
+  showSoldOverlay?: boolean; // Campo decorativo visual
   salePrice?: number;
   paymentBreakdown?: PaymentBreakdown;
   taxAmount?: number;
@@ -95,6 +96,7 @@ function mapRowToProduct(row: any): Product {
     passOnCashDiscount: row.pass_on_cash_discount || false,
     order: row.product_order || 0,
     sold: row.sold || false,
+    showSoldOverlay: row.show_sold_overlay || false,
     salePrice: row.sale_price ? Number(row.sale_price) : undefined,
     paymentBreakdown: row.payment_breakdown as PaymentBreakdown | undefined,
     taxAmount: row.digital_tax ? Number(row.digital_tax) : undefined,
@@ -189,6 +191,7 @@ export const productsStore = {
       passOnCashDiscount: data.passOnCashDiscount || false,
       order: maxOrder + 1,
       sold: false,
+      showSoldOverlay: false,
       salePrice: undefined,
       paymentBreakdown: undefined,
       taxAmount: undefined,
@@ -225,6 +228,7 @@ export const productsStore = {
       pass_on_cash_discount: product.passOnCashDiscount || false,
       product_order: product.order,
       sold: false,
+      show_sold_overlay: false,
       expenses: [],
       created_at: product.createdAt,
     } as any);
@@ -268,6 +272,7 @@ export const productsStore = {
     if (data.passOnCashDiscount !== undefined) updateData.pass_on_cash_discount = data.passOnCashDiscount;
     if (data.order !== undefined) updateData.product_order = data.order;
     if (data.sold !== undefined) updateData.sold = data.sold;
+    if (data.showSoldOverlay !== undefined) updateData.show_sold_overlay = data.showSoldOverlay;
     if (data.salePrice !== undefined) updateData.sale_price = data.salePrice;
     if (data.paymentBreakdown !== undefined) updateData.payment_breakdown = data.paymentBreakdown;
     if (data.taxAmount !== undefined) updateData.digital_tax = data.taxAmount;

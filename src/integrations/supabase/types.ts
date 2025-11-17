@@ -369,6 +369,7 @@ export type Database = {
           receivable_id: string | null
           remaining_amount: number | null
           sale_price: number | null
+          show_sold_overlay: boolean | null
           sold: boolean
           sold_date: string | null
           sold_on_credit: boolean
@@ -405,6 +406,7 @@ export type Database = {
           receivable_id?: string | null
           remaining_amount?: number | null
           sale_price?: number | null
+          show_sold_overlay?: boolean | null
           sold?: boolean
           sold_date?: string | null
           sold_on_credit?: boolean
@@ -441,6 +443,7 @@ export type Database = {
           receivable_id?: string | null
           remaining_amount?: number | null
           sale_price?: number | null
+          show_sold_overlay?: boolean | null
           sold?: boolean
           sold_date?: string | null
           sold_on_credit?: boolean
