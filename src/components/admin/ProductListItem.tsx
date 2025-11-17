@@ -48,7 +48,7 @@ const ProductListItem = ({ product, onEdit, onDelete, onMarkAsSold }: ProductLis
           className="w-16 h-16 object-cover rounded border border-border"
         />
         
-        {product.sold && (
+        {product.showSoldOverlay && (
           <>
             {/* Overlay escuro */}
             <div className="absolute inset-0 bg-black/60 rounded z-10" />

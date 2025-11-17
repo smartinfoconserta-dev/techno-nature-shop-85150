@@ -39,7 +39,7 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
   const [passOnCashDiscount, setPassOnCashDiscount] = useState(
     product?.passOnCashDiscount || false
   );
-  const [sold, setSold] = useState(product?.sold || false);
+  const [showSoldOverlay, setShowSoldOverlay] = useState(product?.showSoldOverlay || false);
   const [images, setImages] = useState<string[]>(product?.images || []);
   const [availableBrands, setAvailableBrands] = useState<string[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
@@ -66,7 +66,7 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
       setPrice(product.price != null ? product.price.toString() : "");
       setDiscountPrice(product.discountPrice != null ? product.discountPrice.toString() : "");
       setPassOnCashDiscount(product.passOnCashDiscount || false);
-      setSold(product.sold || false);
+      setShowSoldOverlay(product.showSoldOverlay || false);
       setImages(product.images || []);
       setProcessor(product.specifications?.processor || "");
       setRam(product.specifications?.ram || "");
@@ -88,7 +88,7 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
           setPrice(draft.price || "");
           setDiscountPrice(draft.discountPrice || "");
           setPassOnCashDiscount(draft.passOnCashDiscount || false);
-          setSold(draft.sold || false);
+          setShowSoldOverlay(draft.showSoldOverlay || false);
           setImages(draft.images || []);
           setProcessor(draft.processor || "");
           setRam(draft.ram || "");
@@ -116,7 +116,7 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
         price,
         discountPrice,
         passOnCashDiscount,
-        sold,
+        showSoldOverlay,
         images,
         processor,
         ram,
@@ -124,7 +124,7 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
       };
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
     }
-  }, [name, category, brand, specs, description, price, discountPrice, passOnCashDiscount, images, processor, ram, dedicatedGPU, product]);
+  }, [name, category, brand, specs, description, price, discountPrice, passOnCashDiscount, showSoldOverlay, images, processor, ram, dedicatedGPU, product]);
 
   // Avisar antes de fechar/recarregar se houver dados não salvos
   useEffect(() => {
@@ -259,7 +259,7 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
         price: parseFloat(price),
         discountPrice: discountPrice ? parseFloat(discountPrice) : undefined,
         passOnCashDiscount,
-        sold,
+        showSoldOverlay,
         images,
         specifications,
       } as any);
@@ -388,19 +388,19 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
         <div className="col-span-2">
           <div className="flex items-start space-x-3 p-4 border rounded-lg bg-muted/50">
             <Checkbox
-              id="sold"
-              checked={sold}
-              onCheckedChange={(checked) => setSold(checked as boolean)}
+              id="showSoldOverlay"
+              checked={showSoldOverlay}
+              onCheckedChange={(checked) => setShowSoldOverlay(checked as boolean)}
             />
             <div className="flex-1 space-y-1">
               <Label 
-                htmlFor="sold" 
+                htmlFor="showSoldOverlay" 
                 className="cursor-pointer font-semibold"
               >
-                Marcar como vendido
+                Exibir ribbon "Vendido" (apenas visual)
               </Label>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Quando marcado, o produto exibirá uma indicação visual de "Vendido" no catálogo
+                Adiciona uma marcação visual de "Vendido" sobre a imagem do produto. O produto continua disponível no sistema e no catálogo.
               </p>
             </div>
           </div>

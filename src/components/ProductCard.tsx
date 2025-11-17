@@ -29,10 +29,10 @@ interface ProductCardProps {
   costPrice?: number;
   discountPrice?: number;
   passOnCashDiscount?: boolean;
-  sold?: boolean;
+  showSoldOverlay?: boolean;
 }
 
-const ProductCard = ({ id, images, name, brand, category, specs, description, price, costPrice, discountPrice, passOnCashDiscount = false, sold = false }: ProductCardProps) => {
+const ProductCard = ({ id, images, name, brand, category, specs, description, price, costPrice, discountPrice, passOnCashDiscount = false, showSoldOverlay = false }: ProductCardProps) => {
   const [coupon, setCoupon] = useState("");
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
@@ -215,7 +215,7 @@ const ProductCard = ({ id, images, name, brand, category, specs, description, pr
             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
           
-          {sold && (
+          {showSoldOverlay && (
             <>
               {/* Overlay escuro semi-transparente */}
               <div className="absolute inset-0 bg-black/60 z-10" />
