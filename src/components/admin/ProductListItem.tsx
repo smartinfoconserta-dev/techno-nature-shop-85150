@@ -41,11 +41,25 @@ const ProductListItem = ({ product, onEdit, onDelete, onMarkAsSold }: ProductLis
         <GripVertical className="h-5 w-5" />
       </button>
 
-      <img
-        src={product.images[0]}
-        alt={product.name}
-        className="w-16 h-16 object-cover rounded border border-border"
-      />
+      <div className="relative">
+        <img
+          src={product.images[0]}
+          alt={product.name}
+          className="w-16 h-16 object-cover rounded border border-border"
+        />
+        
+        {product.sold && (
+          <>
+            {/* Overlay escuro */}
+            <div className="absolute inset-0 bg-black/60 rounded z-10" />
+            
+            {/* Ribbon adaptado para tamanho menor */}
+            <div className="absolute top-2 -right-6 bg-destructive text-destructive-foreground text-[8px] font-bold py-0.5 px-6 rotate-45 shadow-md z-20">
+              VENDIDO
+            </div>
+          </>
+        )}
+      </div>
 
       <div className="flex-1 min-w-0">
         <h4 className="font-semibold text-foreground truncate">{product.name}</h4>
