@@ -36,16 +36,11 @@ export const CustomerReceivableItem = ({
   const warrantyDays = getWarrantyDays({ warranty: receivable.warranty });
 
   return (
-    <div className="p-2.5 md:p-3 border border-border/40 rounded-lg hover:shadow-md hover:border-border transition-all bg-muted/30">
-      <div className="space-y-1.5">
-        {/* Linha 1: Nome + Status */}
-        <div className="flex items-start justify-between gap-2">
-          <h4 className="font-semibold text-sm md:text-base flex-1">{receivable.productName}</h4>
-          {getStatusBadge(receivable.status)}
-        </div>
-        
-        {/* Linha 2: Garantia + Marca + Data */}
-        <div className="flex flex-wrap items-center gap-2 text-xs md:text-sm text-muted-foreground">
+    <div className="px-3 py-2 md:px-3 md:py-2.5 rounded-md border border-border bg-muted/40 shadow-sm hover:shadow transition-colors">
+      <div className="flex items-center gap-2 md:gap-3">
+        {/* Esquerda: Nome + Garantia */}
+        <div className="min-w-0 flex-1 flex items-center gap-2">
+          <h4 className="font-medium text-[13px] md:text-sm truncate">{receivable.productName}</h4>
           {warrantyDays > 0 ? (
             <WarrantyBadge 
               saleDate={receivable.saleDate || receivable.createdAt}
@@ -53,55 +48,45 @@ export const CustomerReceivableItem = ({
               size="sm"
             />
           ) : (
-            <Badge variant="outline" className="text-xs">Sem garantia</Badge>
+            <Badge variant="secondary" className="h-5 px-1.5 text-[10px] shrink-0">Sem garantia</Badge>
           )}
-          {receivable.autoArchived && (
-            <Badge variant="outline" className="text-xs">Auto-arquivado</Badge>
-          )}
-          {receivable.brand && (
-            <>
-              <span>•</span>
-              <span className="font-medium">{receivable.brand}</span>
-            </>
-          )}
-          <span>•</span>
-          <span>{format(new Date(receivable.saleDate || receivable.createdAt), "dd/MM/yyyy", { locale: ptBR })}</span>
-        </div>
-        
-        {/* Linha 3: Valores em Grid */}
-        <div className="grid grid-cols-3 gap-1.5 text-xs">
-          <div className="flex flex-col">
-            <span className="text-muted-foreground">💰 Total</span>
-            <span className="font-semibold">
-              R$ {receivable.totalAmount.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-            </span>
-          </div>
-          <div className="flex flex-col">
-            <span className="text-muted-foreground">✅ Pago</span>
-            <span className="font-semibold text-green-600">
-              R$ {receivable.paidAmount.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-            </span>
-          </div>
-          <div className="flex flex-col">
-            <span className="text-muted-foreground">❌ Resta</span>
-            <span className="font-semibold text-destructive">
-              R$ {receivable.remainingAmount.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-            </span>
-          </div>
         </div>
 
-        {/* Botão de deletar apenas para arquivadas */}
-        {isArchived && onDelete && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onDelete(receivable.id)}
-            className="w-full text-destructive hover:text-destructive hover:bg-destructive/10 mt-2"
-          >
-            <Trash2 className="h-4 w-4 mr-2" />
-            Deletar
-          </Button>
-        )}
+        {/* Meio: Totais (desktop) */}
+        <div className="hidden sm:flex items-center gap-2 text-[11px] text-muted-foreground">
+          <span className="opacity-60">Total</span>
+          <span className="font-semibold">R$ {receivable.totalAmount.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+          <span className="opacity-40">•</span>
+          <span className="opacity-60">Pago</span>
+          <span className="font-semibold text-green-600">R$ {receivable.paidAmount.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+          <span className="opacity-40">•</span>
+          <span className="opacity-60">Resta</span>
+          <span className="font-semibold text-destructive">R$ {receivable.remainingAmount.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+        </div>
+
+        {/* Meio: Totais (mobile - abreviado) */}
+        <div className="sm:hidden flex items-center gap-1.5 text-[10px] text-muted-foreground">
+          <span>Tot R$ {receivable.totalAmount.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+          <span className="opacity-40">•</span>
+          <span className="text-green-600">Pgo R$ {receivable.paidAmount.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+          <span className="opacity-40">•</span>
+          <span className="text-destructive">Rst R$ {receivable.remainingAmount.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+        </div>
+
+        {/* Direita: Deletar + Status */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          {isArchived && onDelete && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onDelete(receivable.id)}
+              className="h-8 w-8 text-destructive hover:bg-destructive/10"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          )}
+          {getStatusBadge(receivable.status)}
+        </div>
       </div>
     </div>
   );

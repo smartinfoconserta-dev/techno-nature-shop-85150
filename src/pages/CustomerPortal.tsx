@@ -241,18 +241,18 @@ const CustomerPortal = () => {
               </div>
             )}
 
-            <div className="space-y-4">
+            <div className="space-y-2">
               {filteredReceivables.length === 0 ? (
                 <Card><CardContent className="p-8 text-center"><p className="text-muted-foreground">Nenhuma compra encontrada</p></CardContent></Card>
               ) : (
-                filteredReceivables.map((rec, index) => (
-                  <div key={rec.id}>
-                    <CustomerReceivableItem receivable={rec} isArchived={activeTab === "archived"}
-                      onDelete={activeTab === "archived" ? handleDeleteClick : undefined} getStatusBadge={getStatusBadge} />
-                    {index < filteredReceivables.length - 1 && (
-                      <Separator className="my-2" />
-                    )}
-                  </div>
+                filteredReceivables.map((rec) => (
+                  <CustomerReceivableItem 
+                    key={rec.id}
+                    receivable={rec} 
+                    isArchived={activeTab === "archived"}
+                    onDelete={activeTab === "archived" ? handleDeleteClick : undefined} 
+                    getStatusBadge={getStatusBadge} 
+                  />
                 ))
               )}
             </div>
