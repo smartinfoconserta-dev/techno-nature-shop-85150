@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { clearAllCache } from "@/lib/appVersion";
 import { toast } from "sonner";
 import MobileMenu from "./MobileMenu";
-import SearchBar from "./SearchBar";
 
 interface HeaderProps {
   searchValue: string;
@@ -37,11 +36,7 @@ const Header = ({ searchValue, onSearchChange, onReset }: HeaderProps) => {
             </h1>
           </button>
           
-          <SearchBar 
-            value={searchValue}
-            onChange={onSearchChange}
-            placeholder="Buscar produtos..."
-          />
+          <div className="flex-1"></div>
           
           <div className="flex items-center gap-2">
             <button

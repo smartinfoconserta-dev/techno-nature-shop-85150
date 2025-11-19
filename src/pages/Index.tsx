@@ -1,12 +1,11 @@
 import { useState, useEffect, useMemo } from "react";
 import Header from "@/components/Header";
-import ProductFilters from "@/components/ProductFilters";
 import ProductCard from "@/components/ProductCard";
 import ProductDetailsDialog from "@/components/ProductDetailsDialog";
-import { CategoryDropdownButton } from "@/components/CategoryDropdownButton";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowUp } from "lucide-react";
+import { ArrowUp, Search } from "lucide-react";
 import { brandsStore } from "@/lib/brandsStore";
 import { productsStore } from "@/lib/productsStore";
 import { categoriesStore, CategoryTreeNode } from "@/lib/categoriesStore";
@@ -180,103 +179,126 @@ const Index = () => {
     setHasDedicatedGpu(null);
     scrollToTop();
   };
-  return <div className="min-h-screen bg-background">
-      <Header searchValue={searchQuery} onSearchChange={setSearchQuery} onReset={handleResetFilters} />
-      
-      {/* Hero Banner */}
-      <section className="relative h-[20vh] min-h-[200px] max-h-[280px] md:h-[53vh] md:min-h-[450px] md:max-h-[750px] overflow-hidden animate-fade-in">
-        <div className="absolute inset-0">
-          {/* Imagem MOBILE - visível apenas em telas < 768px */}
-          <img 
-            src={(activeBanner?.mobile_image_url || activeBanner?.image_url) || heroImage}
-            alt="Tecnologia" 
-            className="w-full h-full object-cover md:hidden" 
-          />
-          
-          {/* Imagem DESKTOP - visível apenas em telas ≥ 768px */}
-          <img 
-            src={bannerUrl || heroImage}
-            alt="Tecnologia" 
-            className="hidden md:block w-full h-full object-cover" 
-          />
-          
-          {/* Overlay/máscara personalizada do banner */}
-          <div 
-            className="absolute inset-0" 
-            style={{
-              backgroundColor: activeBanner?.overlay_color || '#000000',
-              opacity: (activeBanner?.overlay_opacity ?? 30) / 100
-            }}
-          />
-        </div>
-        
-        <div className="relative z-10 h-full flex items-center justify-center">
-          <div className="text-center text-white px-4">
-            <h1 className="text-3xl md:text-5xl font-bold mb-3 drop-shadow-lg">
-              Ramon Tech Solutions  
-            </h1>
-            <p className="text-base md:text-xl drop-shadow-md">
-              Catálogo Digital de tecnologias
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50">
+      <Header 
+        searchValue="" 
+        onSearchChange={() => {}} 
+        onReset={handleResetFilters} 
+      />
 
-   
-            </p>
-          </div>
+      {/* Hero Banner */}
+      <section className="relative overflow-hidden bg-black">
+        <div className="relative w-full aspect-[16/7] lg:aspect-[21/7]">
+          <img
+            src={bannerUrl || heroImage}
+            alt="Banner principal"
+            className="w-full h-full object-cover"
+          />
         </div>
       </section>
 
-      {/* Categorias Horizontais */}
-      <section className="bg-muted/30 border-b">
-        <div className="container mx-auto px-4 py-3">
+      {/* Barra de Busca Principal */}
+      <div className="bg-white/95 backdrop-blur-md border-b border-indigo-100 py-4 shadow-lg">
+        <div className="container mx-auto px-2 sm:px-4">
+          <div className="flex flex-col gap-3">
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-indigo-400" />
+              <Input
+                placeholder="Buscar produtos por nome ou marca..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-12 pr-4 border-2 border-indigo-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/20 rounded-xl h-12 text-base bg-white shadow-sm"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Categorias */}
+      <section className="bg-white border-b border-gray-200">
+        <div className="container mx-auto px-4 py-4">
           <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-            {categoryTree.map(category => <CategoryDropdownButton key={category.id} category={category} selectedCategory={selectedCategory} onSelectCategory={handleSelectCategory} />)}
+            {/* Botão "Todos" */}
+            <Button
+              onClick={() => setSelectedCategory("")}
+              variant="ghost"
+              className={`
+                whitespace-nowrap rounded-full font-semibold transition-all duration-300 shadow-md hover:shadow-xl
+                ${
+                  selectedCategory === ""
+                    ? "bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white border-0 scale-105 shadow-lg hover:scale-110"
+                    : "bg-white text-gray-700 border-2 border-gray-300 hover:border-indigo-400 hover:bg-indigo-50"
+                }
+              `}
+              size="default"
+            >
+              Todos
+            </Button>
+            
+            {/* Categorias existentes */}
+            {categoryTree.map(category => (
+              <Button
+                key={category.id}
+                onClick={() => setSelectedCategory(category.name)}
+                variant="ghost"
+                className={`
+                  whitespace-nowrap rounded-full font-semibold transition-all duration-300 shadow-md hover:shadow-xl
+                  ${
+                    selectedCategory === category.name
+                      ? "bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white border-0 scale-105 shadow-lg hover:scale-110"
+                      : "bg-white text-gray-700 border-2 border-gray-300 hover:border-indigo-400 hover:bg-indigo-50"
+                  }
+                `}
+                size="default"
+              >
+                {category.name}
+              </Button>
+            ))}
           </div>
         </div>
       </section>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 pt-4 pb-8">
-        <ProductFilters searchQuery={searchQuery} onSearchChange={setSearchQuery} selectedCategory={selectedCategory} selectedBrand={selectedBrand} onBrandChange={setSelectedBrand} brands={brands} minPrice={minPrice} maxPrice={maxPrice} onMinPriceChange={setMinPrice} onMaxPriceChange={setMaxPrice} sortBy={sortBy} onSortChange={setSortBy} selectedProcessor={selectedProcessor} onProcessorChange={setSelectedProcessor} selectedRam={selectedRam} onRamChange={setSelectedRam} hasDedicatedGpu={hasDedicatedGpu} onDedicatedGpuChange={setHasDedicatedGpu} />
-
+      <main className="container mx-auto px-4 py-8">
         {/* Products Grid */}
-        <div className="mt-8">
-          {isLoading ? <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {Array.from({
-            length: 8
-          }).map((_, i) => <div key={i} className="space-y-4">
-                  <Skeleton className="h-48 w-full rounded-lg" />
-                  <Skeleton className="h-4 w-3/4" />
-                  <Skeleton className="h-4 w-1/2" />
-                </div>)}
-            </div> : filteredProducts.length === 0 ? <div className="text-center py-16 text-muted-foreground">
-              <p className="text-lg">Nenhum produto encontrado.</p>
-              <Button variant="link" onClick={handleResetFilters} className="mt-2">
-                Limpar filtros
-              </Button>
-            </div> : <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {filteredProducts.map(product => <ProductCard key={product.id} id={product.id} images={product.images} name={product.name} brand={product.brand} category={product.category} specs={product.specs} description={product.description} price={product.price} costPrice={product.costPrice} discountPrice={product.discountPrice} passOnCashDiscount={product.passOnCashDiscount} showSoldOverlay={product.showSoldOverlay} />)}
-            </div>}
-        </div>
+        {isLoading ? (
+          <div className="grid gap-4 lg:gap-6 grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="space-y-4">
+                <Skeleton className="h-48 w-full rounded-lg" />
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+              </div>
+            ))}
+          </div>
+        ) : filteredProducts.length === 0 ? (
+          <div className="text-center py-16 text-muted-foreground">
+            <p className="text-lg">Nenhum produto encontrado.</p>
+            <Button variant="link" onClick={handleResetFilters} className="mt-2">
+              Limpar filtros
+            </Button>
+          </div>
+        ) : (
+          <div className="grid gap-4 lg:gap-6 grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {filteredProducts.map(product => (
+              <ProductCard key={product.id} {...product} />
+            ))}
+          </div>
+        )}
       </main>
 
-      {/* Footer */}
-      <footer className="mt-16 py-6 border-t bg-muted/20">
-        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          <p>© 2024 Sua Empresa. Todos os direitos reservados.</p>
-        </div>
-      </footer>
-
       {/* Scroll to Top Button */}
-      {showScrollTop && <Button className="fixed bottom-8 right-8 rounded-full h-12 w-12 shadow-lg z-50" size="icon" onClick={scrollToTop}>
-          <ArrowUp className="h-5 w-5" />
-        </Button>}
-
-      {deepLinkProductId && (() => {
-      const product = products.find(p => p.id === deepLinkProductId);
-      if (!product) return null;
-      return <ProductDetailsDialog open={!!deepLinkProductId} onOpenChange={open => {
-        if (!open) setDeepLinkProductId(null);
-      }} id={product.id} images={product.images} name={product.name} brand={product.brand} specs={product.specs} description={product.description} price={product.price} costPrice={product.costPrice} discountPrice={product.discountPrice} passOnCashDiscount={product.passOnCashDiscount} />;
-    })()}
-    </div>;
+      {showScrollTop && (
+        <Button
+          onClick={scrollToTop}
+          className="fixed bottom-8 right-8 h-12 w-12 rounded-full shadow-lg z-50"
+          size="icon"
+        >
+          <ArrowUp className="h-6 w-6" />
+        </Button>
+      )}
+    </div>
+  );
 };
 export default Index;
