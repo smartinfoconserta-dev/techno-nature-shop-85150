@@ -10,6 +10,7 @@ import { ArrowUp } from "lucide-react";
 import { brandsStore } from "@/lib/brandsStore";
 import { productsStore } from "@/lib/productsStore";
 import { categoriesStore, CategoryTreeNode } from "@/lib/categoriesStore";
+import { bannersStore } from "@/lib/bannersStore";
 import heroImage from "@/assets/hero-banner.jpg";
 const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState("");
@@ -22,6 +23,7 @@ const Index = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [deepLinkProductId, setDeepLinkProductId] = useState<string | null>(null);
+  const [bannerUrl, setBannerUrl] = useState<string | null>(null);
 
   // Estados para filtros
   const [minPrice, setMinPrice] = useState(0);
@@ -44,7 +46,18 @@ const Index = () => {
         setSelectedCategory(notebooksCategory.name);
       }
 
-      // 3. Carregar produtos
+      // 3. Carregar banner ativo
+      try {
+        await bannersStore.refreshFromBackend();
+        const activeBanner = bannersStore.getActiveBanner();
+        if (activeBanner) {
+          setBannerUrl(activeBanner.image_url);
+        }
+      } catch (error) {
+        console.error("Erro ao carregar banner:", error);
+      }
+
+      // 4. Carregar produtos
       await productsStore.refreshFromBackend();
       loadProducts();
       setIsLoading(false);
@@ -171,19 +184,23 @@ const Index = () => {
       {/* Hero Banner */}
       <section className="relative h-[30vh] min-h-[250px] max-h-[320px] overflow-hidden animate-fade-in">
         <div className="absolute inset-0">
-          <img src={heroImage} alt="Tecnologia" className="w-full h-full object-cover" />
+          <img 
+            src={bannerUrl || heroImage} 
+            alt="Tecnologia" 
+            className="w-full h-full object-cover" 
+          />
           <div className="absolute inset-0 bg-gradient-to-br from-primary/15 via-secondary/12 to-primary-purple/15" />
         </div>
         
         <div className="relative z-10 h-full flex items-center justify-center">
           <div className="text-center text-white px-4">
             <h1 className="text-3xl md:text-5xl font-bold mb-3 drop-shadow-lg">
-              Ramon Tech Solutions  
+              Ramon Tech Solutions  
             </h1>
             <p className="text-base md:text-xl drop-shadow-md">
               Catálogo Digital de tecnologias
 
-   
+   
             </p>
           </div>
         </div>

@@ -22,6 +22,7 @@ import {
   Trash2,
   Settings,
   LogOut,
+  Image,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -77,6 +78,7 @@ export const MobileAdminMenu = ({
     {
       category: "OUTROS",
       items: [
+        { value: "banners", label: "Banners", icon: Image },
         { value: "coupons", label: "Cupons", icon: Ticket },
         { value: "recycle-bin", label: "Lixeira", icon: Trash2 },
         { value: "settings", label: "Configurações", icon: Settings },
