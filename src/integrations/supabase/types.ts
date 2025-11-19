@@ -21,6 +21,7 @@ export type Database = {
           id: string
           image_url: string
           is_active: boolean
+          mobile_image_url: string | null
           overlay_color: string
           overlay_opacity: number
           title: string
@@ -32,6 +33,7 @@ export type Database = {
           id?: string
           image_url: string
           is_active?: boolean
+          mobile_image_url?: string | null
           overlay_color?: string
           overlay_opacity?: number
           title: string
@@ -43,6 +45,7 @@ export type Database = {
           id?: string
           image_url?: string
           is_active?: boolean
+          mobile_image_url?: string | null
           overlay_color?: string
           overlay_opacity?: number
           title?: string
