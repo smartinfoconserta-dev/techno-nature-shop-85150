@@ -236,7 +236,7 @@ const ProductCard = ({ id, images, name, brand, category, specs, description, pr
         </div>
       
         <CardContent className="p-3 space-y-2">
-          <Badge className="bg-primary-purple hover:bg-primary-purple text-white font-medium text-xs px-2 py-0.5 rounded-md w-fit">
+          <Badge className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 text-white font-bold text-xs py-1 px-3 rounded-full shadow-md border-0 w-fit">
             {brand}
           </Badge>
           
@@ -252,16 +252,25 @@ const ProductCard = ({ id, images, name, brand, category, specs, description, pr
           )}
           
           <div className="pt-2">
-            <p className="text-2xl font-bold text-primary-purple">
-              R$ {displayPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              {isLoadingInstallments ? (
-                <span className="animate-pulse">Calculando...</span>
-              ) : (
-                `ou 12x de R$ ${(installmentOptions.find(o => o.installments === 12)?.installmentValue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-              )}
-            </p>
+              <p className="text-2xl md:text-3xl font-black bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+                R$ {displayPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              </p>
+              <p className="text-xs md:text-sm mt-1">
+                {isLoadingInstallments ? (
+                  <span className="animate-pulse text-gray-500">Calculando...</span>
+                ) : (
+                  <>
+                    <span className="text-gray-500 font-normal">ou </span>
+                    <span className="text-gray-700 font-semibold">
+                      {installmentOptions.find(o => o.installments === 12)?.installments || 12}x
+                    </span>
+                    <span className="text-gray-500 font-normal"> de </span>
+                    <span className="text-gray-800 font-bold">
+                      R$ {(installmentOptions.find(o => o.installments === 12)?.installmentValue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </span>
+                  </>
+                )}
+              </p>
           </div>
         </CardContent>
         </div>
