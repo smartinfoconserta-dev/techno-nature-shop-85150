@@ -10,7 +10,6 @@ import { brandsStore } from "@/lib/brandsStore";
 import { productsStore } from "@/lib/productsStore";
 import { categoriesStore, CategoryTreeNode } from "@/lib/categoriesStore";
 import { bannersStore } from "@/lib/bannersStore";
-import heroImage from "@/assets/hero-banner.jpg";
 const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedBrand, setSelectedBrand] = useState("all");
@@ -187,16 +186,18 @@ const Index = () => {
         onReset={handleResetFilters} 
       />
 
-      {/* Hero Banner */}
-      <section className="relative overflow-hidden bg-black">
-        <div className="relative w-full aspect-[16/7] lg:aspect-[21/7]">
-          <img
-            src={bannerUrl || heroImage}
-            alt="Banner principal"
-            className="w-full h-full object-cover"
-          />
-        </div>
-      </section>
+      {/* Hero Banner - Só renderiza se houver banner ativo */}
+      {bannerUrl && (
+        <section className="relative overflow-hidden bg-black">
+          <div className="relative w-full aspect-[16/7] lg:aspect-[21/7]">
+            <img
+              src={bannerUrl}
+              alt="Banner principal"
+              className="w-full h-full object-cover"
+            />
+          </div>
+        </section>
+      )}
 
       {/* Barra de Busca Principal */}
       <div className="bg-white/95 backdrop-blur-md border-b border-indigo-100 py-4 shadow-lg">
