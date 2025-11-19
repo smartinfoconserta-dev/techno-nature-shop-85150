@@ -184,20 +184,20 @@ const Index = () => {
       <Header searchValue={searchQuery} onSearchChange={setSearchQuery} onReset={handleResetFilters} />
       
       {/* Hero Banner */}
-      <section className="relative h-[20vh] min-h-[200px] max-h-[280px] md:h-[53vh] md:min-h-[450px] md:max-h-[750px] overflow-hidden animate-fade-in">
+      <section className="relative h-[20vh] min-h-[200px] max-h-[280px] md:h-[53vh] md:min-h-[450px] md:max-h-[750px] overflow-hidden animate-fade-in bg-gray-900">
         <div className="absolute inset-0">
           {/* Imagem MOBILE - visível apenas em telas < 768px */}
           <img 
             src={(activeBanner?.mobile_image_url || activeBanner?.image_url) || heroImage}
             alt="Tecnologia" 
-            className="w-full h-full object-cover md:hidden" 
+            className="w-full h-full object-contain md:hidden" 
           />
           
           {/* Imagem DESKTOP - visível apenas em telas ≥ 768px */}
           <img 
             src={bannerUrl || heroImage}
             alt="Tecnologia" 
-            className="hidden md:block w-full h-full object-cover" 
+            className="hidden md:block w-full h-full object-contain" 
           />
           
           {/* Overlay/máscara personalizada do banner */}
