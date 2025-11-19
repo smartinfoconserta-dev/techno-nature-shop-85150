@@ -203,7 +203,7 @@ const ProductCard = ({ id, images, name, brand, category, specs, description, pr
   return (
     <>
       <Card 
-        className="overflow-hidden transition-all duration-300 cursor-pointer relative group before:absolute before:inset-0 before:rounded-lg before:p-[2px] before:bg-gradient-to-br before:from-primary before:to-primary-purple before:opacity-30 hover:before:opacity-100 before:transition-all before:-z-10 shadow-[0_0_15px_rgba(37,99,235,0.15),0_0_30px_rgba(147,51,234,0.1)] hover:shadow-[0_0_25px_rgba(37,99,235,0.3),0_0_50px_rgba(147,51,234,0.2)]"
+        className="overflow-hidden transition-all duration-300 cursor-pointer rounded-2xl border border-gray-200 shadow-sm hover:shadow-2xl hover:shadow-indigo-500/20 hover:-translate-y-1 group"
         onClick={() => setIsDetailsOpen(true)}
       >
         <div className="relative bg-card rounded-lg">
