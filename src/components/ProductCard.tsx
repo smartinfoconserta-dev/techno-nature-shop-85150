@@ -236,10 +236,13 @@ const ProductCard = ({ id, images, name, brand, category, specs, description, pr
         </div>
       
         <CardContent className="p-3 space-y-2">
+          <Badge className="bg-primary-purple hover:bg-primary-purple text-white font-medium text-xs px-2 py-0.5 rounded-md w-fit">
+            {brand}
+          </Badge>
+          
           <h3 className="text-sm font-semibold text-foreground line-clamp-2 min-h-[2.5rem]">
             {name}
           </h3>
-          <p className="text-xs text-muted-foreground font-medium">{brand}</p>
           
           {/* Especificações */}
           {specs && (
@@ -249,14 +252,14 @@ const ProductCard = ({ id, images, name, brand, category, specs, description, pr
           )}
           
           <div className="pt-2">
-            <p className="text-xl font-bold bg-gradient-to-r from-primary to-primary-purple bg-clip-text text-transparent">
+            <p className="text-2xl font-bold text-primary-purple">
               R$ {displayPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </p>
-            <p className="text-xs text-muted-foreground mt-0.5">
+            <p className="text-xs text-muted-foreground mt-1">
               {isLoadingInstallments ? (
-                <span className="animate-pulse">Calculando parcelamento...</span>
+                <span className="animate-pulse">Calculando...</span>
               ) : (
-                `em até 12x de R$ ${(installmentOptions.find(o => o.installments === 12)?.installmentValue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                `ou 12x de R$ ${(installmentOptions.find(o => o.installments === 12)?.installmentValue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
               )}
             </p>
           </div>
