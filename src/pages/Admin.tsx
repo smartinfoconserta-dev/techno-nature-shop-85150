@@ -19,6 +19,7 @@ import QuickSalesTab from "@/components/admin/QuickSalesTab";
 import CustomersTab from "@/components/admin/CustomersTab";
 import NotebookRequestsTab from "@/components/admin/NotebookRequestsTab";
 import RecycleBinTab from "@/components/admin/RecycleBinTab";
+import BannersTab from "@/components/admin/BannersTab";
 import { productsStore } from "@/lib/productsStore";
 import { quickSalesStore } from "@/lib/quickSalesStore";
 import { receivablesStore } from "@/lib/receivablesStore";
@@ -144,6 +145,7 @@ const Admin = () => {
             {activeTab === "customers" && <CustomersTab />}
             {activeTab === "finance" && <FinanceMainTab />}
             {activeTab === "history" && <SalesHistoryTab />}
+            {activeTab === "banners" && <BannersTab />}
             {activeTab === "coupons" && <CouponsTab />}
             {activeTab === "settings" && <SettingsTab />}
           </main>
