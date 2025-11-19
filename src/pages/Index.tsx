@@ -24,6 +24,7 @@ const Index = () => {
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [deepLinkProductId, setDeepLinkProductId] = useState<string | null>(null);
   const [bannerUrl, setBannerUrl] = useState<string | null>(null);
+  const [activeBanner, setActiveBanner] = useState<any>(null);
 
   // Estados para filtros
   const [minPrice, setMinPrice] = useState(0);
@@ -49,9 +50,10 @@ const Index = () => {
       // 3. Carregar banner ativo
       try {
         await bannersStore.refreshFromBackend();
-        const activeBanner = bannersStore.getActiveBanner();
-        if (activeBanner) {
-          setBannerUrl(activeBanner.image_url);
+        const banner = bannersStore.getActiveBanner();
+        if (banner) {
+          setActiveBanner(banner);
+          setBannerUrl(banner.image_url);
         }
       } catch (error) {
         console.error("Erro ao carregar banner:", error);
@@ -189,7 +191,14 @@ const Index = () => {
             alt="Tecnologia" 
             className="w-full h-full object-cover" 
           />
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/15 via-secondary/12 to-primary-purple/15" />
+          {/* Overlay/máscara personalizada do banner */}
+          <div 
+            className="absolute inset-0" 
+            style={{
+              backgroundColor: activeBanner?.overlay_color || '#000000',
+              opacity: (activeBanner?.overlay_opacity ?? 30) / 100
+            }}
+          />
         </div>
         
         <div className="relative z-10 h-full flex items-center justify-center">

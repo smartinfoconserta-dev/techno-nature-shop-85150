@@ -6,6 +6,8 @@ export interface Banner {
   image_url: string;
   is_active: boolean;
   display_order: number;
+  overlay_color: string;
+  overlay_opacity: number;
   created_at: string;
   updated_at: string;
 }
@@ -36,7 +38,7 @@ class BannersStore {
     }
   }
 
-  async uploadBanner(file: File, title: string, isActive: boolean): Promise<Banner> {
+  async uploadBanner(file: File, title: string, isActive: boolean, overlayColor: string, overlayOpacity: number): Promise<Banner> {
     try {
       // Upload da imagem
       const fileExt = file.name.split('.').pop();
@@ -66,7 +68,9 @@ class BannersStore {
           title,
           image_url: publicUrl,
           is_active: isActive,
-          display_order: 0
+          display_order: 0,
+          overlay_color: overlayColor,
+          overlay_opacity: overlayOpacity
         })
         .select()
         .single();
