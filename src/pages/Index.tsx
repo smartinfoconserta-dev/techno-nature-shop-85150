@@ -184,7 +184,7 @@ const Index = () => {
       <Header searchValue={searchQuery} onSearchChange={setSearchQuery} onReset={handleResetFilters} />
       
       {/* Hero Banner */}
-      <section className="relative h-[30vh] min-h-[250px] max-h-[320px] overflow-hidden animate-fade-in">
+      <section className="relative h-[20vh] min-h-[200px] max-h-[280px] overflow-hidden animate-fade-in">
         <div className="absolute inset-0">
           <img 
             src={bannerUrl || heroImage} 
