@@ -3,14 +3,12 @@ import { Plus, Trash2, CheckCircle, XCircle, Image as ImageIcon } from "lucide-r
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { bannersStore, Banner } from "@/lib/bannersStore";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import { Dialog, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { 
+  StickyDialogContent, 
+  DialogHeader, 
+  DialogFooter 
+} from "@/components/ui/sticky-dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -285,14 +283,27 @@ const BannersTab = () => {
 
       {/* Dialog para adicionar banner */}
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Adicionar Novo Banner</DialogTitle>
-            <DialogDescription>
-              Faça upload de uma imagem para o banner da página inicial
-            </DialogDescription>
-          </DialogHeader>
-
+        <StickyDialogContent 
+          maxWidth="2xl"
+          header={
+            <DialogHeader>
+              <DialogTitle>Adicionar Novo Banner</DialogTitle>
+              <DialogDescription>
+                Faça upload de uma imagem para o banner da página inicial
+              </DialogDescription>
+            </DialogHeader>
+          }
+          footer={
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowDialog(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleSubmit} disabled={uploading}>
+                {uploading ? "Enviando..." : "Adicionar Banner"}
+              </Button>
+            </DialogFooter>
+          }
+        >
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="title">Título</Label>
@@ -407,16 +418,7 @@ const BannersTab = () => {
               </Label>
             </div>
           </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowDialog(false)}>
-              Cancelar
-            </Button>
-            <Button onClick={handleSubmit} disabled={uploading}>
-              {uploading ? "Enviando..." : "Adicionar Banner"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
+        </StickyDialogContent>
       </Dialog>
 
       {/* Dialog de confirmação para exclusão */}
