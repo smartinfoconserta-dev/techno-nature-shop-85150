@@ -39,6 +39,8 @@ const BannersTab = () => {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isActive, setIsActive] = useState(false);
+  const [overlayColor, setOverlayColor] = useState("#000000");
+  const [overlayOpacity, setOverlayOpacity] = useState(30);
 
   useEffect(() => {
     loadBanners();
@@ -112,7 +114,7 @@ const BannersTab = () => {
 
     setUploading(true);
     try {
-      await bannersStore.uploadBanner(imageFile, title, isActive);
+      await bannersStore.uploadBanner(imageFile, title, isActive, overlayColor, overlayOpacity);
       toast({
         title: "Banner adicionado!",
         description: "O banner foi cadastrado com sucesso.",
@@ -190,7 +192,18 @@ const BannersTab = () => {
     setImageFile(null);
     setImagePreview(null);
     setIsActive(false);
+    setOverlayColor("#000000");
+    setOverlayOpacity(30);
   };
+
+  const presetColors = [
+    { name: "Preto", value: "#000000" },
+    { name: "Branco", value: "#FFFFFF" },
+    { name: "Verde", value: "#00ff00" },
+    { name: "Vermelho", value: "#ff0000" },
+    { name: "Azul", value: "#0000ff" },
+    { name: "Roxo", value: "#8b5cf6" },
+  ];
 
   return (
     <div className="space-y-4 md:space-y-6">
@@ -306,15 +319,81 @@ const BannersTab = () => {
 
             {imagePreview && (
               <div className="space-y-2">
-                <Label>Preview</Label>
+                <Label>Preview do Banner</Label>
                 <div className="aspect-video relative rounded-lg overflow-hidden border">
                   <img
                     src={imagePreview}
                     alt="Preview"
                     className="w-full h-full object-cover"
                   />
+                  <div
+                    className="absolute inset-0"
+                    style={{
+                      backgroundColor: overlayColor,
+                      opacity: overlayOpacity / 100,
+                    }}
+                  />
                 </div>
               </div>
+            )}
+
+            {imagePreview && (
+              <>
+                <div className="space-y-3">
+                  <Label>Cor da Máscara</Label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {presetColors.map((color) => (
+                      <button
+                        key={color.value}
+                        type="button"
+                        onClick={() => setOverlayColor(color.value)}
+                        className={`h-12 rounded-lg border-2 transition-all ${
+                          overlayColor === color.value
+                            ? "border-primary ring-2 ring-primary/20"
+                            : "border-border hover:border-primary/50"
+                        }`}
+                        style={{ backgroundColor: color.value }}
+                        title={color.name}
+                      >
+                        <span className="sr-only">{color.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex gap-2 items-center">
+                    <Label htmlFor="customColor" className="text-xs text-muted-foreground">
+                      Cor customizada:
+                    </Label>
+                    <Input
+                      id="customColor"
+                      type="color"
+                      value={overlayColor}
+                      onChange={(e) => setOverlayColor(e.target.value)}
+                      className="w-16 h-8 cursor-pointer"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <Label htmlFor="opacity">Opacidade da Máscara</Label>
+                    <span className="text-sm font-medium text-muted-foreground">
+                      {overlayOpacity}%
+                    </span>
+                  </div>
+                  <input
+                    id="opacity"
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={overlayOpacity}
+                    onChange={(e) => setOverlayOpacity(Number(e.target.value))}
+                    className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    0% = sem máscara, 100% = totalmente opaco
+                  </p>
+                </div>
+              </>
             )}
 
             <div className="flex items-center space-x-2">
