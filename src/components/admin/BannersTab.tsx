@@ -34,8 +34,10 @@ const BannersTab = () => {
 
   // Form state
   const [title, setTitle] = useState("");
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [desktopImageFile, setDesktopImageFile] = useState<File | null>(null);
+  const [mobileImageFile, setMobileImageFile] = useState<File | null>(null);
+  const [desktopImagePreview, setDesktopImagePreview] = useState<string | null>(null);
+  const [mobileImagePreview, setMobileImagePreview] = useState<string | null>(null);
   const [isActive, setIsActive] = useState(false);
   const [overlayColor, setOverlayColor] = useState("#000000");
   const [overlayOpacity, setOverlayOpacity] = useState(30);
@@ -57,7 +59,7 @@ const BannersTab = () => {
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleDesktopFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -81,12 +83,46 @@ const BannersTab = () => {
       return;
     }
 
-    setImageFile(file);
+    setDesktopImageFile(file);
 
     // Criar preview
     const reader = new FileReader();
     reader.onloadend = () => {
-      setImagePreview(reader.result as string);
+      setDesktopImagePreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleMobileFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validar tipo de arquivo
+    if (!file.type.startsWith('image/')) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Por favor, selecione uma imagem válida",
+      });
+      return;
+    }
+
+    // Validar tamanho (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "A imagem deve ter no máximo 5MB",
+      });
+      return;
+    }
+
+    setMobileImageFile(file);
+
+    // Criar preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setMobileImagePreview(reader.result as string);
     };
     reader.readAsDataURL(file);
   };
@@ -101,18 +137,25 @@ const BannersTab = () => {
       return;
     }
 
-    if (!imageFile) {
+    if (!desktopImageFile) {
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Por favor, selecione uma imagem",
+        description: "Por favor, selecione pelo menos a imagem para desktop",
       });
       return;
     }
 
     setUploading(true);
     try {
-      await bannersStore.uploadBanner(imageFile, title, isActive, overlayColor, overlayOpacity);
+      await bannersStore.uploadBanner(
+        desktopImageFile,
+        mobileImageFile,
+        title,
+        isActive,
+        overlayColor,
+        overlayOpacity
+      );
       toast({
         title: "Banner adicionado!",
         description: "O banner foi cadastrado com sucesso.",
@@ -187,8 +230,10 @@ const BannersTab = () => {
 
   const resetForm = () => {
     setTitle("");
-    setImageFile(null);
-    setImagePreview(null);
+    setDesktopImageFile(null);
+    setMobileImageFile(null);
+    setDesktopImagePreview(null);
+    setMobileImagePreview(null);
     setIsActive(false);
     setOverlayColor("#000000");
     setOverlayOpacity(30);
@@ -316,25 +361,30 @@ const BannersTab = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="image">Imagem do Banner</Label>
+              <Label htmlFor="desktop-image" className="flex items-center gap-2">
+                🖥️ Imagem Desktop
+                <span className="text-xs text-muted-foreground font-normal">
+                  (Obrigatório)
+                </span>
+              </Label>
               <Input
-                id="image"
+                id="desktop-image"
                 type="file"
                 accept="image/*"
-                onChange={handleFileChange}
+                onChange={handleDesktopFileChange}
               />
               <p className="text-xs text-muted-foreground">
-                Tamanho máximo: 5MB. Formatos aceitos: JPG, PNG, WEBP
+                Tamanho recomendado: 1920x1080px. Máximo: 5MB
               </p>
             </div>
 
-            {imagePreview && (
+            {desktopImagePreview && (
               <div className="space-y-2">
-                <Label>Preview do Banner</Label>
+                <Label>Preview Desktop</Label>
                 <div className="aspect-video relative rounded-lg overflow-hidden border">
                   <img
-                    src={imagePreview}
-                    alt="Preview"
+                    src={desktopImagePreview}
+                    alt="Preview Desktop"
                     className="w-full h-full object-cover"
                   />
                   <div
@@ -348,7 +398,45 @@ const BannersTab = () => {
               </div>
             )}
 
-            {imagePreview && (
+            <div className="space-y-2">
+              <Label htmlFor="mobile-image" className="flex items-center gap-2">
+                📱 Imagem Mobile
+                <span className="text-xs text-muted-foreground font-normal">
+                  (Opcional - se não fornecida, usará a imagem desktop)
+                </span>
+              </Label>
+              <Input
+                id="mobile-image"
+                type="file"
+                accept="image/*"
+                onChange={handleMobileFileChange}
+              />
+              <p className="text-xs text-muted-foreground">
+                Tamanho recomendado: 750x1000px (vertical). Máximo: 5MB
+              </p>
+            </div>
+
+            {mobileImagePreview && (
+              <div className="space-y-2">
+                <Label>Preview Mobile</Label>
+                <div className="aspect-[3/4] max-w-xs relative rounded-lg overflow-hidden border">
+                  <img
+                    src={mobileImagePreview}
+                    alt="Preview Mobile"
+                    className="w-full h-full object-cover"
+                  />
+                  <div
+                    className="absolute inset-0"
+                    style={{
+                      backgroundColor: overlayColor,
+                      opacity: overlayOpacity / 100,
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {(desktopImagePreview || mobileImagePreview) && (
               <>
                 <div className="space-y-3">
                   <Label>Cor da Máscara</Label>

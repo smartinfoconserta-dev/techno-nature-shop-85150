@@ -4,6 +4,7 @@ export interface Banner {
   id: string;
   title: string;
   image_url: string;
+  mobile_image_url: string | null;
   is_active: boolean;
   display_order: number;
   overlay_color: string;
@@ -38,23 +39,50 @@ class BannersStore {
     }
   }
 
-  async uploadBanner(file: File, title: string, isActive: boolean, overlayColor: string, overlayOpacity: number): Promise<Banner> {
+  async uploadBanner(
+    desktopFile: File,
+    mobileFile: File | null,
+    title: string,
+    isActive: boolean,
+    overlayColor: string,
+    overlayOpacity: number
+  ): Promise<Banner> {
     try {
-      // Upload da imagem
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
-      const filePath = `banners/${fileName}`;
+      // Upload da imagem DESKTOP
+      const desktopExt = desktopFile.name.split('.').pop();
+      const desktopFileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${desktopExt}`;
+      const desktopPath = `banners/${desktopFileName}`;
 
-      const { error: uploadError } = await supabase.storage
+      const { error: desktopUploadError } = await supabase.storage
         .from('product-images')
-        .upload(filePath, file);
+        .upload(desktopPath, desktopFile);
 
-      if (uploadError) throw uploadError;
+      if (desktopUploadError) throw desktopUploadError;
 
-      // Obter URL pública
-      const { data: { publicUrl } } = supabase.storage
+      const { data: { publicUrl: desktopUrl } } = supabase.storage
         .from('product-images')
-        .getPublicUrl(filePath);
+        .getPublicUrl(desktopPath);
+
+      // Upload da imagem MOBILE (se fornecida)
+      let mobileUrl: string | null = null;
+      
+      if (mobileFile) {
+        const mobileExt = mobileFile.name.split('.').pop();
+        const mobileFileName = `${Math.random().toString(36).substring(2)}_mobile_${Date.now()}.${mobileExt}`;
+        const mobilePath = `banners/${mobileFileName}`;
+
+        const { error: mobileUploadError } = await supabase.storage
+          .from('product-images')
+          .upload(mobilePath, mobileFile);
+
+        if (mobileUploadError) throw mobileUploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('product-images')
+          .getPublicUrl(mobilePath);
+
+        mobileUrl = publicUrl;
+      }
 
       // Se este banner for ativo, desativar todos os outros
       if (isActive) {
@@ -66,7 +94,8 @@ class BannersStore {
         .from('banners')
         .insert({
           title,
-          image_url: publicUrl,
+          image_url: desktopUrl,
+          mobile_image_url: mobileUrl,
           is_active: isActive,
           display_order: 0,
           overlay_color: overlayColor,
@@ -135,16 +164,26 @@ class BannersStore {
       const banner = this.banners.find(b => b.id === id);
       if (!banner) throw new Error('Banner não encontrado');
 
-      // Extrair caminho da imagem da URL
-      const urlParts = banner.image_url.split('/');
-      const filePath = `banners/${urlParts[urlParts.length - 1]}`;
+      const filesToDelete: string[] = [];
 
-      // Deletar imagem do storage
+      // Extrair caminho da imagem DESKTOP
+      const desktopUrlParts = banner.image_url.split('/');
+      const desktopPath = `banners/${desktopUrlParts[desktopUrlParts.length - 1]}`;
+      filesToDelete.push(desktopPath);
+
+      // Extrair caminho da imagem MOBILE (se existir)
+      if (banner.mobile_image_url) {
+        const mobileUrlParts = banner.mobile_image_url.split('/');
+        const mobilePath = `banners/${mobileUrlParts[mobileUrlParts.length - 1]}`;
+        filesToDelete.push(mobilePath);
+      }
+
+      // Deletar todas as imagens do storage
       const { error: storageError } = await supabase.storage
         .from('product-images')
-        .remove([filePath]);
+        .remove(filesToDelete);
 
-      if (storageError) console.error('Erro ao deletar imagem:', storageError);
+      if (storageError) console.error('Erro ao deletar imagens:', storageError);
 
       // Deletar registro do banco
       const { error } = await supabase
