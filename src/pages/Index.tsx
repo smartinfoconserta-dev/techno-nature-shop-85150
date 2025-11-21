@@ -23,6 +23,7 @@ const Index = () => {
   const [deepLinkProductId, setDeepLinkProductId] = useState<string | null>(null);
   const [bannerUrl, setBannerUrl] = useState<string | null>(null);
   const [activeBanner, setActiveBanner] = useState<any>(null);
+  const [categoryNamesInSelection, setCategoryNamesInSelection] = useState<string[]>([]);
 
   // Estados para filtros
   const [minPrice, setMinPrice] = useState(0);
@@ -90,7 +91,17 @@ const Index = () => {
   }, [deepLinkProductId, products]);
   useEffect(() => {
     loadBrands();
+    loadCategoryNames();
   }, [selectedCategory]);
+
+  const loadCategoryNames = async () => {
+    if (selectedCategory) {
+      const names = await categoriesStore.getAllCategoryNamesInTree(selectedCategory);
+      setCategoryNamesInSelection(names);
+    } else {
+      setCategoryNamesInSelection([]);
+    }
+  };
   const loadCategories = async () => {
     const tree = await categoriesStore.getCategoryTree();
     setCategoryTree(tree);
@@ -122,7 +133,7 @@ const Index = () => {
   };
   const filteredProducts = useMemo(() => {
     let filtered = products.filter(product => {
-      const categoryMatch = !selectedCategory || product.category === selectedCategory;
+      const categoryMatch = !selectedCategory || categoryNamesInSelection.includes(product.category);
       const brandMatch = selectedBrand === "all" || product.brand === selectedBrand;
       const searchLower = searchQuery.toLowerCase();
       const searchMatch = searchQuery === "" || product.name.toLowerCase().includes(searchLower) || product.brand.toLowerCase().includes(searchLower) || product.specs.toLowerCase().includes(searchLower);
@@ -155,7 +166,7 @@ const Index = () => {
       filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     }
     return filtered;
-  }, [products, selectedCategory, selectedBrand, searchQuery, minPrice, maxPrice, sortBy, selectedProcessor, selectedRam, hasDedicatedGpu]);
+  }, [products, selectedCategory, selectedBrand, searchQuery, minPrice, maxPrice, sortBy, selectedProcessor, selectedRam, hasDedicatedGpu, categoryNamesInSelection]);
   const scrollToTop = () => {
     window.scrollTo({
       top: 0,
