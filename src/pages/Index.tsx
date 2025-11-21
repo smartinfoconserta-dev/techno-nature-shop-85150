@@ -2,13 +2,17 @@ import { useState, useEffect, useMemo } from "react";
 import Header from "@/components/Header";
 import ProductCard from "@/components/ProductCard";
 import ProductDetailsDialog from "@/components/ProductDetailsDialog";
+import ProductFilters from "@/components/ProductFilters";
+import { CategoryDropdownButton } from "@/components/CategoryDropdownButton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowUp, Search } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
+import { ArrowUp, Search, SlidersHorizontal } from "lucide-react";
 import { brandsStore } from "@/lib/brandsStore";
 import { productsStore } from "@/lib/productsStore";
-import { categoriesStore, CategoryTreeNode } from "@/lib/categoriesStore";
+import { categoriesStore, CategoryTreeNode, Category } from "@/lib/categoriesStore";
 import { bannersStore } from "@/lib/bannersStore";
 
 // Função para embaralhar array aleatoriamente (Fisher-Yates shuffle)
@@ -35,6 +39,7 @@ const Index = () => {
   const [bannerUrl, setBannerUrl] = useState<string | null>(null);
   const [activeBanner, setActiveBanner] = useState<any>(null);
   const [categoryNamesInSelection, setCategoryNamesInSelection] = useState<string[]>([]);
+  const [categoryPath, setCategoryPath] = useState<Category[]>([]);
 
   // Estados para filtros
   const [minPrice, setMinPrice] = useState(0);
@@ -103,7 +108,21 @@ const Index = () => {
   useEffect(() => {
     loadBrands();
     loadCategoryNames();
+    updateCategoryPath();
   }, [selectedCategory]);
+
+  const updateCategoryPath = async () => {
+    if (selectedCategory) {
+      const allCategories = await categoriesStore.getAllCategories();
+      const category = allCategories.find(c => c.name === selectedCategory);
+      if (category) {
+        const path = await categoriesStore.getCategoryPath(category.id);
+        setCategoryPath(path);
+      }
+    } else {
+      setCategoryPath([]);
+    }
+  };
 
   const loadCategoryNames = async () => {
     if (selectedCategory) {
@@ -227,8 +246,8 @@ const Index = () => {
       {/* Barra de Busca Principal */}
       <div className="bg-white/95 backdrop-blur-md border-b border-indigo-100 py-4 shadow-lg">
         <div className="container mx-auto px-2 sm:px-4">
-          <div className="flex flex-col gap-3">
-            <div className="relative">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
               <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-indigo-400" />
               <Input
                 placeholder="Buscar produtos por nome ou marca..."
@@ -236,6 +255,39 @@ const Index = () => {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-12 pr-4 border-2 border-indigo-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/20 rounded-xl h-12 text-base bg-white shadow-sm"
               />
+            </div>
+            <div className="flex gap-2">
+              <ProductFilters
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                selectedBrand={selectedBrand}
+                onBrandChange={setSelectedBrand}
+                brands={brands}
+                minPrice={minPrice}
+                onMinPriceChange={setMinPrice}
+                maxPrice={maxPrice}
+                onMaxPriceChange={setMaxPrice}
+                sortBy={sortBy}
+                onSortChange={setSortBy}
+                selectedProcessor={selectedProcessor}
+                onProcessorChange={setSelectedProcessor}
+                selectedRam={selectedRam}
+                onRamChange={setSelectedRam}
+                hasDedicatedGpu={hasDedicatedGpu}
+                onDedicatedGpuChange={setHasDedicatedGpu}
+                selectedCategory={selectedCategory}
+              />
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="w-[180px] h-12 border-2 border-indigo-200 focus:border-indigo-500 rounded-xl bg-white">
+                  <SelectValue placeholder="Ordenar por" />
+                </SelectTrigger>
+                <SelectContent className="bg-background z-50">
+                  <SelectItem value="newest">Mais recentes</SelectItem>
+                  <SelectItem value="oldest">Mais antigos</SelectItem>
+                  <SelectItem value="price-asc">Menor preço</SelectItem>
+                  <SelectItem value="price-desc">Maior preço</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </div>
@@ -262,24 +314,14 @@ const Index = () => {
               Todos
             </Button>
             
-            {/* Categorias existentes */}
+            {/* Categorias com dropdown para subcategorias */}
             {categoryTree.map(category => (
-              <Button
+              <CategoryDropdownButton
                 key={category.id}
-                onClick={() => setSelectedCategory(category.name)}
-                variant="ghost"
-                className={`
-                  whitespace-nowrap rounded-full font-semibold transition-all duration-300 shadow-md hover:shadow-xl
-                  ${
-                    selectedCategory === category.name
-                      ? "bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white border-0 scale-105 shadow-lg hover:scale-110"
-                      : "bg-white text-gray-700 border-2 border-gray-300 hover:border-indigo-400 hover:bg-indigo-50"
-                  }
-                `}
-                size="default"
-              >
-                {category.name}
-              </Button>
+                category={category}
+                selectedCategory={selectedCategory}
+                onSelectCategory={handleSelectCategory}
+              />
             ))}
           </div>
         </div>
@@ -287,6 +329,46 @@ const Index = () => {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
+        {/* Breadcrumb */}
+        {categoryPath.length > 0 && (
+          <Breadcrumb className="mb-4">
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink 
+                  onClick={() => setSelectedCategory("")}
+                  className="cursor-pointer hover:text-indigo-600"
+                >
+                  Início
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              {categoryPath.map((cat, index) => (
+                <div key={cat.id} className="flex items-center gap-2">
+                  <BreadcrumbSeparator />
+                  <BreadcrumbItem>
+                    {index === categoryPath.length - 1 ? (
+                      <BreadcrumbPage>{cat.name}</BreadcrumbPage>
+                    ) : (
+                      <BreadcrumbLink 
+                        onClick={() => setSelectedCategory(cat.name)}
+                        className="cursor-pointer hover:text-indigo-600"
+                      >
+                        {cat.name}
+                      </BreadcrumbLink>
+                    )}
+                  </BreadcrumbItem>
+                </div>
+              ))}
+            </BreadcrumbList>
+          </Breadcrumb>
+        )}
+
+        {/* Contador de produtos */}
+        {!isLoading && (
+          <div className="text-sm text-muted-foreground mb-4">
+            Mostrando {filteredProducts.length} de {products.length} produtos
+          </div>
+        )}
+
         {/* Products Grid */}
         {isLoading ? (
           <div className="grid gap-4 lg:gap-6 grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
