@@ -128,6 +128,25 @@ export const categoriesStore = {
     return ids;
   },
 
+  async getAllCategoryNamesInTree(categoryName: string): Promise<string[]> {
+    const allCategories = await this.getAllCategories();
+    const category = allCategories.find(c => c.name === categoryName);
+    
+    if (!category) return [categoryName];
+    
+    const names = [categoryName];
+    const findChildren = (parentId: string) => {
+      const children = allCategories.filter(c => c.parentCategoryId === parentId);
+      children.forEach(child => {
+        names.push(child.name);
+        findChildren(child.id);
+      });
+    };
+    
+    findChildren(category.id);
+    return names;
+  },
+
   async getCategoryNames(): Promise<string[]> {
     const categories = await this.getAllCategories();
     return categories.map((c) => c.name).sort();
