@@ -2,8 +2,9 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/compone
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { MessageCircle, X, CreditCard, Tag, ChevronDown } from "lucide-react";
+import { MessageCircle, X, CreditCard, Tag, ChevronDown, Expand } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
+import ProductGalleryDialog from "@/components/ProductGalleryDialog";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from "@/components/ui/carousel";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -61,6 +62,7 @@ const ProductDetailsDialog = ({
   const [couponValidation, setCouponValidation] = useState<{ valid: boolean; coupon?: any }>({ valid: false });
   const [installmentOptions, setInstallmentOptions] = useState<InstallmentOption[]>([]);
   const [isLoadingInstallments, setIsLoadingInstallments] = useState(true);
+  const [galleryOpen, setGalleryOpen] = useState(false);
   
   const isDiscountActive = couponValidation.valid;
 
@@ -250,19 +252,28 @@ const ProductDetailsDialog = ({
           <div className="grid md:grid-cols-2 gap-4">
           {/* Galeria de imagens */}
           <div>
-            
+            <div className="relative">
               <Carousel setApi={setApi}>
                 <CarouselContent>
                   {images?.length ? (
                     images.map((src, idx) => (
                       <CarouselItem key={idx}>
-                        <div className="aspect-square rounded-md overflow-hidden bg-muted">
+                        <div 
+                          className="aspect-square rounded-md overflow-hidden bg-muted cursor-pointer relative group"
+                          onClick={() => setGalleryOpen(true)}
+                        >
                           <img
                             src={src}
                             alt={`${name} - imagem ${idx + 1}`}
-                            className="h-full w-full object-cover"
+                            className="h-full w-full object-cover transition-transform group-hover:scale-105"
                             loading="lazy"
                           />
+                          {/* Botão de expandir que aparece no hover */}
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                            <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 backdrop-blur-sm rounded-full p-3 shadow-lg">
+                              <Expand className="h-6 w-6 text-gray-700" />
+                            </div>
+                          </div>
                         </div>
                       </CarouselItem>
                     ))
@@ -275,7 +286,19 @@ const ProductDetailsDialog = ({
                 <CarouselPrevious className="left-2 top-1/2 -translate-y-1/2 z-[110] bg-white/90 backdrop-blur-sm border border-gray-200 shadow-lg" />
                 <CarouselNext className="right-2 top-1/2 -translate-y-1/2 z-[110] bg-white/90 backdrop-blur-sm border border-gray-200 shadow-lg" />
               </Carousel>
-            <div className="mt-2 text-xs text-muted-foreground">{current + 1} / {images?.length || 1}</div>
+              
+              {/* Texto indicativo */}
+              <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
+                <span>{current + 1} / {images?.length || 1}</span>
+                <button 
+                  className="flex items-center gap-1 hover:text-foreground transition-colors"
+                  onClick={() => setGalleryOpen(true)}
+                >
+                  <Expand className="h-3 w-3" />
+                  Clique para ampliar
+                </button>
+              </div>
+            </div>
           </div>
 
           {/* Informações e ações */}
@@ -510,6 +533,14 @@ const ProductDetailsDialog = ({
         >
           <X className="h-5 w-5 text-gray-700" />
         </button>
+        
+        {/* Galeria em tela cheia */}
+        <ProductGalleryDialog
+          open={galleryOpen}
+          onOpenChange={setGalleryOpen}
+          images={images}
+          productName={name}
+        />
       </DialogContent>
 
     </Dialog>
