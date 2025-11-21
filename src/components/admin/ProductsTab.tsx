@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { productsStore, Product } from "@/lib/productsStore";
@@ -6,6 +6,14 @@ import ProductForm from "./ProductForm";
 import ProductListItem from "./ProductListItem";
 import MarkAsSoldDialog from "./MarkAsSoldDialog";
 import { useToast } from "@/hooks/use-toast";
+import { FilterBar } from "./FilterBar";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   DndContext,
   closestCenter,
@@ -30,6 +38,9 @@ const ProductsTab = () => {
   const [editingProduct, setEditingProduct] = useState<Product | undefined>();
   const [selectedProduct, setSelectedProduct] = useState<Product | undefined>();
   const [isMarkAsSoldOpen, setIsMarkAsSoldOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterCategory, setFilterCategory] = useState("all");
+  const [filterBrand, setFilterBrand] = useState("all");
   const { toast } = useToast();
 
   const sensors = useSensors(
@@ -47,6 +58,39 @@ const ProductsTab = () => {
   const loadProducts = () => {
     setProducts(productsStore.getAvailableProducts());
   };
+
+  // Obter categorias e marcas únicas
+  const uniqueCategories = useMemo(() => {
+    return Array.from(new Set(products.map(p => p.category))).sort();
+  }, [products]);
+
+  const uniqueBrands = useMemo(() => {
+    return Array.from(new Set(products.map(p => p.brand))).sort();
+  }, [products]);
+
+  // Filtrar produtos baseado nos critérios de busca
+  const filteredProducts = useMemo(() => {
+    let filtered = products;
+
+    // Filtro por termo de busca (nome do produto)
+    if (searchTerm.trim()) {
+      filtered = filtered.filter(p => 
+        p.name.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Filtro por categoria
+    if (filterCategory !== "all") {
+      filtered = filtered.filter(p => p.category === filterCategory);
+    }
+
+    // Filtro por marca
+    if (filterBrand !== "all") {
+      filtered = filtered.filter(p => p.brand === filterBrand);
+    }
+
+    return filtered;
+  }, [products, searchTerm, filterCategory, filterBrand]);
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
@@ -210,15 +254,53 @@ const ProductsTab = () => {
         />
       ) : (
         <div className="space-y-4">
-          {products.length === 0 ? (
+          <FilterBar
+            searchValue={searchTerm}
+            onSearchChange={setSearchTerm}
+            searchPlaceholder="Buscar produto por nome..."
+            resultsCount={{
+              showing: filteredProducts.length,
+              total: products.length
+            }}
+          >
+            <Select value={filterCategory} onValueChange={setFilterCategory}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Categoria" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas categorias</SelectItem>
+                {uniqueCategories.map(cat => (
+                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={filterBrand} onValueChange={setFilterBrand}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Marca" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas marcas</SelectItem>
+                {uniqueBrands.map(brand => (
+                  <SelectItem key={brand} value={brand}>{brand}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FilterBar>
+
+          {filteredProducts.length === 0 ? (
             <div className="text-center py-12 bg-card rounded-lg border border-border">
               <p className="text-muted-foreground">
-                Nenhum produto cadastrado ainda.
+                {searchTerm || filterCategory !== "all" || filterBrand !== "all" 
+                  ? "Nenhum produto encontrado com os filtros aplicados."
+                  : "Nenhum produto cadastrado ainda."}
               </p>
-              <Button onClick={() => setIsFormOpen(true)} className="mt-4">
-                <Plus className="h-4 w-4 mr-2" />
-                Adicionar Primeiro Produto
-              </Button>
+              {!searchTerm && filterCategory === "all" && filterBrand === "all" && (
+                <Button onClick={() => setIsFormOpen(true)} className="mt-4">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Adicionar Primeiro Produto
+                </Button>
+              )}
             </div>
           ) : (
             <DndContext
@@ -227,11 +309,11 @@ const ProductsTab = () => {
               onDragEnd={handleDragEnd}
             >
               <SortableContext
-                items={products.map((p) => p.id)}
+                items={filteredProducts.map((p) => p.id)}
                 strategy={verticalListSortingStrategy}
               >
                 <div className="space-y-3">
-                  {products.map((product) => (
+                  {filteredProducts.map((product) => (
                     <ProductListItem
                       key={product.id}
                       product={product}
