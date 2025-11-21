@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import Header from "@/components/Header";
 import ProductCard from "@/components/ProductCard";
 import ProductDetailsDialog from "@/components/ProductDetailsDialog";
@@ -26,6 +27,7 @@ const shuffleArray = <T,>(array: T[]): T[] => {
 };
 
 const Index = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedBrand, setSelectedBrand] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -35,7 +37,8 @@ const Index = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showScrollTop, setShowScrollTop] = useState(false);
-  const [deepLinkProductId, setDeepLinkProductId] = useState<string | null>(null);
+  const [deepLinkProduct, setDeepLinkProduct] = useState<any | null>(null);
+  const [isDeepLinkDialogOpen, setIsDeepLinkDialogOpen] = useState(false);
   const [bannerUrl, setBannerUrl] = useState<string | null>(null);
   const [activeBanner, setActiveBanner] = useState<any>(null);
   const [categoryNamesInSelection, setCategoryNamesInSelection] = useState<string[]>([]);
@@ -56,10 +59,15 @@ const Index = () => {
       const tree = await categoriesStore.getCategoryTree();
       setCategoryTree(tree);
 
-      // 2. Encontrar e definir Notebooks como categoria inicial
-      const notebooksCategory = tree.find(cat => cat.name.toLowerCase().includes('notebook'));
-      if (notebooksCategory) {
-        setSelectedCategory(notebooksCategory.name);
+      // 2. Ler categoria da URL ou usar Notebooks como padrão
+      const categoryParam = searchParams.get('categoria');
+      if (categoryParam) {
+        setSelectedCategory(categoryParam);
+      } else {
+        const notebooksCategory = tree.find(cat => cat.name.toLowerCase().includes('notebook'));
+        if (notebooksCategory) {
+          setSelectedCategory(notebooksCategory.name);
+        }
       }
 
       // 3. Carregar banner ativo
@@ -80,13 +88,6 @@ const Index = () => {
       setIsLoading(false);
     };
     init();
-
-    // Deep linking
-    const urlParams = new URLSearchParams(window.location.search);
-    const productId = urlParams.get('produto');
-    if (productId) {
-      setDeepLinkProductId(productId);
-    }
   }, []);
   useEffect(() => {
     const handleScroll = () => {
@@ -95,16 +96,19 @@ const Index = () => {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+  // Deep linking de produtos - detectar produto na URL e abrir modal
   useEffect(() => {
-    if (deepLinkProductId && products.length > 0) {
-      const product = products.find(p => p.id === deepLinkProductId);
+    const productId = searchParams.get('produto');
+    
+    if (productId && products.length > 0) {
+      const product = products.find(p => p.id === productId);
+      
       if (product) {
-        setTimeout(() => {
-          setDeepLinkProductId(product.id);
-        }, 300);
+        setDeepLinkProduct(product);
+        setIsDeepLinkDialogOpen(true);
       }
     }
-  }, [deepLinkProductId, products]);
+  }, [searchParams, products]);
   useEffect(() => {
     loadBrands();
     loadCategoryNames();
@@ -159,7 +163,27 @@ const Index = () => {
   const handleSelectCategory = (category: string) => {
     setSelectedCategory(category);
     setSelectedBrand("all");
+    
+    // Atualizar URL com categoria
+    if (category) {
+      setSearchParams({ categoria: category });
+    } else {
+      setSearchParams({});
+    }
+    
     scrollToTop();
+  };
+
+  const handleDeepLinkDialogClose = (open: boolean) => {
+    setIsDeepLinkDialogOpen(open);
+    
+    if (!open) {
+      setDeepLinkProduct(null);
+      // Remove parâmetro 'produto' da URL
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete('produto');
+      setSearchParams(newParams);
+    }
   };
   const filteredProducts = useMemo(() => {
     let filtered = products.filter(product => {
@@ -405,6 +429,24 @@ const Index = () => {
         >
           <ArrowUp className="h-6 w-6" />
         </Button>
+      )}
+
+      {/* Dialog de deep linking - abre automaticamente quando há produto na URL */}
+      {deepLinkProduct && (
+        <ProductDetailsDialog
+          open={isDeepLinkDialogOpen}
+          onOpenChange={handleDeepLinkDialogClose}
+          id={deepLinkProduct.id}
+          images={deepLinkProduct.images}
+          name={deepLinkProduct.name}
+          brand={deepLinkProduct.brand}
+          specs={deepLinkProduct.specs}
+          description={deepLinkProduct.description}
+          price={deepLinkProduct.price}
+          costPrice={deepLinkProduct.costPrice}
+          discountPrice={deepLinkProduct.discountPrice}
+          passOnCashDiscount={deepLinkProduct.passOnCashDiscount}
+        />
       )}
     </div>
   );
