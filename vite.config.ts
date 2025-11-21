@@ -19,6 +19,7 @@ export default defineConfig(({ mode }) => ({
     },
   },
   build: {
+    target: 'es2019',
     rollupOptions: {
       output: {
         // Hash + formato otimizado para cache busting
