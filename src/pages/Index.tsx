@@ -10,6 +10,17 @@ import { brandsStore } from "@/lib/brandsStore";
 import { productsStore } from "@/lib/productsStore";
 import { categoriesStore, CategoryTreeNode } from "@/lib/categoriesStore";
 import { bannersStore } from "@/lib/bannersStore";
+
+// Função para embaralhar array aleatoriamente (Fisher-Yates shuffle)
+const shuffleArray = <T,>(array: T[]): T[] => {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+};
+
 const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedBrand, setSelectedBrand] = useState("all");
@@ -156,7 +167,10 @@ const Index = () => {
     });
 
     // Aplicar ordenação
-    if (sortBy === "price-asc") {
+    // Se estiver na aba "Todos", ordem aleatória
+    if (selectedCategory === "") {
+      filtered = shuffleArray(filtered);
+    } else if (sortBy === "price-asc") {
       filtered.sort((a, b) => a.price - b.price);
     } else if (sortBy === "price-desc") {
       filtered.sort((a, b) => b.price - a.price);
