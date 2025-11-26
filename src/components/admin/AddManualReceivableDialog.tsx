@@ -72,6 +72,7 @@ export function AddManualReceivableDialog({
   const [isLoading, setIsLoading] = useState(false);
   const [productSource, setProductSource] = useState<"manual" | "catalog">("manual");
   const [selectedProductId, setSelectedProductId] = useState<string>("");
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [couponCode, setCouponCode] = useState("");
   const [couponValidated, setCouponValidated] = useState(false);
   const [couponDiscount, setCouponDiscount] = useState(0);
@@ -105,6 +106,7 @@ export function AddManualReceivableDialog({
     if (!open) {
       setProductSource("manual");
       setSelectedProductId("");
+      setSelectedProduct(null);
       setCouponCode("");
       setCouponValidated(false);
       setCouponDiscount(0);
@@ -135,14 +137,31 @@ export function AddManualReceivableDialog({
 
     const result = await couponsStore.validateCoupon(couponCode);
     if (result.valid && result.coupon) {
-      const discount = result.coupon.discountPercent || 0;
       setCouponValidated(true);
-      setCouponDiscount(discount);
       setCouponError("");
-      toast({
-        title: "Cupom válido",
-        description: `${discount}% de desconto aplicado`,
-      });
+      
+      // Verificar se produto tem preço de lojista (B2B)
+      if (selectedProduct?.discountPrice && selectedProduct.discountPrice < form.watch("salePrice")) {
+        const originalPrice = form.watch("salePrice");
+        const b2bPrice = selectedProduct.discountPrice;
+        const savings = originalPrice - b2bPrice;
+        
+        // Aplicar preço B2B
+        form.setValue("salePrice", b2bPrice);
+        setCouponDiscount(0); // Não é desconto percentual
+        
+        toast({
+          title: "Cupom válido!",
+          description: `Preço de lojista aplicado: R$ ${b2bPrice.toFixed(2)} (economia de R$ ${savings.toFixed(2)})`,
+        });
+      } else {
+        const discount = result.coupon.discountPercent || 0;
+        setCouponDiscount(discount);
+        toast({
+          title: "Cupom válido",
+          description: discount > 0 ? `${discount}% de desconto aplicado` : "Cupom reconhecido, mas este produto não tem preço de lojista configurado",
+        });
+      }
     } else {
       setCouponValidated(false);
       setCouponDiscount(0);
@@ -371,11 +390,19 @@ export function AddManualReceivableDialog({
                     setSelectedProductId(productId);
                     const product = catalogProducts.find(p => p.id === productId);
                     if (product) {
+                      setSelectedProduct(product);
+                      
                       // Preenche automaticamente os campos
                       const totalExpenses = product.expenses.reduce((sum, e) => sum + e.value, 0);
                       form.setValue("productName", product.name);
                       form.setValue("costPrice", totalExpenses);
-                      form.setValue("salePrice", product.price);
+                      
+                      // Se já tiver cupom válido e produto tem preço B2B, aplicar
+                      if (couponValidated && product.discountPrice && product.discountPrice < product.price) {
+                        form.setValue("salePrice", product.discountPrice);
+                      } else {
+                        form.setValue("salePrice", product.price);
+                      }
                     }
                   }}
                 >
@@ -484,31 +511,37 @@ export function AddManualReceivableDialog({
                   <p className="text-sm text-destructive">{couponError}</p>
                 )}
 
-                {couponValidated && (
+                {couponValidated && selectedProduct?.discountPrice && (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
+                      <Check className="h-4 w-4" />
+                      <span>Cupom válido! Preço de lojista aplicado</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-muted-foreground">Preço Original:</span>
+                        <p className="font-medium line-through">
+                          R$ {selectedProduct.price.toFixed(2)}
+                        </p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Preço B2B:</span>
+                        <p className="font-semibold text-green-600 dark:text-green-400">
+                          R$ {selectedProduct.discountPrice.toFixed(2)}
+                        </p>
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Economia: R$ {(selectedProduct.price - selectedProduct.discountPrice).toFixed(2)}
+                    </p>
+                  </div>
+                )}
+                
+                {couponValidated && !selectedProduct?.discountPrice && couponDiscount > 0 && (
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
                       <Check className="h-4 w-4" />
                       <span>Cupom válido! {couponDiscount}% de desconto aplicado</span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <span className="text-muted-foreground">Preço Base:</span>
-                        <p className="font-medium">
-                          {form.watch("salePrice")?.toLocaleString("pt-BR", {
-                            style: "currency",
-                            currency: "BRL",
-                          })}
-                        </p>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Novo Valor:</span>
-                        <p className="font-semibold text-green-600 dark:text-green-400">
-                          {(form.watch("salePrice") * (1 - couponDiscount / 100)).toLocaleString("pt-BR", {
-                            style: "currency",
-                            currency: "BRL",
-                          })}
-                        </p>
-                      </div>
                     </div>
                   </div>
                 )}
@@ -781,12 +814,20 @@ export function AddManualReceivableDialog({
                           setSelectedProductId(productId);
                           const product = catalogProducts.find(p => p.id === productId);
                           if (product) {
+                            setSelectedProduct(product);
+                            
                             const totalExpenses = product.expenses.reduce((sum, e) => sum + e.value, 0);
                             form.setValue("productName", product.name);
                             form.setValue("brand", product.brand || "");
                             form.setValue("category", product.category || "");
                             form.setValue("costPrice", totalExpenses);
-                            form.setValue("salePrice", product.price);
+                            
+                            // Se já tiver cupom válido e produto tem preço B2B, aplicar
+                            if (couponValidated && product.discountPrice && product.discountPrice < product.price) {
+                              form.setValue("salePrice", product.discountPrice);
+                            } else {
+                              form.setValue("salePrice", product.price);
+                            }
                           }
                         }}
                       >
