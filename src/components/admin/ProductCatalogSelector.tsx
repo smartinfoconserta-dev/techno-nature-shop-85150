@@ -74,7 +74,7 @@ export function ProductCatalogSelector({
         <PopoverContent className="w-[95vw] sm:w-[500px] p-0" align="start">
           <Command>
             <CommandInput placeholder="Buscar por nome, marca, specs..." />
-            <CommandList className="max-h-[400px] overflow-y-auto overscroll-contain touch-pan-y [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:bg-muted-foreground/30 [&::-webkit-scrollbar-thumb]:rounded-full">
+            <CommandList className="max-h-[400px]">
               <CommandEmpty>Nenhum produto encontrado</CommandEmpty>
               {Object.entries(productsByCategory).map(
                 ([category, categoryProducts]) => (
