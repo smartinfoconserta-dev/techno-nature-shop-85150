@@ -15,6 +15,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Card } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { Product } from "@/lib/productsStore";
 
@@ -71,82 +72,84 @@ export function ProductCatalogSelector({
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[500px] p-0" align="start">
+        <PopoverContent className="w-[95vw] sm:w-[500px] p-0" align="start">
           <Command>
             <CommandInput placeholder="Buscar por nome, marca, specs..." />
-            <CommandList className="max-h-[400px]">
-              <CommandEmpty>Nenhum produto encontrado</CommandEmpty>
-              {Object.entries(productsByCategory).map(
-                ([category, categoryProducts]) => (
-                  <CommandGroup key={category} heading={category}>
-                    {categoryProducts.map((product) => {
-                      const searchValue = `${product.name} ${product.brand} ${product.category} ${product.specs || ""}`.toLowerCase();
-                      
-                      return (
-                        <CommandItem
-                          key={product.id}
-                          value={searchValue}
-                          onSelect={() => {
-                            onProductSelect(product);
-                            setOpen(false);
-                          }}
-                        >
-                          <div className="flex items-center gap-3 w-full py-1">
-                            {/* Thumbnail */}
-                            <div className="w-12 h-12 rounded bg-muted overflow-hidden flex-shrink-0">
-                              {product.images?.[0] ? (
-                                <img
-                                  src={product.images[0]}
-                                  alt={product.name}
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                <Package className="w-6 h-6 m-3 text-muted-foreground" />
-                              )}
-                            </div>
-
-                            {/* Product Info */}
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <p className="font-medium truncate">
-                                  {product.name}
-                                </p>
-                                <Check
-                                  className={cn(
-                                    "h-4 w-4 shrink-0",
-                                    selectedProductId === product.id
-                                      ? "opacity-100"
-                                      : "opacity-0"
-                                  )}
-                                />
-                              </div>
-
-                              {/* Specs */}
-                              {product.specs && (
-                                <p className="text-xs text-muted-foreground truncate">
-                                  {product.specs}
-                                </p>
-                              )}
-
-                              {/* Prices */}
-                              <div className="flex items-center gap-2 mt-1">
-                                <span className="text-sm font-semibold">
-                                  R$ {product.price.toFixed(2)}
-                                </span>
-                                {product.discountPrice && (
-                                  <span className="text-xs text-green-600 font-medium">
-                                    B2B: R$ {product.discountPrice.toFixed(2)}
-                                  </span>
+            <CommandList className="max-h-[400px] overflow-hidden">
+              <ScrollArea className="h-[400px]">
+                <CommandEmpty>Nenhum produto encontrado</CommandEmpty>
+                {Object.entries(productsByCategory).map(
+                  ([category, categoryProducts]) => (
+                    <CommandGroup key={category} heading={category}>
+                      {categoryProducts.map((product) => {
+                        const searchValue = `${product.name} ${product.brand} ${product.category} ${product.specs || ""}`.toLowerCase();
+                        
+                        return (
+                          <CommandItem
+                            key={product.id}
+                            value={searchValue}
+                            onSelect={() => {
+                              onProductSelect(product);
+                              setOpen(false);
+                            }}
+                          >
+                            <div className="flex items-center gap-3 w-full py-1">
+                              {/* Thumbnail */}
+                              <div className="w-12 h-12 rounded bg-muted overflow-hidden flex-shrink-0">
+                                {product.images?.[0] ? (
+                                  <img
+                                    src={product.images[0]}
+                                    alt={product.name}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <Package className="w-6 h-6 m-3 text-muted-foreground" />
                                 )}
                               </div>
+
+                              {/* Product Info */}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <p className="font-medium truncate">
+                                    {product.name}
+                                  </p>
+                                  <Check
+                                    className={cn(
+                                      "h-4 w-4 shrink-0",
+                                      selectedProductId === product.id
+                                        ? "opacity-100"
+                                        : "opacity-0"
+                                    )}
+                                  />
+                                </div>
+
+                                {/* Specs */}
+                                {product.specs && (
+                                  <p className="text-xs text-muted-foreground truncate">
+                                    {product.specs}
+                                  </p>
+                                )}
+
+                                {/* Prices */}
+                                <div className="flex items-center gap-2 mt-1">
+                                  <span className="text-sm font-semibold">
+                                    R$ {product.price.toFixed(2)}
+                                  </span>
+                                  {product.discountPrice && (
+                                    <span className="text-xs text-green-600 font-medium">
+                                      B2B: R$ {product.discountPrice.toFixed(2)}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                        </CommandItem>
-                      );
-                    })}
-                  </CommandGroup>
-                )
-              )}
+                          </CommandItem>
+                        );
+                      })}
+                    </CommandGroup>
+                  )
+                )}
+              </ScrollArea>
             </CommandList>
           </Command>
         </PopoverContent>
