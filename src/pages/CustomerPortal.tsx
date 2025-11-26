@@ -187,7 +187,7 @@ const CustomerPortal = () => {
         creditBalance={customer?.creditBalance}
       />
 
-      <main className="container mx-auto px-3 md:px-4 py-4 md:py-6 space-y-4">
+      <main className="container mx-auto px-4 md:px-4 py-4 md:py-6 space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <SummaryCard title="Total Comprado" value={`R$ ${totalComprado.toFixed(2)}`} icon={ShoppingBag} valueColor="text-primary" />
           <SummaryCard title="Total Pago" value={`R$ ${totalPago.toFixed(2)}`} icon={DollarSign} valueColor="text-green-600" />
@@ -241,7 +241,7 @@ const CustomerPortal = () => {
               </div>
             )}
 
-            <div className="space-y-2">
+            <div className="space-y-3">
               {filteredReceivables.length === 0 ? (
                 <Card><CardContent className="p-8 text-center"><p className="text-muted-foreground">Nenhuma compra encontrada</p></CardContent></Card>
               ) : (
