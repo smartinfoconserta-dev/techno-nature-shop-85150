@@ -28,6 +28,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { CalendarIcon, Check, ChevronDown } from "lucide-react";
+import { ProductCatalogSelector } from "./ProductCatalogSelector";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -384,51 +385,27 @@ export function AddManualReceivableDialog({
             ) : (
               <div className="space-y-2">
                 <Label>Selecione o Produto *</Label>
-                <Select 
-                  value={selectedProductId} 
-                  onValueChange={(productId) => {
-                    setSelectedProductId(productId);
-                    const product = catalogProducts.find(p => p.id === productId);
-                    if (product) {
-                      setSelectedProduct(product);
-                      
-                      // Preenche automaticamente os campos
-                      const totalExpenses = product.expenses.reduce((sum, e) => sum + e.value, 0);
-                      form.setValue("productName", product.name);
-                      form.setValue("costPrice", totalExpenses);
-                      
-                      // Se já tiver cupom válido e produto tem preço B2B, aplicar
-                      if (couponValidated && product.discountPrice && product.discountPrice < product.price) {
-                        form.setValue("salePrice", product.discountPrice);
-                      } else {
-                        form.setValue("salePrice", product.price);
-                      }
+                <ProductCatalogSelector
+                  products={catalogProducts}
+                  selectedProductId={selectedProductId}
+                  onProductSelect={(product) => {
+                    setSelectedProductId(product.id);
+                    setSelectedProduct(product);
+                    
+                    // Preenche automaticamente os campos
+                    const totalExpenses = product.expenses.reduce((sum, e) => sum + e.value, 0);
+                    form.setValue("productName", product.name);
+                    form.setValue("costPrice", totalExpenses);
+                    form.setValue("warranty", product.warranty || 3);
+                    
+                    // Se já tiver cupom válido e produto tem preço B2B, aplicar
+                    if (couponValidated && product.discountPrice && product.discountPrice < product.price) {
+                      form.setValue("salePrice", product.discountPrice);
+                    } else {
+                      form.setValue("salePrice", product.price);
                     }
                   }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Escolha um produto do catálogo..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {catalogProducts.length === 0 ? (
-                      <SelectItem value="_empty" disabled>
-                        Nenhum produto disponível
-                      </SelectItem>
-                    ) : (
-                      catalogProducts.map(product => (
-                        <SelectItem key={product.id} value={product.id}>
-                          {product.name} - R$ {product.price.toFixed(2)}
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-                {selectedProductId && (
-                  <p className="text-sm text-green-600 dark:text-green-400 flex items-center gap-1">
-                    <Check className="h-4 w-4" />
-                    Produto vinculado ao catálogo
-                  </p>
-                )}
+                />
               </div>
             )}
 
