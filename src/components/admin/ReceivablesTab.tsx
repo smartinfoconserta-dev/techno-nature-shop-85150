@@ -441,10 +441,28 @@ const ReceivablesTab = () => {
                     </CollapsibleTrigger>
                     
                     <CollapsibleContent className="mt-4 space-y-2">
-                      <div className="flex gap-2 mb-3">
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        {/* Editar Cliente - Mobile */}
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="sm:hidden h-9 w-9"
+                          title="Editar Cliente"
+                          onClick={async () => {
+                            const customer = await customersStore.getCustomerById(group.customerId);
+                            if (customer) {
+                              setCustomerToEdit(customer);
+                              setShowEditCustomerDialog(true);
+                            }
+                          }}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        {/* Editar Cliente - Desktop */}
                         <Button
                           variant="outline"
                           size="sm"
+                          className="hidden sm:flex"
                           onClick={async () => {
                             const customer = await customersStore.getCustomerById(group.customerId);
                             if (customer) {
@@ -456,9 +474,29 @@ const ReceivablesTab = () => {
                           <Edit className="w-4 h-4 mr-2" />
                           Editar Cliente
                         </Button>
+                        
+                        {/* Gerar PDF - Mobile */}
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="sm:hidden h-9 w-9"
+                          title="Gerar PDF"
+                          onClick={async () => {
+                            const customer = await customersStore.getCustomerById(group.customerId);
+                            if (customer) {
+                              const receivables = receivablesStore.getReceivablesByCustomer(group.customerId);
+                              generateCustomerReportPDF(customer, receivables);
+                              toast({ title: "PDF gerado com sucesso!" });
+                            }
+                          }}
+                        >
+                          <FileDown className="h-4 w-4" />
+                        </Button>
+                        {/* Gerar PDF - Desktop */}
                         <Button
                           variant="outline"
                           size="sm"
+                          className="hidden sm:flex"
                           onClick={async () => {
                             const customer = await customersStore.getCustomerById(group.customerId);
                             if (customer) {
@@ -471,9 +509,25 @@ const ReceivablesTab = () => {
                           <FileDown className="w-4 h-4 mr-2" />
                           Gerar PDF
                         </Button>
+                        
+                        {/* Pagamento Geral - Mobile */}
+                        <Button
+                          variant="default"
+                          size="icon"
+                          className="sm:hidden h-9 w-9"
+                          title="Pagamento Geral"
+                          onClick={() => {
+                            setSelectedCustomerId(group.customerId);
+                            setShowCustomerPaymentDialog(true);
+                          }}
+                        >
+                          <DollarSign className="h-4 w-4" />
+                        </Button>
+                        {/* Pagamento Geral - Desktop */}
                         <Button
                           variant="default"
                           size="sm"
+                          className="hidden sm:flex"
                           onClick={() => {
                             setSelectedCustomerId(group.customerId);
                             setShowCustomerPaymentDialog(true);
