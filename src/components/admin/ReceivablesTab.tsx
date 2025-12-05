@@ -340,6 +340,20 @@ const ReceivablesTab = () => {
             ))}
           </SelectContent>
         </Select>
+        {customerFilter !== "all" && (
+          <Button
+            variant="default"
+            size="sm"
+            onClick={() => {
+              setSelectedCustomerId(customerFilter);
+              setShowCustomerPaymentDialog(true);
+            }}
+            className="gap-2 h-10"
+          >
+            <DollarSign className="h-4 w-4" />
+            Pagamento Geral
+          </Button>
+        )}
         {hasActiveFilters && (
           <Button
             variant="ghost"
@@ -456,6 +470,17 @@ const ReceivablesTab = () => {
                         >
                           <FileDown className="w-4 h-4 mr-2" />
                           Gerar PDF
+                        </Button>
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedCustomerId(group.customerId);
+                            setShowCustomerPaymentDialog(true);
+                          }}
+                        >
+                          <DollarSign className="w-4 h-4 mr-2" />
+                          Pagamento Geral
                         </Button>
                       </div>
                       {group.receivables.map((receivable) => (
