@@ -44,10 +44,13 @@ const SettingsTab = () => {
   // Processor and RAM options
   const [processorOptions, setProcessorOptions] = useState<string[]>([]);
   const [ramOptions, setRamOptions] = useState<string[]>([]);
+  const [gpuOptions, setGpuOptions] = useState<string[]>([]);
   const [showAddProcessorDialog, setShowAddProcessorDialog] = useState(false);
   const [showAddRAMDialog, setShowAddRAMDialog] = useState(false);
+  const [showAddGPUDialog, setShowAddGPUDialog] = useState(false);
   const [newProcessor, setNewProcessor] = useState("");
   const [newRAM, setNewRAM] = useState("");
+  const [newGPU, setNewGPU] = useState("");
 
   useEffect(() => {
     loadSettings();
@@ -60,6 +63,7 @@ const SettingsTab = () => {
     setInstallmentRates(settings.installmentRates || []);
     setProcessorOptions(settings.processorOptions || []);
     setRamOptions(settings.ramOptions || []);
+    setGpuOptions(settings.gpuOptions || []);
   };
 
   const handleSaveTaxSettings = () => {
@@ -196,6 +200,32 @@ const SettingsTab = () => {
       toast.success("Opção de RAM removida!");
     } catch (error: any) {
       toast.error(error.message || "Erro ao remover RAM");
+    }
+  };
+
+  const handleAddGPU = () => {
+    if (!newGPU.trim()) {
+      toast.error("Digite o modelo da placa de vídeo");
+      return;
+    }
+    try {
+      settingsStore.addGPUOption(newGPU.trim());
+      loadSettings();
+      toast.success("Placa de vídeo adicionada!");
+      setNewGPU("");
+      setShowAddGPUDialog(false);
+    } catch (error: any) {
+      toast.error(error.message || "Erro ao adicionar placa de vídeo");
+    }
+  };
+
+  const handleRemoveGPU = (option: string) => {
+    try {
+      settingsStore.removeGPUOption(option);
+      loadSettings();
+      toast.success("Placa de vídeo removida!");
+    } catch (error: any) {
+      toast.error(error.message || "Erro ao remover placa de vídeo");
     }
   };
 
