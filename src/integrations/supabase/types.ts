@@ -708,6 +708,7 @@ export type Database = {
       settings: {
         Row: {
           digital_tax_rate: number
+          gpu_options: Json
           id: string
           include_cash_in_tax: boolean
           installment_rates: Json
@@ -717,6 +718,7 @@ export type Database = {
         }
         Insert: {
           digital_tax_rate?: number
+          gpu_options?: Json
           id?: string
           include_cash_in_tax?: boolean
           installment_rates?: Json
@@ -726,6 +728,7 @@ export type Database = {
         }
         Update: {
           digital_tax_rate?: number
+          gpu_options?: Json
           id?: string
           include_cash_in_tax?: boolean
           installment_rates?: Json
