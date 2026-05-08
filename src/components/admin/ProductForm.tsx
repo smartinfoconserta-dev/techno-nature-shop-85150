@@ -50,10 +50,12 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
   const [processor, setProcessor] = useState(product?.specifications?.processor || "");
   const [ram, setRam] = useState(product?.specifications?.ram || "");
   const [dedicatedGPU, setDedicatedGPU] = useState(product?.specifications?.dedicatedGPU || false);
+  const [gpuModel, setGpuModel] = useState(product?.specifications?.gpuModel || "");
   
-  // Opções dinâmicas de processador e RAM
+  // Opções dinâmicas de processador, RAM e GPU
   const [processorOptions, setProcessorOptions] = useState<string[]>([]);
   const [ramOptions, setRamOptions] = useState<string[]>([]);
+  const [gpuOptions, setGpuOptions] = useState<string[]>([]);
 
   // Rehidratar campos quando o produto mudar (para edição)
   useEffect(() => {
@@ -71,6 +73,7 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
       setProcessor(product.specifications?.processor || "");
       setRam(product.specifications?.ram || "");
       setDedicatedGPU(!!product.specifications?.dedicatedGPU);
+      setGpuModel(product.specifications?.gpuModel || "");
       
       // Remover rascunho salvo ao editar produto existente
       sessionStorage.removeItem(STORAGE_KEY);
@@ -93,6 +96,7 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
           setProcessor(draft.processor || "");
           setRam(draft.ram || "");
           setDedicatedGPU(draft.dedicatedGPU || false);
+          setGpuModel(draft.gpuModel || "");
           toast.success("Rascunho restaurado", {
             description: "Seus dados não salvos foram recuperados",
             duration: 3000,
@@ -121,10 +125,11 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
         processor,
         ram,
         dedicatedGPU,
+        gpuModel,
       };
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
     }
-  }, [name, category, brand, specs, description, price, discountPrice, passOnCashDiscount, showSoldOverlay, images, processor, ram, dedicatedGPU, product]);
+  }, [name, category, brand, specs, description, price, discountPrice, passOnCashDiscount, showSoldOverlay, images, processor, ram, dedicatedGPU, gpuModel, product]);
 
   // Avisar antes de fechar/recarregar se houver dados não salvos
   useEffect(() => {
@@ -165,6 +170,7 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
       const settings = await settingsStore.getSettings();
       setProcessorOptions(settings.processorOptions || []);
       setRamOptions(settings.ramOptions || []);
+      setGpuOptions(settings.gpuOptions || []);
     };
     loadSpecOptions();
   }, []);
@@ -244,10 +250,11 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
     setSaving(true);
     try {
       // Construir especificações se for notebook
-      const specifications = category === "Notebooks" && (processor || ram || dedicatedGPU) ? {
+      const specifications = category === "Notebooks" && (processor || ram || dedicatedGPU || gpuModel) ? {
         processor: processor || undefined,
         ram: ram || undefined,
         dedicatedGPU: dedicatedGPU || undefined,
+        gpuModel: dedicatedGPU && gpuModel ? gpuModel : undefined,
       } : undefined;
 
       await onSave({
@@ -450,12 +457,27 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
                 <Checkbox
                   id="dedicatedGPU"
                   checked={dedicatedGPU}
-                  onCheckedChange={(checked) => setDedicatedGPU(checked as boolean)}
+                  onCheckedChange={(checked) => {
+                    setDedicatedGPU(checked as boolean);
+                    if (!checked) setGpuModel("");
+                  }}
                 />
                 <label htmlFor="dedicatedGPU" className="text-sm cursor-pointer">
                   Tem placa de vídeo dedicada
                 </label>
               </div>
+              {dedicatedGPU && (
+                <Select value={gpuModel || undefined} onValueChange={setGpuModel}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Modelo (opcional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {gpuOptions.map((g) => (
+                      <SelectItem key={g} value={g}>{g}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
           </div>
         </div>
