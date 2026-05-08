@@ -44,10 +44,13 @@ const SettingsTab = () => {
   // Processor and RAM options
   const [processorOptions, setProcessorOptions] = useState<string[]>([]);
   const [ramOptions, setRamOptions] = useState<string[]>([]);
+  const [gpuOptions, setGpuOptions] = useState<string[]>([]);
   const [showAddProcessorDialog, setShowAddProcessorDialog] = useState(false);
   const [showAddRAMDialog, setShowAddRAMDialog] = useState(false);
+  const [showAddGPUDialog, setShowAddGPUDialog] = useState(false);
   const [newProcessor, setNewProcessor] = useState("");
   const [newRAM, setNewRAM] = useState("");
+  const [newGPU, setNewGPU] = useState("");
 
   useEffect(() => {
     loadSettings();
@@ -60,6 +63,7 @@ const SettingsTab = () => {
     setInstallmentRates(settings.installmentRates || []);
     setProcessorOptions(settings.processorOptions || []);
     setRamOptions(settings.ramOptions || []);
+    setGpuOptions(settings.gpuOptions || []);
   };
 
   const handleSaveTaxSettings = () => {
@@ -196,6 +200,32 @@ const SettingsTab = () => {
       toast.success("Opção de RAM removida!");
     } catch (error: any) {
       toast.error(error.message || "Erro ao remover RAM");
+    }
+  };
+
+  const handleAddGPU = () => {
+    if (!newGPU.trim()) {
+      toast.error("Digite o modelo da placa de vídeo");
+      return;
+    }
+    try {
+      settingsStore.addGPUOption(newGPU.trim());
+      loadSettings();
+      toast.success("Placa de vídeo adicionada!");
+      setNewGPU("");
+      setShowAddGPUDialog(false);
+    } catch (error: any) {
+      toast.error(error.message || "Erro ao adicionar placa de vídeo");
+    }
+  };
+
+  const handleRemoveGPU = (option: string) => {
+    try {
+      settingsStore.removeGPUOption(option);
+      loadSettings();
+      toast.success("Placa de vídeo removida!");
+    } catch (error: any) {
+      toast.error(error.message || "Erro ao remover placa de vídeo");
     }
   };
 
@@ -618,6 +648,71 @@ const SettingsTab = () => {
           <Button onClick={() => setShowAddRAMDialog(true)} variant="outline" size="sm">
             <Plus className="h-4 w-4 mr-2" />
             Adicionar Opção de RAM
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* GPU Options Dialog */}
+      <Dialog open={showAddGPUDialog} onOpenChange={setShowAddGPUDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Adicionar Placa de Vídeo</DialogTitle>
+            <DialogDescription>
+              Digite o modelo da placa de vídeo (ex: RTX 4060, Radeon RX 7600)
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="newGPU">Modelo da Placa de Vídeo</Label>
+            <Input
+              id="newGPU"
+              placeholder="Ex: RTX 4060"
+              value={newGPU}
+              onChange={(e) => setNewGPU(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleAddGPU()}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddGPUDialog(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleAddGPU}>
+              <Plus className="h-4 w-4 mr-2" />
+              Adicionar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* GPU Options Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <SettingsIcon className="h-5 w-5" />
+            Opções de Placa de Vídeo
+          </CardTitle>
+          <CardDescription>
+            Configure os modelos de placa de vídeo disponíveis para notebooks
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-wrap gap-2">
+            {gpuOptions.map((g) => (
+              <div key={g} className="flex items-center gap-2 p-2 border rounded-lg bg-muted/50">
+                <Badge variant="secondary">{g}</Badge>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-6 w-6 p-0"
+                  onClick={() => handleRemoveGPU(g)}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+            ))}
+          </div>
+          <Button onClick={() => setShowAddGPUDialog(true)} variant="outline" size="sm">
+            <Plus className="h-4 w-4 mr-2" />
+            Adicionar Placa de Vídeo
           </Button>
         </CardContent>
       </Card>

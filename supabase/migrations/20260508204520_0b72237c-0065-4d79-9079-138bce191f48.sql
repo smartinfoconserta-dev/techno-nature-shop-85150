@@ -1,0 +1,1 @@
+ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS gpu_options jsonb NOT NULL DEFAULT '["GTX 1650", "GTX 1660", "RTX 3050", "RTX 3060", "RTX 4050", "RTX 4060", "Radeon RX 6600", "Radeon RX 7600"]'::jsonb;
