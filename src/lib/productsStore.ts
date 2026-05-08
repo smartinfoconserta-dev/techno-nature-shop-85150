@@ -17,9 +17,10 @@ export interface PaymentBreakdown {
 }
 
 export interface ProductSpecifications {
-  processor?: 'i3' | 'i5' | 'i7' | 'i9';
-  ram?: '4GB' | '8GB' | '16GB';
+  processor?: string;
+  ram?: string;
   dedicatedGPU?: boolean;
+  gpuModel?: string;
 }
 
 export interface Product {
@@ -79,6 +80,7 @@ function mapRowToProduct(row: any): Product {
       processor: row.specifications.processor,
       ram: row.specifications.ram,
       dedicatedGPU: row.specifications.dedicatedGPU,
+      gpuModel: row.specifications.gpuModel,
     };
   }
 
@@ -671,7 +673,6 @@ export const productsStore = {
           remaining_amount: data.remainingAmount,
           payment_status: data.status,
           warranty_days: data.warranty ?? undefined,
-          updated_at: new Date().toISOString(),
         })
         .eq("id", productId);
 

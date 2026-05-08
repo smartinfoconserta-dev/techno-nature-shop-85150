@@ -14,6 +14,7 @@ export interface Settings extends TaxSettings {
   installmentRates: InstallmentRate[];
   processorOptions: string[];
   ramOptions: string[];
+  gpuOptions: string[];
 }
 
 const DEFAULT_INSTALLMENT_RATES: InstallmentRate[] = [
@@ -33,6 +34,7 @@ const DEFAULT_INSTALLMENT_RATES: InstallmentRate[] = [
 
 const DEFAULT_PROCESSOR_OPTIONS = ["i3", "i5", "i7", "i9", "Ryzen 3", "Ryzen 5", "Ryzen 7", "Ryzen 9"];
 const DEFAULT_RAM_OPTIONS = ["4GB", "8GB", "16GB", "32GB", "64GB"];
+const DEFAULT_GPU_OPTIONS = ["GTX 1650", "GTX 1660", "RTX 3050", "RTX 3060", "RTX 4050", "RTX 4060", "Radeon RX 6600", "Radeon RX 7600"];
 
 export const settingsStore = {
   async getSettings(): Promise<Settings> {
@@ -49,6 +51,7 @@ export const settingsStore = {
         installmentRates: DEFAULT_INSTALLMENT_RATES,
         processorOptions: DEFAULT_PROCESSOR_OPTIONS,
         ramOptions: DEFAULT_RAM_OPTIONS,
+        gpuOptions: DEFAULT_GPU_OPTIONS,
       };
     }
 
@@ -58,6 +61,7 @@ export const settingsStore = {
       installmentRates: (data.installment_rates as any[]) || DEFAULT_INSTALLMENT_RATES,
       processorOptions: (data.processor_options as string[]) || DEFAULT_PROCESSOR_OPTIONS,
       ramOptions: (data.ram_options as string[]) || DEFAULT_RAM_OPTIONS,
+      gpuOptions: ((data as any).gpu_options as string[]) || DEFAULT_GPU_OPTIONS,
     };
   },
 
@@ -215,5 +219,44 @@ export const settingsStore = {
     const settings = await this.getSettings();
     const filtered = settings.ramOptions.filter((o) => o !== option);
     await this.updateRAMOptions(filtered);
+  },
+
+  // GPU Options Management
+  async updateGPUOptions(options: string[]): Promise<void> {
+    const { data: existing } = await supabase
+      .from("settings")
+      .select("id")
+      .limit(1)
+      .maybeSingle();
+
+    if (existing) {
+      const { error } = await supabase
+        .from("settings")
+        .update({ gpu_options: options as any } as any)
+        .eq("id", existing.id);
+
+      if (error) {
+        console.error("Erro ao atualizar opções de GPU:", error);
+        throw error;
+      }
+    }
+  },
+
+  async addGPUOption(option: string): Promise<void> {
+    const settings = await this.getSettings();
+    const exists = settings.gpuOptions.some((o) => o === option);
+
+    if (exists) {
+      throw new Error(`Já existe a opção "${option}" configurada`);
+    }
+
+    const newOptions = [...settings.gpuOptions, option];
+    await this.updateGPUOptions(newOptions);
+  },
+
+  async removeGPUOption(option: string): Promise<void> {
+    const settings = await this.getSettings();
+    const filtered = settings.gpuOptions.filter((o) => o !== option);
+    await this.updateGPUOptions(filtered);
   },
 };
