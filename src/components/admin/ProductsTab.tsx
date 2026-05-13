@@ -35,7 +35,10 @@ const ProductsTab = () => {
   const [isFormOpen, setIsFormOpen] = useState(() => {
     return sessionStorage.getItem('admin.products.isFormOpen') === 'true';
   });
-  const [editingProduct, setEditingProduct] = useState<Product | undefined>();
+  const [editingProduct, setEditingProduct] = useState<Product | undefined>(() => {
+    const saved = sessionStorage.getItem('admin.products.editingProduct');
+    return saved ? JSON.parse(saved) : undefined;
+  });
   const [selectedProduct, setSelectedProduct] = useState<Product | undefined>();
   const [isMarkAsSoldOpen, setIsMarkAsSoldOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
