@@ -143,19 +143,18 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
 
   // Avisar antes de fechar/recarregar se houver dados não salvos
   useEffect(() => {
-    if (!product) {
-      const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-        const hasDraft = sessionStorage.getItem(STORAGE_KEY);
-        if (hasDraft) {
-          e.preventDefault();
-          e.returnValue = '';
-        }
-      };
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      const draftKey = getDraftKey(product?.id);
+      const hasDraft = sessionStorage.getItem(draftKey);
+      if (hasDraft) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
 
-      window.addEventListener('beforeunload', handleBeforeUnload);
-      return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-    }
-  }, [product]);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [product?.id]);
 
   useEffect(() => {
     import("@/lib/categoriesStore").then(async ({ categoriesStore }) => {
