@@ -472,19 +472,21 @@ const ProductDetailsDialog = ({
                               ref={(el) => (installmentRefs.current[option.installments] = el)}
                               onClick={() => handleInstallmentClick(option)}
                               className={cn(
-                                "flex flex-col p-2 rounded-md border text-left transition-all hover:border-primary-purple/50 hover:bg-gray-50",
+                                "flex flex-col p-2.5 rounded-md border text-left transition-all hover:border-primary-purple/50 hover:bg-gray-50",
                                 selectedPayment?.type === 'installment' && selectedPayment.data?.installments === option.installments 
                                   ? "border-primary-purple bg-primary-purple/5 ring-1 ring-primary-purple" 
                                   : "border-gray-200 bg-white"
                               )}
                             >
-                              <span className="text-[11px] font-semibold text-gray-500 mb-0.5">{option.installments}x de</span>
-                              <span className={cn(
-                                "text-sm font-bold",
-                                selectedPayment?.type === 'installment' && selectedPayment.data?.installments === option.installments ? "text-primary-purple" : "text-gray-900"
-                              )}>
-                                R$ {option.installmentValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                              </span>
+                              <div className="flex items-baseline gap-1 overflow-hidden">
+                                <span className="text-[10px] sm:text-[11px] font-semibold text-gray-500 whitespace-nowrap shrink-0">{option.installments}x de</span>
+                                <span className={cn(
+                                  "text-xs sm:text-sm font-bold truncate",
+                                  selectedPayment?.type === 'installment' && selectedPayment.data?.installments === option.installments ? "text-primary-purple" : "text-gray-900"
+                                )}>
+                                  R$ {option.installmentValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </span>
+                              </div>
                             </button>
                           ))
                         )}
