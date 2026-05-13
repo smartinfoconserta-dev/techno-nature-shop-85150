@@ -147,6 +147,7 @@ const ProductsTab = () => {
 
   const handleEdit = (product: Product) => {
     setEditingProduct(product);
+    sessionStorage.setItem('admin.products.editingProduct', JSON.stringify(product));
     setIsFormOpen(true);
   };
 
