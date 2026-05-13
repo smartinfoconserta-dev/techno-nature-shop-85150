@@ -281,7 +281,7 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
       } as any);
 
       // Limpar rascunho após salvar
-      sessionStorage.removeItem(STORAGE_KEY);
+      sessionStorage.removeItem(getDraftKey(product?.id));
     } finally {
       setSaving(false);
     }
