@@ -396,8 +396,8 @@ const ProductDetailsDialog = ({
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent 
-                  className="w-[calc(100vw-32px)] sm:w-[420px] max-h-[var(--radix-popover-content-available-height)] overflow-y-auto overscroll-contain p-3" 
-                  side="bottom" 
+                  className="w-[calc(100vw-32px)] sm:w-[420px] max-h-[400px] overflow-y-auto overscroll-contain p-3" 
+                  side="top" 
                   align="center" 
                   sideOffset={8}
                   onWheelCapture={(e) => e.stopPropagation()}
