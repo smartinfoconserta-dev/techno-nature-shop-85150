@@ -495,9 +495,18 @@ const ProductDetailsDialog = ({
 
             {/* Detalhes do pagamento selecionado */}
             {selectedPayment?.type === 'installment' && selectedPayment.data && (
-              <div className="mt-3 text-sm text-muted-foreground">
-                {selectedPayment.data.installments}x de R$ {selectedPayment.data.installmentValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                {' '} (Total: R$ {selectedPayment.data.totalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
+              <div className="mt-3 p-3 bg-primary-purple/5 border border-primary-purple/20 rounded-lg">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Total parcelado:</span>
+                  <span className="font-bold text-primary-purple">
+                    R$ {selectedPayment.data.totalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                </div>
+                {selectedPayment.data.totalAmount > displayPrice && (
+                  <div className="text-[10px] text-right text-orange-600 font-medium">
+                    Inclui taxas de parcelamento
+                  </div>
+                )}
               </div>
             )}
 
