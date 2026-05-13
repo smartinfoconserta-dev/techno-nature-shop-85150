@@ -502,28 +502,60 @@ const ProductDetailsDialog = ({
             )}
 
             {/* Cupom */}
-            <div className="mt-6">
-              <button
-                type="button"
-                onClick={() => setShowCouponInput((v) => !v)}
-                className="text-sm text-primary hover:underline inline-flex items-center"
-              >
-                <Tag className="h-4 w-4 mr-1" /> Tenho cupom
-              </button>
-              {showCouponInput && (
-                <div className="mt-2 flex flex-wrap items-center gap-2">
-                  <Input
-                    value={coupon}
-                    onChange={(e) => setCoupon(e.target.value.toUpperCase())}
-                    placeholder="CUPOM"
-                    className="w-full sm:flex-1 sm:min-w-0 sm:max-w-xs"
-                  />
+            <div className="mt-8 bg-gray-50 p-4 rounded-xl border border-gray-100 shadow-sm">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                  <Tag className="h-4 w-4 text-primary-purple" />
+                  Cupom de Desconto
+                </span>
+                {!showCouponInput && (
+                  <button
+                    type="button"
+                    onClick={() => setShowCouponInput(true)}
+                    className="text-xs font-medium text-primary-purple hover:underline"
+                  >
+                    Adicionar
+                  </button>
+                )}
+              </div>
+              
+              {showCouponInput ? (
+                <div className="flex flex-col gap-2">
+                  <div className="flex gap-2">
+                    <Input
+                      value={coupon}
+                      onChange={(e) => setCoupon(e.target.value.toUpperCase())}
+                      placeholder="INSIRA SEU CUPOM"
+                      className="h-10 text-sm border-gray-200 focus:border-primary-purple focus:ring-primary-purple bg-white"
+                      autoFocus
+                    />
+                    <Button 
+                      variant="outline" 
+                      size="icon" 
+                      className="h-10 w-10 shrink-0 text-gray-400 hover:text-red-500 hover:bg-red-50"
+                      onClick={() => {
+                        setCoupon("");
+                        setShowCouponInput(false);
+                      }}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
                   {coupon && (
-                    <Badge variant={couponValidation.valid ? 'default' : 'secondary'} className="shrink-0">
-                      {couponValidation.valid ? 'Cupom válido' : 'Cupom inválido'}
-                    </Badge>
+                    <div className={cn(
+                      "text-[11px] font-medium px-2 py-1 rounded-md inline-self-start",
+                      couponValidation.valid 
+                        ? "bg-green-100 text-green-700" 
+                        : "bg-red-100 text-red-700"
+                    )}>
+                      {couponValidation.valid ? '✓ Cupom aplicado com sucesso!' : '✕ Cupom inválido ou expirado'}
+                    </div>
                   )}
                 </div>
+              ) : (
+                <p className="text-xs text-gray-500">
+                  Tem um cupom? Clique para aplicar e ver o preço especial.
+                </p>
               )}
             </div>
 
