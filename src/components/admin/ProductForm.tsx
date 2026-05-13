@@ -448,7 +448,7 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
 
             <div className="space-y-2">
               <Label htmlFor="ram">Memória RAM</Label>
-              <Select value={ram || undefined} onValueChange={setRam}>
+              <Select value={ram || "none"} onValueChange={(val) => setRam(val === "none" ? "" : val)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Nenhum selecionado" />
                 </SelectTrigger>
