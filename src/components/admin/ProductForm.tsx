@@ -57,9 +57,52 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
   const [ramOptions, setRamOptions] = useState<string[]>([]);
   const [gpuOptions, setGpuOptions] = useState<string[]>([]);
 
-  // Rehidratar campos quando o produto mudar (para edição)
+  // Rehidratar campos quando o produto mudar ou rascunho existir
   useEffect(() => {
-    if (product) {
+    const draftKey = getDraftKey(product?.id);
+    const savedDraft = sessionStorage.getItem(draftKey);
+    
+    if (savedDraft) {
+      try {
+        const draft = JSON.parse(savedDraft);
+        setName(draft.name || "");
+        setCategory(draft.category || "Notebooks");
+        setBrand(draft.brand || "");
+        setSpecs(draft.specs || "");
+        setDescription(draft.description || "");
+        setPrice(draft.price || "");
+        setDiscountPrice(draft.discountPrice || "");
+        setPassOnCashDiscount(draft.passOnCashDiscount || false);
+        setShowSoldOverlay(draft.showSoldOverlay || false);
+        setImages(draft.images || []);
+        setProcessor(draft.processor || "");
+        setRam(draft.ram || "");
+        setDedicatedGPU(draft.dedicatedGPU || false);
+        setGpuModel(draft.gpuModel || "");
+        
+        // Só mostrar toast se o rascunho for diferente do estado inicial do produto
+        if (product) {
+          const hasChanges = 
+            draft.name !== product.name || 
+            draft.brand !== product.brand ||
+            draft.category !== product.category;
+            
+          if (hasChanges) {
+            toast.success("Rascunho recuperado", {
+              description: "Continuando edição do produto",
+              duration: 2000,
+            });
+          }
+        } else {
+          toast.success("Rascunho restaurado", {
+            description: "Seus dados não salvos foram recuperados",
+            duration: 3000,
+          });
+        }
+      } catch (e) {
+        console.error("Erro ao carregar rascunho:", e);
+      }
+    } else if (product) {
       setName(product.name || "");
       setCategory(product.category || "Notebooks");
       setBrand(product.brand || "");
@@ -74,37 +117,6 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
       setRam(product.specifications?.ram || "");
       setDedicatedGPU(!!product.specifications?.dedicatedGPU);
       setGpuModel(product.specifications?.gpuModel || "");
-      
-      // Remover rascunho salvo ao editar produto existente
-      sessionStorage.removeItem(STORAGE_KEY);
-    } else {
-      // Carregar rascunho salvo apenas para novos produtos
-      const savedDraft = sessionStorage.getItem(STORAGE_KEY);
-      if (savedDraft) {
-        try {
-          const draft = JSON.parse(savedDraft);
-          setName(draft.name || "");
-          setCategory(draft.category || "Notebooks");
-          setBrand(draft.brand || "");
-          setSpecs(draft.specs || "");
-          setDescription(draft.description || "");
-          setPrice(draft.price || "");
-          setDiscountPrice(draft.discountPrice || "");
-          setPassOnCashDiscount(draft.passOnCashDiscount || false);
-          setShowSoldOverlay(draft.showSoldOverlay || false);
-          setImages(draft.images || []);
-          setProcessor(draft.processor || "");
-          setRam(draft.ram || "");
-          setDedicatedGPU(draft.dedicatedGPU || false);
-          setGpuModel(draft.gpuModel || "");
-          toast.success("Rascunho restaurado", {
-            description: "Seus dados não salvos foram recuperados",
-            duration: 3000,
-          });
-        } catch (e) {
-          console.error("Erro ao carregar rascunho:", e);
-        }
-      }
     }
   }, [product?.id]);
 
