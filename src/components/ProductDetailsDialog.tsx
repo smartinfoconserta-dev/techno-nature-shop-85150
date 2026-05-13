@@ -316,7 +316,8 @@ const ProductDetailsDialog = ({
               <div className="text-3xl font-bold text-primary-purple">
                 {(displayMode === 'installment' || displayMode === 'coupon-installment') && paymentDetails.installments && paymentDetails.installmentValue ? (
                   <>
-                    {paymentDetails.installments}x de R$ {paymentDetails.installmentValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    <span className="text-sm font-semibold text-muted-foreground mr-1 uppercase tracking-wider">{paymentDetails.installments}x de</span>
+                    R$ {paymentDetails.installmentValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </>
                 ) : (
                   <>R$ {finalPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</>
