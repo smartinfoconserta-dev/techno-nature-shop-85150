@@ -434,7 +434,7 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="processor">Processador</Label>
-              <Select value={processor || undefined} onValueChange={setProcessor}>
+              <Select value={processor || "none"} onValueChange={(val) => setProcessor(val === "none" ? "" : val)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Nenhum selecionado" />
                 </SelectTrigger>
