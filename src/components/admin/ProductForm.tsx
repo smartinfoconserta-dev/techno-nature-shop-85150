@@ -324,7 +324,7 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
               <SelectValue placeholder="Selecione uma marca" />
             </SelectTrigger>
             <SelectContent>
-              {availableBrands.map((b) => (
+              <SelectItem value="none">Selecione uma marca</SelectItem>
                 <SelectItem key={b} value={b}>
                   {b}
                 </SelectItem>
