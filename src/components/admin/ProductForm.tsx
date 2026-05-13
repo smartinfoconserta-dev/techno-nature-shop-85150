@@ -319,7 +319,7 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
 
         <div className="space-y-2 w-full">
           <Label htmlFor="brand">Marca *</Label>
-          <Select value={brand} onValueChange={setBrand}>
+          <Select value={brand || "none"} onValueChange={(val) => setBrand(val === "none" ? "" : val)}>
             <SelectTrigger>
               <SelectValue placeholder="Selecione uma marca" />
             </SelectTrigger>
