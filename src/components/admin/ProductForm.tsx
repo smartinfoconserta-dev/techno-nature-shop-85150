@@ -319,11 +319,12 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
 
         <div className="space-y-2 w-full">
           <Label htmlFor="brand">Marca *</Label>
-          <Select value={brand} onValueChange={setBrand}>
+          <Select value={brand || "none"} onValueChange={(val) => setBrand(val === "none" ? "" : val)}>
             <SelectTrigger>
               <SelectValue placeholder="Selecione uma marca" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="none">Selecione uma marca</SelectItem>
               {availableBrands.map((b) => (
                 <SelectItem key={b} value={b}>
                   {b}
@@ -434,11 +435,12 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="processor">Processador</Label>
-              <Select value={processor || undefined} onValueChange={setProcessor}>
+              <Select value={processor || "none"} onValueChange={(val) => setProcessor(val === "none" ? "" : val)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Nenhum selecionado" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="none">Nenhum selecionado</SelectItem>
                   {processorOptions.map((proc) => (
                     <SelectItem key={proc} value={proc}>{proc}</SelectItem>
                   ))}
@@ -448,11 +450,12 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
 
             <div className="space-y-2">
               <Label htmlFor="ram">Memória RAM</Label>
-              <Select value={ram || undefined} onValueChange={setRam}>
+              <Select value={ram || "none"} onValueChange={(val) => setRam(val === "none" ? "" : val)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Nenhum selecionado" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="none">Nenhum selecionado</SelectItem>
                   {ramOptions.map((memory) => (
                     <SelectItem key={memory} value={memory}>{memory}</SelectItem>
                   ))}
@@ -476,11 +479,12 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
                 </label>
               </div>
               {dedicatedGPU && (
-                <Select value={gpuModel || undefined} onValueChange={setGpuModel}>
+                <Select value={gpuModel || "none"} onValueChange={(val) => setGpuModel(val === "none" ? "" : val)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Modelo (opcional)" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="none">Modelo (opcional)</SelectItem>
                     {gpuOptions.map((g) => (
                       <SelectItem key={g} value={g}>{g}</SelectItem>
                     ))}
