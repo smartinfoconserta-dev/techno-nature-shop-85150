@@ -455,6 +455,7 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
                   <SelectValue placeholder="Nenhum selecionado" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="none">Nenhum selecionado</SelectItem>
                   {ramOptions.map((memory) => (
                     <SelectItem key={memory} value={memory}>{memory}</SelectItem>
                   ))}
