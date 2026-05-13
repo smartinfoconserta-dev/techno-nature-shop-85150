@@ -120,22 +120,21 @@ const ProductsTab = () => {
     try {
       if (editingProduct) {
         await productsStore.updateProduct(editingProduct.id, data);
-        toast({
-          title: "Produto atualizado!",
-          description: `${data.name} foi atualizado com sucesso.`,
-        });
+        sessionStorage.removeItem(`product-form-draft-${editingProduct.id}`);
       } else {
         await productsStore.addProduct(data);
-        toast({
-          title: "Produto criado!",
-          description: `${data.name} foi adicionado ao catálogo.`,
-        });
+        sessionStorage.removeItem('product-form-draft-new');
       }
+      
+      toast({
+        title: editingProduct ? "Produto atualizado!" : "Produto criado!",
+        description: `${data.name} foi ${editingProduct ? "atualizado" : "adicionado"} com sucesso.`,
+      });
       
       setIsFormOpen(false);
       setEditingProduct(undefined);
       sessionStorage.removeItem('admin.products.isFormOpen');
-      sessionStorage.removeItem('product-form-draft');
+      sessionStorage.removeItem('admin.products.editingProduct');
       loadProducts();
     } catch (error) {
       toast({
