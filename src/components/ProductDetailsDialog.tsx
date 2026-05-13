@@ -243,13 +243,13 @@ const ProductDetailsDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl p-0 bg-white">
+      <DialogContent className="max-w-4xl p-0 bg-white h-[90vh] flex flex-col overflow-hidden">
         <DialogTitle className="sr-only">{name}</DialogTitle>
         <DialogDescription className="sr-only">
           Detalhes completos do produto {name} - {brand}
         </DialogDescription>
         
-        <div className="max-h-[90vh] overflow-y-auto p-4 overscroll-contain">
+        <div className="h-full overflow-y-auto p-4 overscroll-contain">
           <div className="grid md:grid-cols-2 gap-4">
           {/* Galeria de imagens */}
           <div>
@@ -396,8 +396,8 @@ const ProductDetailsDialog = ({
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent 
-                  className="w-[calc(100vw-32px)] sm:w-[420px] max-h-[var(--radix-popover-content-available-height)] overflow-y-auto overscroll-contain p-3" 
-                  side="bottom" 
+                  className="w-[calc(100vw-32px)] sm:w-[420px] max-h-[400px] overflow-y-auto overscroll-contain p-3" 
+                  side="top" 
                   align="center" 
                   sideOffset={8}
                   onWheelCapture={(e) => e.stopPropagation()}
