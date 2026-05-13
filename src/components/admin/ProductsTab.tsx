@@ -35,7 +35,10 @@ const ProductsTab = () => {
   const [isFormOpen, setIsFormOpen] = useState(() => {
     return sessionStorage.getItem('admin.products.isFormOpen') === 'true';
   });
-  const [editingProduct, setEditingProduct] = useState<Product | undefined>();
+  const [editingProduct, setEditingProduct] = useState<Product | undefined>(() => {
+    const saved = sessionStorage.getItem('admin.products.editingProduct');
+    return saved ? JSON.parse(saved) : undefined;
+  });
   const [selectedProduct, setSelectedProduct] = useState<Product | undefined>();
   const [isMarkAsSoldOpen, setIsMarkAsSoldOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -117,22 +120,21 @@ const ProductsTab = () => {
     try {
       if (editingProduct) {
         await productsStore.updateProduct(editingProduct.id, data);
-        toast({
-          title: "Produto atualizado!",
-          description: `${data.name} foi atualizado com sucesso.`,
-        });
+        sessionStorage.removeItem(`product-form-draft-${editingProduct.id}`);
       } else {
         await productsStore.addProduct(data);
-        toast({
-          title: "Produto criado!",
-          description: `${data.name} foi adicionado ao catálogo.`,
-        });
+        sessionStorage.removeItem('product-form-draft-new');
       }
+      
+      toast({
+        title: editingProduct ? "Produto atualizado!" : "Produto criado!",
+        description: `${data.name} foi ${editingProduct ? "atualizado" : "adicionado"} com sucesso.`,
+      });
       
       setIsFormOpen(false);
       setEditingProduct(undefined);
       sessionStorage.removeItem('admin.products.isFormOpen');
-      sessionStorage.removeItem('product-form-draft');
+      sessionStorage.removeItem('admin.products.editingProduct');
       loadProducts();
     } catch (error) {
       toast({
@@ -145,6 +147,7 @@ const ProductsTab = () => {
 
   const handleEdit = (product: Product) => {
     setEditingProduct(product);
+    sessionStorage.setItem('admin.products.editingProduct', JSON.stringify(product));
     setIsFormOpen(true);
   };
 
@@ -214,16 +217,20 @@ const ProductsTab = () => {
   };
 
   const handleCancel = () => {
-    const hasDraft = sessionStorage.getItem('product-form-draft');
+    const draftKey = editingProduct ? `product-form-draft-${editingProduct.id}` : 'product-form-draft-new';
+    const hasDraft = sessionStorage.getItem(draftKey);
+    
     if (hasDraft) {
       if (confirm("Descartar rascunho? Seus dados não salvos serão perdidos.")) {
-        sessionStorage.removeItem('product-form-draft');
+        sessionStorage.removeItem(draftKey);
         sessionStorage.removeItem('admin.products.isFormOpen');
+        sessionStorage.removeItem('admin.products.editingProduct');
         setIsFormOpen(false);
         setEditingProduct(undefined);
       }
     } else {
       sessionStorage.removeItem('admin.products.isFormOpen');
+      sessionStorage.removeItem('admin.products.editingProduct');
       setIsFormOpen(false);
       setEditingProduct(undefined);
     }

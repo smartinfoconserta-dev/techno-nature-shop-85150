@@ -18,7 +18,7 @@ import { brandsStore } from "@/lib/brandsStore";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-const STORAGE_KEY = 'product-form-draft';
+const getDraftKey = (productId?: string) => productId ? `product-form-draft-${productId}` : 'product-form-draft-new';
 
 interface ProductFormProps {
   product?: Product;
@@ -57,9 +57,52 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
   const [ramOptions, setRamOptions] = useState<string[]>([]);
   const [gpuOptions, setGpuOptions] = useState<string[]>([]);
 
-  // Rehidratar campos quando o produto mudar (para edição)
+  // Rehidratar campos quando o produto mudar ou rascunho existir
   useEffect(() => {
-    if (product) {
+    const draftKey = getDraftKey(product?.id);
+    const savedDraft = sessionStorage.getItem(draftKey);
+    
+    if (savedDraft) {
+      try {
+        const draft = JSON.parse(savedDraft);
+        setName(draft.name || "");
+        setCategory(draft.category || "Notebooks");
+        setBrand(draft.brand || "");
+        setSpecs(draft.specs || "");
+        setDescription(draft.description || "");
+        setPrice(draft.price || "");
+        setDiscountPrice(draft.discountPrice || "");
+        setPassOnCashDiscount(draft.passOnCashDiscount || false);
+        setShowSoldOverlay(draft.showSoldOverlay || false);
+        setImages(draft.images || []);
+        setProcessor(draft.processor || "");
+        setRam(draft.ram || "");
+        setDedicatedGPU(draft.dedicatedGPU || false);
+        setGpuModel(draft.gpuModel || "");
+        
+        // Só mostrar toast se o rascunho for diferente do estado inicial do produto
+        if (product) {
+          const hasChanges = 
+            draft.name !== product.name || 
+            draft.brand !== product.brand ||
+            draft.category !== product.category;
+            
+          if (hasChanges) {
+            toast.success("Rascunho recuperado", {
+              description: "Continuando edição do produto",
+              duration: 2000,
+            });
+          }
+        } else {
+          toast.success("Rascunho restaurado", {
+            description: "Seus dados não salvos foram recuperados",
+            duration: 3000,
+          });
+        }
+      } catch (e) {
+        console.error("Erro ao carregar rascunho:", e);
+      }
+    } else if (product) {
       setName(product.name || "");
       setCategory(product.category || "Notebooks");
       setBrand(product.brand || "");
@@ -74,78 +117,44 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
       setRam(product.specifications?.ram || "");
       setDedicatedGPU(!!product.specifications?.dedicatedGPU);
       setGpuModel(product.specifications?.gpuModel || "");
-      
-      // Remover rascunho salvo ao editar produto existente
-      sessionStorage.removeItem(STORAGE_KEY);
-    } else {
-      // Carregar rascunho salvo apenas para novos produtos
-      const savedDraft = sessionStorage.getItem(STORAGE_KEY);
-      if (savedDraft) {
-        try {
-          const draft = JSON.parse(savedDraft);
-          setName(draft.name || "");
-          setCategory(draft.category || "Notebooks");
-          setBrand(draft.brand || "");
-          setSpecs(draft.specs || "");
-          setDescription(draft.description || "");
-          setPrice(draft.price || "");
-          setDiscountPrice(draft.discountPrice || "");
-          setPassOnCashDiscount(draft.passOnCashDiscount || false);
-          setShowSoldOverlay(draft.showSoldOverlay || false);
-          setImages(draft.images || []);
-          setProcessor(draft.processor || "");
-          setRam(draft.ram || "");
-          setDedicatedGPU(draft.dedicatedGPU || false);
-          setGpuModel(draft.gpuModel || "");
-          toast.success("Rascunho restaurado", {
-            description: "Seus dados não salvos foram recuperados",
-            duration: 3000,
-          });
-        } catch (e) {
-          console.error("Erro ao carregar rascunho:", e);
-        }
-      }
     }
   }, [product?.id]);
 
   // Salvar rascunho automaticamente ao digitar
   useEffect(() => {
-    if (!product) {
-      const draft = {
-        name,
-        category,
-        brand,
-        specs,
-        description,
-        price,
-        discountPrice,
-        passOnCashDiscount,
-        showSoldOverlay,
-        images,
-        processor,
-        ram,
-        dedicatedGPU,
-        gpuModel,
-      };
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
-    }
-  }, [name, category, brand, specs, description, price, discountPrice, passOnCashDiscount, showSoldOverlay, images, processor, ram, dedicatedGPU, gpuModel, product]);
+    const draft = {
+      name,
+      category,
+      brand,
+      specs,
+      description,
+      price,
+      discountPrice,
+      passOnCashDiscount,
+      showSoldOverlay,
+      images,
+      processor,
+      ram,
+      dedicatedGPU,
+      gpuModel,
+    };
+    sessionStorage.setItem(getDraftKey(product?.id), JSON.stringify(draft));
+  }, [name, category, brand, specs, description, price, discountPrice, passOnCashDiscount, showSoldOverlay, images, processor, ram, dedicatedGPU, gpuModel, product?.id]);
 
   // Avisar antes de fechar/recarregar se houver dados não salvos
   useEffect(() => {
-    if (!product) {
-      const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-        const hasDraft = sessionStorage.getItem(STORAGE_KEY);
-        if (hasDraft) {
-          e.preventDefault();
-          e.returnValue = '';
-        }
-      };
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      const draftKey = getDraftKey(product?.id);
+      const hasDraft = sessionStorage.getItem(draftKey);
+      if (hasDraft) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
 
-      window.addEventListener('beforeunload', handleBeforeUnload);
-      return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-    }
-  }, [product]);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [product?.id]);
 
   useEffect(() => {
     import("@/lib/categoriesStore").then(async ({ categoriesStore }) => {
@@ -272,7 +281,7 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
       } as any);
 
       // Limpar rascunho após salvar
-      sessionStorage.removeItem(STORAGE_KEY);
+      sessionStorage.removeItem(getDraftKey(product?.id));
     } finally {
       setSaving(false);
     }
