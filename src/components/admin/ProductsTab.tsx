@@ -217,16 +217,20 @@ const ProductsTab = () => {
   };
 
   const handleCancel = () => {
-    const hasDraft = sessionStorage.getItem('product-form-draft');
+    const draftKey = editingProduct ? `product-form-draft-${editingProduct.id}` : 'product-form-draft-new';
+    const hasDraft = sessionStorage.getItem(draftKey);
+    
     if (hasDraft) {
       if (confirm("Descartar rascunho? Seus dados não salvos serão perdidos.")) {
-        sessionStorage.removeItem('product-form-draft');
+        sessionStorage.removeItem(draftKey);
         sessionStorage.removeItem('admin.products.isFormOpen');
+        sessionStorage.removeItem('admin.products.editingProduct');
         setIsFormOpen(false);
         setEditingProduct(undefined);
       }
     } else {
       sessionStorage.removeItem('admin.products.isFormOpen');
+      sessionStorage.removeItem('admin.products.editingProduct');
       setIsFormOpen(false);
       setEditingProduct(undefined);
     }
