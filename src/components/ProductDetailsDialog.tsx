@@ -13,6 +13,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { InstallmentOption, calculateCashPriceWithPassOn, calculateDisplayPrice, getAllInstallmentOptions } from "@/lib/installmentHelper";
 import { couponsStore } from "@/lib/couponsStore";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
 
 const sanitizeForWhatsApp = (text: string): string => {
   return text
@@ -315,50 +316,53 @@ const ProductDetailsDialog = ({
               <div className="text-3xl font-bold text-primary-purple">
                 {(displayMode === 'installment' || displayMode === 'coupon-installment') && paymentDetails.installments && paymentDetails.installmentValue ? (
                   <>
-                    {paymentDetails.installments}x de R$ {paymentDetails.installmentValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    <span className="text-sm font-semibold text-muted-foreground mr-1 uppercase tracking-wider">{paymentDetails.installments}x de</span>
+                    R$ {paymentDetails.installmentValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </>
                 ) : (
                   <>R$ {finalPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</>
                 )}
               </div>
-              <div className="text-sm text-muted-foreground mt-1">
+              <div className="text-sm mt-1">
                 {displayMode === 'coupon' && (
-                  <>
-                    Preço com cupom aplicado
+                  <div className="flex items-center gap-1.5 text-green-600 font-medium bg-green-50 px-2 py-0.5 rounded-md border border-green-100 w-fit">
+                    <Tag className="h-3 w-3" />
+                    Cupom aplicado
                     {couponSavings > 0 && (
-                      <span className="text-green-600 font-medium ml-2">
-                        — Economia de R$ {couponSavings.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </span>
+                      <span className="ml-1">— Economia de R$ {couponSavings.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     )}
-                  </>
+                  </div>
                 )}
-                {displayMode === 'cash' && 'Preço à vista (5% de desconto)'}
-                {displayMode === 'installment' && paymentDetails.totalAmount && (
-                  <>
-                    Total: R$ {paymentDetails.totalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    {(() => {
-                      const baseAmount = displayPrice;
-                      const interestAmount = Math.max(0, Math.round((paymentDetails.totalAmount - baseAmount) * 100) / 100);
-                      return interestAmount > 0 ? ` • Juros totais: R$ ${interestAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '';
-                    })()}
-                  </>
+                {displayMode === 'cash' && (
+                  <div className="text-green-600 font-medium flex items-center gap-1">
+                    <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                    Preço à vista (5% de desconto)
+                  </div>
                 )}
-                {displayMode === 'coupon-installment' && paymentDetails.totalAmount && (
-                  <>
-                    Cupom + parcelado — Total: R$ {paymentDetails.totalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    {(() => {
-                      const baseAmount = (discountPrice && discountPrice < displayPrice) ? discountPrice : displayPrice;
-                      const interestAmount = Math.max(0, Math.round((paymentDetails.totalAmount - baseAmount) * 100) / 100);
-                      return interestAmount > 0 ? ` • Juros totais: R$ ${interestAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '';
-                    })()}
-                    {couponSavings > 0 && (
-                      <span className="text-green-600 font-medium ml-2">
-                        — Economia de R$ {couponSavings.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </span>
-                    )}
-                  </>
+                {displayMode === 'installment' && (
+                  <div className="text-muted-foreground flex items-center gap-2">
+                    <span className="bg-gray-100 px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-tighter">Total</span>
+                    R$ {paymentDetails.totalAmount?.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </div>
                 )}
-                {displayMode === 'original' && `Preço de tabela: R$ ${displayPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                {displayMode === 'coupon-installment' && (
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-1.5 text-green-600 font-medium bg-green-50 px-2 py-0.5 rounded-md border border-green-100 w-fit">
+                      <Tag className="h-3 w-3" />
+                      Cupom aplicado
+                    </div>
+                    <div className="text-muted-foreground text-xs flex items-center gap-2">
+                      <span className="bg-gray-100 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-tighter">Total Parcelado</span>
+                      R$ {paymentDetails.totalAmount?.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </div>
+                  </div>
+                )}
+                {displayMode === 'original' && (
+                  <div className="text-muted-foreground flex items-center gap-1.5">
+                    <div className="w-1.5 h-1.5 rounded-full bg-gray-300" />
+                    Preço de tabela
+                  </div>
+                )}
               </div>
             </div>
 
@@ -401,62 +405,86 @@ const ProductDetailsDialog = ({
                   onWheelCapture={(e) => e.stopPropagation()}
                   onTouchMove={(e) => e.stopPropagation()}
                 >
-                  <div className="space-y-3 pt-2">
-                    {/* Título */}
-                    <h3 className="font-medium text-foreground">Escolha a forma de pagamento</h3>
-                    
-                    {/* Ver preço original */}
-                    <Button 
-                      variant="ghost" 
-                      className="w-full justify-between text-sm h-auto py-2"
-                      onClick={() => {
-                        setSelectedPayment(null);
-                        setPaymentPopoverOpen(false);
-                      }}
-                    >
-                      <span>Ver preço original</span>
-                      <span className="font-medium">R$ {displayPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                    </Button>
-                    
-                    {/* À vista com desconto */}
-                    <Button 
-                      variant="ghost" 
-                      className="w-full justify-between text-sm h-auto py-2"
-                      onClick={() => {
-                        setSelectedPayment({ type: 'cash', cashValue: calculateCashPriceWithPassOn(displayPrice, passOnCashDiscount || false, price) });
-                        setPaymentPopoverOpen(false);
-                      }}
-                    >
-                      <span>💰 À vista (5% desconto)</span>
-                      <span className="font-medium text-green-600">R$ {calculateCashPriceWithPassOn(displayPrice, passOnCashDiscount || false, price).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                    </Button>
+                  <div className="p-1 pointer-events-auto">
+                    <div className="bg-gray-50 rounded-lg p-3 mb-3 border border-gray-100">
+                      <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                        <CreditCard className="h-4 w-4 text-primary-purple" />
+                        Formas de Pagamento
+                      </h3>
+                      
+                      <div className="grid grid-cols-1 gap-2">
+                        {/* Ver preço original */}
+                        <button 
+                          onClick={() => {
+                            setSelectedPayment(null);
+                            setPaymentPopoverOpen(false);
+                          }}
+                          className={cn(
+                            "flex items-center justify-between p-3 rounded-md border transition-all hover:border-primary-purple/50 hover:bg-white text-left group",
+                            selectedPayment === null ? "border-primary-purple bg-primary-purple/5 ring-1 ring-primary-purple" : "border-gray-200 bg-white"
+                          )}
+                        >
+                          <span className="text-sm font-medium text-gray-700">Preço de tabela</span>
+                          <span className="text-sm font-bold text-gray-900">R$ {displayPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        </button>
+                        
+                        {/* À vista com desconto */}
+                        <button 
+                          onClick={() => {
+                            setSelectedPayment({ type: 'cash', cashValue: calculateCashPriceWithPassOn(displayPrice, passOnCashDiscount || false, price) });
+                            setPaymentPopoverOpen(false);
+                          }}
+                          className={cn(
+                            "flex items-center justify-between p-3 rounded-md border transition-all hover:border-green-500/50 hover:bg-white text-left group",
+                            selectedPayment?.type === 'cash' ? "border-green-600 bg-green-50 ring-1 ring-green-600" : "border-gray-200 bg-white"
+                          )}
+                        >
+                          <div className="flex flex-col">
+                            <span className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                              À vista <span className="text-[10px] bg-green-100 text-green-700 px-1 rounded">5% OFF</span>
+                            </span>
+                          </div>
+                          <span className="text-sm font-bold text-green-700">R$ {calculateCashPriceWithPassOn(displayPrice, passOnCashDiscount || false, price).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        </button>
+                      </div>
+                    </div>
                     
                     {/* Seção de Parcelamento */}
-                    <div className="border-t pt-3">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium">💳 Parcelamento (Visa/Mastercard)</span>
-                        <span className="text-xs text-muted-foreground">Role para ver mais</span>
+                    <div className="px-1">
+                      <div className="flex items-center justify-between mb-3 px-1">
+                        <span className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                          <CreditCard className="h-4 w-4 text-primary-purple" />
+                          Parcelamento (Visa/Master)
+                        </span>
+                        <span className="text-[10px] text-gray-400 uppercase tracking-wider font-medium">Até 12x</span>
                       </div>
                       
-                      <div className="space-y-2">
+                      <div className="grid grid-cols-2 gap-2 pb-2">
                         {isLoadingInstallments ? (
-                          <div className="text-sm text-muted-foreground">Carregando...</div>
+                          <div className="col-span-2 py-8 text-center text-sm text-gray-400 flex flex-col items-center gap-2">
+                            <div className="w-5 h-5 border-2 border-primary-purple/30 border-t-primary-purple rounded-full animate-spin"></div>
+                            Carregando opções...
+                          </div>
                         ) : (
                           installmentOptions.map((option) => (
                             <button
                               key={option.installments}
                               ref={(el) => (installmentRefs.current[option.installments] = el)}
                               onClick={() => handleInstallmentClick(option)}
-                              className={
-                                'w-full text-left rounded-md border bg-background px-3 py-2 text-sm transition-colors hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring pointer-events-auto ' +
-                                (selectedPayment?.type === 'installment' && selectedPayment.data?.installments === option.installments ? 'ring-2 ring-primary' : '')
-                              }
+                              className={cn(
+                                "flex flex-col p-2 rounded-md border text-left transition-all hover:border-primary-purple/50 hover:bg-gray-50",
+                                selectedPayment?.type === 'installment' && selectedPayment.data?.installments === option.installments 
+                                  ? "border-primary-purple bg-primary-purple/5 ring-1 ring-primary-purple" 
+                                  : "border-gray-200 bg-white"
+                              )}
                             >
-                              <div className="flex items-center justify-between">
-                                <span className="font-medium">{option.installments}x</span>
-                                <span className="text-foreground">R$ {option.installmentValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                              </div>
-                              <div className="text-xs text-muted-foreground">Total: R$ {option.totalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                              <span className="text-[11px] font-semibold text-gray-500 mb-0.5">{option.installments}x de</span>
+                              <span className={cn(
+                                "text-sm font-bold",
+                                selectedPayment?.type === 'installment' && selectedPayment.data?.installments === option.installments ? "text-primary-purple" : "text-gray-900"
+                              )}>
+                                R$ {option.installmentValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              </span>
                             </button>
                           ))
                         )}
@@ -469,35 +497,76 @@ const ProductDetailsDialog = ({
 
             {/* Detalhes do pagamento selecionado */}
             {selectedPayment?.type === 'installment' && selectedPayment.data && (
-              <div className="mt-3 text-sm text-muted-foreground">
-                {selectedPayment.data.installments}x de R$ {selectedPayment.data.installmentValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                {' '} (Total: R$ {selectedPayment.data.totalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
+              <div className="mt-3 p-3 bg-primary-purple/5 border border-primary-purple/20 rounded-lg">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Total parcelado:</span>
+                  <span className="font-bold text-primary-purple">
+                    R$ {selectedPayment.data.totalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                </div>
+                {selectedPayment.data.totalAmount > displayPrice && (
+                  <div className="text-[10px] text-right text-orange-600 font-medium">
+                    Inclui taxas de parcelamento
+                  </div>
+                )}
               </div>
             )}
 
             {/* Cupom */}
-            <div className="mt-6">
-              <button
-                type="button"
-                onClick={() => setShowCouponInput((v) => !v)}
-                className="text-sm text-primary hover:underline inline-flex items-center"
-              >
-                <Tag className="h-4 w-4 mr-1" /> Tenho cupom
-              </button>
-              {showCouponInput && (
-                <div className="mt-2 flex flex-wrap items-center gap-2">
-                  <Input
-                    value={coupon}
-                    onChange={(e) => setCoupon(e.target.value.toUpperCase())}
-                    placeholder="CUPOM"
-                    className="w-full sm:flex-1 sm:min-w-0 sm:max-w-xs"
-                  />
+            <div className="mt-8 bg-gray-50 p-4 rounded-xl border border-gray-100 shadow-sm">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                  <Tag className="h-4 w-4 text-primary-purple" />
+                  Cupom de Desconto
+                </span>
+                {!showCouponInput && (
+                  <button
+                    type="button"
+                    onClick={() => setShowCouponInput(true)}
+                    className="text-xs font-medium text-primary-purple hover:underline"
+                  >
+                    Adicionar
+                  </button>
+                )}
+              </div>
+              
+              {showCouponInput ? (
+                <div className="flex flex-col gap-2">
+                  <div className="flex gap-2">
+                    <Input
+                      value={coupon}
+                      onChange={(e) => setCoupon(e.target.value.toUpperCase())}
+                      placeholder="INSIRA SEU CUPOM"
+                      className="h-10 text-sm border-gray-200 focus:border-primary-purple focus:ring-primary-purple bg-white"
+                      autoFocus
+                    />
+                    <Button 
+                      variant="outline" 
+                      size="icon" 
+                      className="h-10 w-10 shrink-0 text-gray-400 hover:text-red-500 hover:bg-red-50"
+                      onClick={() => {
+                        setCoupon("");
+                        setShowCouponInput(false);
+                      }}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
                   {coupon && (
-                    <Badge variant={couponValidation.valid ? 'default' : 'secondary'} className="shrink-0">
-                      {couponValidation.valid ? 'Cupom válido' : 'Cupom inválido'}
-                    </Badge>
+                    <div className={cn(
+                      "text-[11px] font-medium px-2 py-1 rounded-md inline-self-start",
+                      couponValidation.valid 
+                        ? "bg-green-100 text-green-700" 
+                        : "bg-red-100 text-red-700"
+                    )}>
+                      {couponValidation.valid ? '✓ Cupom aplicado com sucesso!' : '✕ Cupom inválido ou expirado'}
+                    </div>
                   )}
                 </div>
+              ) : (
+                <p className="text-xs text-gray-500">
+                  Tem um cupom? Clique para aplicar e ver o preço especial.
+                </p>
               )}
             </div>
 
