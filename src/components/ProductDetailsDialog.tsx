@@ -472,16 +472,16 @@ const ProductDetailsDialog = ({
                               ref={(el) => (installmentRefs.current[option.installments] = el)}
                               onClick={() => handleInstallmentClick(option)}
                               className={cn(
-                                "flex flex-col p-2.5 rounded-md border text-left transition-all hover:border-primary-purple/50 hover:bg-gray-50",
+                                "flex flex-col p-2 rounded-md border text-center transition-all hover:border-primary-purple/50 hover:bg-gray-50",
                                 selectedPayment?.type === 'installment' && selectedPayment.data?.installments === option.installments 
                                   ? "border-primary-purple bg-primary-purple/5 ring-1 ring-primary-purple" 
                                   : "border-gray-200 bg-white"
                               )}
                             >
-                              <div className="flex items-baseline gap-1 overflow-hidden">
-                                <span className="text-[10px] sm:text-[11px] font-semibold text-gray-500 whitespace-nowrap shrink-0">{option.installments}x de</span>
+                              <div className="flex flex-col items-center justify-center gap-0.5 leading-tight">
+                                <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-tighter shrink-0">{option.installments}x de</span>
                                 <span className={cn(
-                                  "text-xs sm:text-sm font-bold truncate",
+                                  "text-xs font-bold leading-none",
                                   selectedPayment?.type === 'installment' && selectedPayment.data?.installments === option.installments ? "text-primary-purple" : "text-gray-900"
                                 )}>
                                   R$ {option.installmentValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
