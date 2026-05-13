@@ -249,7 +249,7 @@ const ProductDetailsDialog = ({
           Detalhes completos do produto {name} - {brand}
         </DialogDescription>
         
-        <div className="max-h-[90vh] overflow-y-auto p-4">
+        <div className="max-h-[90vh] overflow-y-auto p-4 overscroll-contain">
           <div className="grid md:grid-cols-2 gap-4">
           {/* Galeria de imagens */}
           <div>
@@ -396,12 +396,10 @@ const ProductDetailsDialog = ({
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent 
-                  className="w-[90vw] sm:w-[420px] max-h-[60vh] sm:max-h-[50vh] overflow-y-auto overscroll-contain overflow-x-hidden p-3 pointer-events-auto" 
+                  className="w-[calc(100vw-32px)] sm:w-[420px] max-h-[var(--radix-popover-content-available-height)] overflow-y-auto overscroll-contain p-3" 
                   side="bottom" 
                   align="center" 
-                  sideOffset={4} 
-                  avoidCollisions 
-                  collisionPadding={{ top: 120, bottom: 20, left: 20, right: 20 }}
+                  sideOffset={8}
                   onWheelCapture={(e) => e.stopPropagation()}
                   onTouchMove={(e) => e.stopPropagation()}
                 >
