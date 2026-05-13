@@ -243,7 +243,7 @@ const ProductDetailsDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl p-0 bg-white">
+      <DialogContent className="max-w-4xl p-0 bg-white h-[90vh] flex flex-col overflow-hidden">
         <DialogTitle className="sr-only">{name}</DialogTitle>
         <DialogDescription className="sr-only">
           Detalhes completos do produto {name} - {brand}
