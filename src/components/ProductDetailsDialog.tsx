@@ -401,62 +401,86 @@ const ProductDetailsDialog = ({
                   onWheelCapture={(e) => e.stopPropagation()}
                   onTouchMove={(e) => e.stopPropagation()}
                 >
-                  <div className="space-y-3 pt-2">
-                    {/* Título */}
-                    <h3 className="font-medium text-foreground">Escolha a forma de pagamento</h3>
-                    
-                    {/* Ver preço original */}
-                    <Button 
-                      variant="ghost" 
-                      className="w-full justify-between text-sm h-auto py-2"
-                      onClick={() => {
-                        setSelectedPayment(null);
-                        setPaymentPopoverOpen(false);
-                      }}
-                    >
-                      <span>Ver preço original</span>
-                      <span className="font-medium">R$ {displayPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                    </Button>
-                    
-                    {/* À vista com desconto */}
-                    <Button 
-                      variant="ghost" 
-                      className="w-full justify-between text-sm h-auto py-2"
-                      onClick={() => {
-                        setSelectedPayment({ type: 'cash', cashValue: calculateCashPriceWithPassOn(displayPrice, passOnCashDiscount || false, price) });
-                        setPaymentPopoverOpen(false);
-                      }}
-                    >
-                      <span>💰 À vista (5% desconto)</span>
-                      <span className="font-medium text-green-600">R$ {calculateCashPriceWithPassOn(displayPrice, passOnCashDiscount || false, price).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                    </Button>
+                  <div className="p-1 pointer-events-auto">
+                    <div className="bg-gray-50 rounded-lg p-3 mb-3 border border-gray-100">
+                      <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                        <CreditCard className="h-4 w-4 text-primary-purple" />
+                        Formas de Pagamento
+                      </h3>
+                      
+                      <div className="grid grid-cols-1 gap-2">
+                        {/* Ver preço original */}
+                        <button 
+                          onClick={() => {
+                            setSelectedPayment(null);
+                            setPaymentPopoverOpen(false);
+                          }}
+                          className={cn(
+                            "flex items-center justify-between p-3 rounded-md border transition-all hover:border-primary-purple/50 hover:bg-white text-left group",
+                            selectedPayment === null ? "border-primary-purple bg-primary-purple/5 ring-1 ring-primary-purple" : "border-gray-200 bg-white"
+                          )}
+                        >
+                          <span className="text-sm font-medium text-gray-700">Preço de tabela</span>
+                          <span className="text-sm font-bold text-gray-900">R$ {displayPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        </button>
+                        
+                        {/* À vista com desconto */}
+                        <button 
+                          onClick={() => {
+                            setSelectedPayment({ type: 'cash', cashValue: calculateCashPriceWithPassOn(displayPrice, passOnCashDiscount || false, price) });
+                            setPaymentPopoverOpen(false);
+                          }}
+                          className={cn(
+                            "flex items-center justify-between p-3 rounded-md border transition-all hover:border-green-500/50 hover:bg-white text-left group",
+                            selectedPayment?.type === 'cash' ? "border-green-600 bg-green-50 ring-1 ring-green-600" : "border-gray-200 bg-white"
+                          )}
+                        >
+                          <div className="flex flex-col">
+                            <span className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                              À vista <span className="text-[10px] bg-green-100 text-green-700 px-1 rounded">5% OFF</span>
+                            </span>
+                          </div>
+                          <span className="text-sm font-bold text-green-700">R$ {calculateCashPriceWithPassOn(displayPrice, passOnCashDiscount || false, price).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        </button>
+                      </div>
+                    </div>
                     
                     {/* Seção de Parcelamento */}
-                    <div className="border-t pt-3">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium">💳 Parcelamento (Visa/Mastercard)</span>
-                        <span className="text-xs text-muted-foreground">Role para ver mais</span>
+                    <div className="px-1">
+                      <div className="flex items-center justify-between mb-3 px-1">
+                        <span className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                          <CreditCard className="h-4 w-4 text-primary-purple" />
+                          Parcelamento (Visa/Master)
+                        </span>
+                        <span className="text-[10px] text-gray-400 uppercase tracking-wider font-medium">Até 12x</span>
                       </div>
                       
-                      <div className="space-y-2">
+                      <div className="grid grid-cols-2 gap-2 pb-2">
                         {isLoadingInstallments ? (
-                          <div className="text-sm text-muted-foreground">Carregando...</div>
+                          <div className="col-span-2 py-8 text-center text-sm text-gray-400 flex flex-col items-center gap-2">
+                            <div className="w-5 h-5 border-2 border-primary-purple/30 border-t-primary-purple rounded-full animate-spin"></div>
+                            Carregando opções...
+                          </div>
                         ) : (
                           installmentOptions.map((option) => (
                             <button
                               key={option.installments}
                               ref={(el) => (installmentRefs.current[option.installments] = el)}
                               onClick={() => handleInstallmentClick(option)}
-                              className={
-                                'w-full text-left rounded-md border bg-background px-3 py-2 text-sm transition-colors hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring pointer-events-auto ' +
-                                (selectedPayment?.type === 'installment' && selectedPayment.data?.installments === option.installments ? 'ring-2 ring-primary' : '')
-                              }
+                              className={cn(
+                                "flex flex-col p-2 rounded-md border text-left transition-all hover:border-primary-purple/50 hover:bg-gray-50",
+                                selectedPayment?.type === 'installment' && selectedPayment.data?.installments === option.installments 
+                                  ? "border-primary-purple bg-primary-purple/5 ring-1 ring-primary-purple" 
+                                  : "border-gray-200 bg-white"
+                              )}
                             >
-                              <div className="flex items-center justify-between">
-                                <span className="font-medium">{option.installments}x</span>
-                                <span className="text-foreground">R$ {option.installmentValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                              </div>
-                              <div className="text-xs text-muted-foreground">Total: R$ {option.totalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                              <span className="text-[11px] font-semibold text-gray-500 mb-0.5">{option.installments}x de</span>
+                              <span className={cn(
+                                "text-sm font-bold",
+                                selectedPayment?.type === 'installment' && selectedPayment.data?.installments === option.installments ? "text-primary-purple" : "text-gray-900"
+                              )}>
+                                R$ {option.installmentValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              </span>
                             </button>
                           ))
                         )}
