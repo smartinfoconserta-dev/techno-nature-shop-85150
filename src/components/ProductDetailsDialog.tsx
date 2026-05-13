@@ -249,7 +249,7 @@ const ProductDetailsDialog = ({
           Detalhes completos do produto {name} - {brand}
         </DialogDescription>
         
-        <div className="max-h-[90vh] overflow-y-auto p-4 overscroll-contain">
+        <div className="h-full overflow-y-auto p-4 overscroll-contain">
           <div className="grid md:grid-cols-2 gap-4">
           {/* Galeria de imagens */}
           <div>
