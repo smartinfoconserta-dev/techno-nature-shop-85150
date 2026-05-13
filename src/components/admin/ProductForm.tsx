@@ -479,11 +479,12 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
                 </label>
               </div>
               {dedicatedGPU && (
-                <Select value={gpuModel || undefined} onValueChange={setGpuModel}>
+                <Select value={gpuModel || "none"} onValueChange={(val) => setGpuModel(val === "none" ? "" : val)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Modelo (opcional)" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="none">Modelo (opcional)</SelectItem>
                     {gpuOptions.map((g) => (
                       <SelectItem key={g} value={g}>{g}</SelectItem>
                     ))}
