@@ -440,6 +440,7 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
                   <SelectValue placeholder="Nenhum selecionado" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="none">Nenhum selecionado</SelectItem>
                   {processorOptions.map((proc) => (
                     <SelectItem key={proc} value={proc}>{proc}</SelectItem>
                   ))}
