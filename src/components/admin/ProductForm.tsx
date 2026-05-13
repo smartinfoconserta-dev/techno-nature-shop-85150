@@ -122,26 +122,24 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
 
   // Salvar rascunho automaticamente ao digitar
   useEffect(() => {
-    if (!product) {
-      const draft = {
-        name,
-        category,
-        brand,
-        specs,
-        description,
-        price,
-        discountPrice,
-        passOnCashDiscount,
-        showSoldOverlay,
-        images,
-        processor,
-        ram,
-        dedicatedGPU,
-        gpuModel,
-      };
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
-    }
-  }, [name, category, brand, specs, description, price, discountPrice, passOnCashDiscount, showSoldOverlay, images, processor, ram, dedicatedGPU, gpuModel, product]);
+    const draft = {
+      name,
+      category,
+      brand,
+      specs,
+      description,
+      price,
+      discountPrice,
+      passOnCashDiscount,
+      showSoldOverlay,
+      images,
+      processor,
+      ram,
+      dedicatedGPU,
+      gpuModel,
+    };
+    sessionStorage.setItem(getDraftKey(product?.id), JSON.stringify(draft));
+  }, [name, category, brand, specs, description, price, discountPrice, passOnCashDiscount, showSoldOverlay, images, processor, ram, dedicatedGPU, gpuModel, product?.id]);
 
   // Avisar antes de fechar/recarregar se houver dados não salvos
   useEffect(() => {
