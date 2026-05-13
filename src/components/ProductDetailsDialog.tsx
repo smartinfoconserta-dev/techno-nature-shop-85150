@@ -323,44 +323,46 @@ const ProductDetailsDialog = ({
                   <>R$ {finalPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</>
                 )}
               </div>
-              <div className="text-sm text-muted-foreground mt-1">
+              <div className="text-sm mt-1">
                 {displayMode === 'coupon' && (
-                  <>
-                    Preço com cupom aplicado
+                  <div className="flex items-center gap-1.5 text-green-600 font-medium bg-green-50 px-2 py-0.5 rounded-md border border-green-100 w-fit">
+                    <Tag className="h-3 w-3" />
+                    Cupom aplicado
                     {couponSavings > 0 && (
-                      <span className="text-green-600 font-medium ml-2">
-                        — Economia de R$ {couponSavings.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </span>
+                      <span className="ml-1">— Economia de R$ {couponSavings.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     )}
-                  </>
+                  </div>
                 )}
-                {displayMode === 'cash' && 'Preço à vista (5% de desconto)'}
-                {displayMode === 'installment' && paymentDetails.totalAmount && (
-                  <>
-                    Total: R$ {paymentDetails.totalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    {(() => {
-                      const baseAmount = displayPrice;
-                      const interestAmount = Math.max(0, Math.round((paymentDetails.totalAmount - baseAmount) * 100) / 100);
-                      return interestAmount > 0 ? ` • Juros totais: R$ ${interestAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '';
-                    })()}
-                  </>
+                {displayMode === 'cash' && (
+                  <div className="text-green-600 font-medium flex items-center gap-1">
+                    <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                    Preço à vista (5% de desconto)
+                  </div>
                 )}
-                {displayMode === 'coupon-installment' && paymentDetails.totalAmount && (
-                  <>
-                    Cupom + parcelado — Total: R$ {paymentDetails.totalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    {(() => {
-                      const baseAmount = (discountPrice && discountPrice < displayPrice) ? discountPrice : displayPrice;
-                      const interestAmount = Math.max(0, Math.round((paymentDetails.totalAmount - baseAmount) * 100) / 100);
-                      return interestAmount > 0 ? ` • Juros totais: R$ ${interestAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '';
-                    })()}
-                    {couponSavings > 0 && (
-                      <span className="text-green-600 font-medium ml-2">
-                        — Economia de R$ {couponSavings.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </span>
-                    )}
-                  </>
+                {displayMode === 'installment' && (
+                  <div className="text-muted-foreground flex items-center gap-2">
+                    <span className="bg-gray-100 px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-tighter">Total</span>
+                    R$ {paymentDetails.totalAmount?.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </div>
                 )}
-                {displayMode === 'original' && `Preço de tabela: R$ ${displayPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                {displayMode === 'coupon-installment' && (
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-1.5 text-green-600 font-medium bg-green-50 px-2 py-0.5 rounded-md border border-green-100 w-fit">
+                      <Tag className="h-3 w-3" />
+                      Cupom aplicado
+                    </div>
+                    <div className="text-muted-foreground text-xs flex items-center gap-2">
+                      <span className="bg-gray-100 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-tighter">Total Parcelado</span>
+                      R$ {paymentDetails.totalAmount?.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </div>
+                  </div>
+                )}
+                {displayMode === 'original' && (
+                  <div className="text-muted-foreground flex items-center gap-1.5">
+                    <div className="w-1.5 h-1.5 rounded-full bg-gray-300" />
+                    Preço de tabela
+                  </div>
+                )}
               </div>
             </div>
 
