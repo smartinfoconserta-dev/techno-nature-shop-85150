@@ -325,6 +325,7 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="none">Selecione uma marca</SelectItem>
+              {availableBrands.map((b) => (
                 <SelectItem key={b} value={b}>
                   {b}
                 </SelectItem>
