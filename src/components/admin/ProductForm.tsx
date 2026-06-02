@@ -141,20 +141,8 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
     sessionStorage.setItem(getDraftKey(product?.id), JSON.stringify(draft));
   }, [name, category, brand, specs, description, price, discountPrice, passOnCashDiscount, showSoldOverlay, images, processor, ram, dedicatedGPU, gpuModel, product?.id]);
 
-  // Avisar antes de fechar/recarregar se houver dados não salvos
-  useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      const draftKey = getDraftKey(product?.id);
-      const hasDraft = sessionStorage.getItem(draftKey);
-      if (hasDraft) {
-        e.preventDefault();
-        e.returnValue = '';
-      }
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [product?.id]);
+  // O rascunho é salvo automaticamente em sessionStorage; não bloqueamos
+  // navegação/recarga para não travar a experiência do admin.
 
   useEffect(() => {
     import("@/lib/categoriesStore").then(async ({ categoriesStore }) => {

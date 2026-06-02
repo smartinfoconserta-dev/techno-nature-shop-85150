@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+
 import { useAuth } from "@/hooks/useAuth";
 import {
   Dialog,
@@ -23,7 +23,6 @@ const AdminLoginDialog = ({ open, onOpenChange }: AdminLoginDialogProps) => {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { login, logout, checkIsAdmin } = useAuth();
-  const navigate = useNavigate();
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -44,7 +43,9 @@ const AdminLoginDialog = ({ open, onOpenChange }: AdminLoginDialogProps) => {
         onOpenChange(false);
         setEmail("");
         setPassword("");
-        navigate("/admin");
+        // Força navegação completa para garantir que a sessão esteja
+        // totalmente carregada antes da rota /admin checar o role
+        window.location.assign("/admin");
       } else {
         toast({
           variant: "destructive",
