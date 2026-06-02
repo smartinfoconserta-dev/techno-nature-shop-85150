@@ -65,7 +65,10 @@ const ProductDetailsDialog = ({
   const [isLoadingInstallments, setIsLoadingInstallments] = useState(true);
   const [galleryOpen, setGalleryOpen] = useState(false);
   
-  const isDiscountActive = couponValidation.valid;
+  // Só consideramos o cupom "ativo" para alterar preço quando o produto
+  // tem um preço B2B (discountPrice) menor que o preço de tabela.
+  const hasB2BPrice = !!(discountPrice && discountPrice < price);
+  const isDiscountActive = couponValidation.valid && hasB2BPrice;
 
   // Calcular o preço de vitrine baseado no passOnCashDiscount
   const displayPrice = calculateDisplayPrice(price, passOnCashDiscount);
@@ -550,11 +553,17 @@ const ProductDetailsDialog = ({
                   {coupon && (
                     <div className={cn(
                       "text-[11px] font-medium px-2 py-1 rounded-md inline-self-start",
-                      couponValidation.valid 
-                        ? "bg-green-100 text-green-700" 
-                        : "bg-red-100 text-red-700"
+                      couponValidation.valid && hasB2BPrice
+                        ? "bg-green-100 text-green-700"
+                        : couponValidation.valid && !hasB2BPrice
+                          ? "bg-amber-100 text-amber-700"
+                          : "bg-red-100 text-red-700"
                     )}>
-                      {couponValidation.valid ? '✓ Cupom aplicado com sucesso!' : '✕ Cupom inválido ou expirado'}
+                      {couponValidation.valid && hasB2BPrice
+                        ? '✓ Cupom aplicado com sucesso!'
+                        : couponValidation.valid && !hasB2BPrice
+                          ? 'ⓘ Este produto não possui desconto especial disponível'
+                          : '✕ Cupom inválido ou expirado'}
                     </div>
                   )}
                 </div>
