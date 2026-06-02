@@ -1,35 +1,22 @@
-## Contexto
+## Plano de correção
 
-Ao analisar o código, descobri que **o gerenciamento de Processadores e Memória RAM já existe** na aba **Configurações** do Admin (`SettingsTab`). Lá já é possível adicionar e remover opções que aparecem nos selects do formulário de produto.
+Vou corrigir os três problemas que apareceram após a última atualização:
 
-O que **falta** é o equivalente para **Placa de Vídeo**: hoje no cadastro do produto só existe um checkbox "Tem placa de vídeo dedicada", sem campo para informar o **modelo** (ex: RTX 4060, GTX 1650, Radeon RX 6600).
+1. **Cupom aparece como aplicado, mas preço não muda**
+   - Ajustar a lógica do modal do produto para aplicar o preço de desconto assim que o cupom válido for digitado.
+   - Garantir que o parcelamento também seja recalculado usando o preço com desconto.
+   - Tratar o caso em que o produto não tem preço lojista configurado, para não mostrar “cupom aplicado” como se tivesse desconto real.
 
-## O que será feito
+2. **Login admin diz que entrou, mas fica preso na tela inicial até apertar F5**
+   - Corrigir o fluxo do `AdminLoginDialog` para aguardar a sessão e a validação de admin antes de navegar.
+   - Fechar o menu/dialog corretamente no mobile antes de redirecionar.
+   - Evitar condição de corrida entre login, checagem de permissão e proteção da rota `/admin`.
 
-### 1. Banco de dados
-- Adicionar coluna `gpu_options` (jsonb) na tabela `settings` com lista padrão (ex: "GTX 1650", "RTX 3050", "RTX 4060", "Radeon RX 6600").
+3. **Cadastro/finalização de produto fica preso ou parece dar erro**
+   - Remover o bloqueio automático de recarregar/fechar página causado pelo rascunho salvo em `sessionStorage`, que pode deixar o navegador parecendo travado.
+   - Garantir que o formulário sempre destrave o botão de salvar, inclusive quando der erro.
+   - Limpar o estado do formulário e do rascunho somente depois que o produto for salvo com sucesso.
 
-### 2. Configurações (`SettingsTab`)
-- Nova seção **"Opções de Placa de Vídeo"**, idêntica em comportamento às de Processador/RAM (listar, adicionar, remover modelos).
-- Adicionar funções `addGPUOption` / `removeGPUOption` / `updateGPUOptions` em `settingsStore.ts`.
-
-### 3. Formulário de produto (`ProductForm`)
-- Manter o checkbox "Tem placa de vídeo dedicada".
-- Quando marcado, mostrar um **Select com os modelos de GPU** cadastrados em Configurações para escolher o modelo (campo opcional).
-- Salvar em `specifications.gpuModel`.
-
-### 4. Filtros e exibição
-- Mostrar o modelo da GPU nos detalhes/specs do produto quando preenchido.
-- (Filtro por modelo de GPU não será adicionado agora — apenas o filtro existente "apenas com placa dedicada" continua.)
-
-## Observação importante
-
-Se você não estava enxergando a opção de adicionar/remover **Processador** e **RAM**, ela está em **Admin → Configurações**, nas seções "Opções de Processador" e "Opções de Memória RAM". Se preferir, posso também mover/destacar essas seções para ficarem mais visíveis — me avise.
-
-## Arquivos afetados
-- migration na tabela `settings`
-- `src/lib/settingsStore.ts`
-- `src/components/admin/SettingsTab.tsx`
-- `src/components/admin/ProductForm.tsx`
-- `src/lib/productsStore.ts` (tipo `gpuModel`)
-- exibição de specs (ProductDetailsDialog / ProductCard se aplicável)
+4. **Verificação final**
+   - Revisar o comportamento em desktop/mobile do fluxo: aplicar cupom, entrar no admin e salvar produto.
+   - Manter as mudanças focadas nesses bugs, sem alterar regras de preço ou visual além do necessário.
